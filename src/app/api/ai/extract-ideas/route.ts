@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getGeminiModel } from '@/lib/gemini';
+import { handleApiError, parseGeminiJson } from '@/lib/api-error';
 import type { GeminiModel } from '@/types/content';
 
 export async function POST(request: Request) {
@@ -35,32 +36,13 @@ export async function POST(request: Request) {
     const result = await gemini.generateContent(prompt);
     const text = result.response.text();
 
-    // Extract JSON from response (handle markdown code blocks)
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
+    const ideas = parseGeminiJson(text);
+    if (!ideas) {
       return NextResponse.json({ error: 'Failed to parse AI response' }, { status: 500 });
     }
 
-    const ideas = JSON.parse(jsonMatch[0]);
-
     return NextResponse.json(ideas);
   } catch (error) {
-    console.error('AI idea extraction error:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
-
-    if (message.includes('503') || message.includes('Service Unavailable')) {
-      return NextResponse.json(
-        { error: '현재 선택한 AI 모델이 과부하 상태입니다. 잠시 후 다시 시도하거나 다른 모델을 선택해주세요.' },
-        { status: 503 },
-      );
-    }
-    if (message.includes('404') || message.includes('not found')) {
-      return NextResponse.json(
-        { error: '선택한 AI 모델을 찾을 수 없습니다. 다른 모델을 선택해주세요.' },
-        { status: 400 },
-      );
-    }
-
-    return NextResponse.json({ error: message }, { status: 500 });
+    return handleApiError(error, 'AI idea extraction error');
   }
 }

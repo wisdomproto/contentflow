@@ -1,24 +1,16 @@
 'use client';
 
 import { useCallback } from 'react';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from '@dnd-kit/core';
+import { DndContext } from '@dnd-kit/core';
 import {
   SortableContext,
-  sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Download } from 'lucide-react';
 import { useContentStore } from '@/stores/useContentStore';
+import { useDragReorder } from '@/hooks/useDragReorder';
 import { CardNewsToolbar } from './CardNewsToolbar';
 import { SlideCard } from './SlideCard';
 import { AddSlideButton } from './AddSlideButton';
@@ -79,9 +71,9 @@ export function CardNewsEditor() {
   const content = activeContentId ? contents[activeContentId] : null;
   const cardnews = content?.cardnews;
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  const { sensors, handleDragEnd, closestCenter } = useDragReorder(
+    cardnews?.slides ?? [],
+    (ids) => content && reorderSlides(content.id, ids),
   );
 
   const handleDownloadAll = useCallback(async () => {
@@ -111,18 +103,6 @@ export function CardNewsEditor() {
     colorTheme: cardnews.colorTheme,
     font: cardnews.font,
     ratio: cardnews.ratio,
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      const oldIndex = cardnews.slides.findIndex((s) => s.id === active.id);
-      const newIndex = cardnews.slides.findIndex((s) => s.id === over.id);
-      const newOrder = [...cardnews.slides];
-      const [moved] = newOrder.splice(oldIndex, 1);
-      newOrder.splice(newIndex, 0, moved);
-      reorderSlides(content.id, newOrder.map((s) => s.id));
-    }
   };
 
   return (

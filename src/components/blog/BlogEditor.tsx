@@ -1,22 +1,14 @@
 'use client';
 
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from '@dnd-kit/core';
+import { DndContext } from '@dnd-kit/core';
 import {
   SortableContext,
-  sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useContentStore } from '@/stores/useContentStore';
+import { useDragReorder } from '@/hooks/useDragReorder';
 import { TitleEditor } from './TitleEditor';
 import { Section } from './Section';
 import { AddSectionButton } from './AddSectionButton';
@@ -73,24 +65,12 @@ export function BlogEditor() {
 
   const content = activeContentId ? contents[activeContentId] : null;
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  const { sensors, handleDragEnd, closestCenter } = useDragReorder(
+    content?.blog.sections ?? [],
+    (ids) => content && reorderSections(content.id, ids),
   );
 
   if (!content) return null;
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      const oldIndex = content.blog.sections.findIndex((s) => s.id === active.id);
-      const newIndex = content.blog.sections.findIndex((s) => s.id === over.id);
-      const newOrder = [...content.blog.sections];
-      const [moved] = newOrder.splice(oldIndex, 1);
-      newOrder.splice(newIndex, 0, moved);
-      reorderSections(content.id, newOrder.map((s) => s.id));
-    }
-  };
 
   return (
     <div className="flex flex-col gap-4">

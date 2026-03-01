@@ -13,6 +13,7 @@ import type { IdeaExtraction } from '@/mock/contents';
 import { Sparkles, X, Lightbulb } from 'lucide-react';
 import { ModelSelector } from '@/components/ui/ModelSelector';
 import { IdeaExtractResult } from './IdeaExtractResult';
+import { toast } from '@/components/ui/Toast';
 
 export function BasicSettingsTab() {
   const folders = useFolderStore((s) => s.folders);
@@ -49,7 +50,7 @@ export function BasicSettingsTab() {
     } catch (err) {
       console.error('Idea extraction failed:', err);
       const msg = err instanceof Error ? err.message : '아이디어 추출에 실패했습니다.';
-      alert(msg);
+      toast(msg, 'error');
     } finally {
       setIsExtracting(false);
     }
@@ -77,7 +78,7 @@ export function BasicSettingsTab() {
     } catch (err) {
       console.error('Blog generation failed:', err);
       const msg = err instanceof Error ? err.message : '블로그 생성에 실패했습니다.';
-      alert(msg);
+      toast(msg, 'error');
     } finally {
       setIsGenerating(false);
     }

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getGeminiImageModel } from '@/lib/gemini';
+import { handleApiError } from '@/lib/api-error';
 import type { ImageModel } from '@/types/content';
 
 interface ImageContext {
@@ -116,8 +117,6 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   } catch (error) {
-    console.error('AI image generation error:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return handleApiError(error, 'AI image generation error');
   }
 }

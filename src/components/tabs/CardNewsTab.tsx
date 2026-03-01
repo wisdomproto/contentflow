@@ -8,6 +8,7 @@ import { ImageModelSelector } from '@/components/ui/ImageModelSelector';
 import { Spinner } from '@/components/ui/Spinner';
 import { useContentStore } from '@/stores/useContentStore';
 import { CardNewsEditor } from '@/components/card-news/CardNewsEditor';
+import { toast } from '@/components/ui/Toast';
 import type { CardNewsData } from '@/types/card-news';
 
 export function CardNewsTab() {
@@ -57,7 +58,7 @@ export function CardNewsTab() {
     } catch (err) {
       console.error('Card news generation failed:', err);
       const msg = err instanceof Error ? err.message : '카드뉴스 생성에 실패했습니다.';
-      alert(msg);
+      toast(msg, 'error');
     } finally {
       setIsGenerating(false);
     }

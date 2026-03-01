@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getGeminiModel } from '@/lib/gemini';
+import { handleApiError, parseGeminiJson } from '@/lib/api-error';
 import type { GeminiModel } from '@/types/content';
 import { nanoid } from 'nanoid';
 
@@ -98,15 +99,13 @@ imagePrompt는 AI 이미지 생성 모델에 직접 전달되어 "텍스트가 �
     const result = await gemini.generateContent(prompt);
     const text = result.response.text();
 
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
+    const data = parseGeminiJson(text) as { slides: { type: string; headline: string; body: string; imagePrompt?: string; imagePlaceholder?: string }[] } | null;
+    if (!data) {
       return NextResponse.json({ error: 'Failed to parse AI response' }, { status: 500 });
     }
 
-    const data = JSON.parse(jsonMatch[0]);
-
     const slides = data.slides.map(
-      (sl: { type: string; headline: string; body: string; imagePrompt?: string; imagePlaceholder?: string }) => ({
+      (sl) => ({
         id: nanoid(),
         type: sl.type || 'body',
         headline: sl.headline || '',
@@ -118,22 +117,6 @@ imagePrompt는 AI 이미지 생성 모델에 직접 전달되어 "텍스트가 �
 
     return NextResponse.json({ slides });
   } catch (error) {
-    console.error('AI card news generation error:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
-
-    if (message.includes('503') || message.includes('Service Unavailable')) {
-      return NextResponse.json(
-        { error: '현재 선택한 AI 모델이 과부하 상태입니다. 잠시 후 다시 시도하거나 다른 모델을 선택해주세요.' },
-        { status: 503 },
-      );
-    }
-    if (message.includes('404') || message.includes('not found')) {
-      return NextResponse.json(
-        { error: '선택한 AI 모델을 찾을 수 없습니다. 다른 모델을 선택해주세요.' },
-        { status: 400 },
-      );
-    }
-
-    return NextResponse.json({ error: message }, { status: 500 });
+    return handleApiError(error, 'AI card news generation error');
   }
 }

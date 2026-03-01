@@ -6,6 +6,7 @@ import { SlideControls } from './SlideControls';
 import { Sparkles, Download, RefreshCw } from 'lucide-react';
 import { Spinner } from '@/components/ui/Spinner';
 import { useContentStore } from '@/stores/useContentStore';
+import { toast } from '@/components/ui/Toast';
 import type { Slide, SlideType, CardNewsData } from '@/types/card-news';
 
 const SLIDE_TYPE_CONFIG: Record<SlideType, { label: string; color: string }> = {
@@ -65,15 +66,12 @@ export function SlideCard({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Image generation failed');
 
-      const blob = await fetch(
-        `data:${data.mimeType};base64,${data.image}`,
-      ).then((r) => r.blob());
-      const url = URL.createObjectURL(blob);
+      const url = `data:${data.mimeType};base64,${data.image}`;
       onUpdate({ imageUrl: url });
     } catch (err) {
       console.error('Slide image generation failed:', err);
       const msg = err instanceof Error ? err.message : '이미지 생성에 실패했습니다.';
-      alert(msg);
+      toast(msg, 'error');
     } finally {
       setIsGenerating(false);
     }

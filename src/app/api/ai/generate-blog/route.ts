@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getGeminiModel } from '@/lib/gemini';
+import { handleApiError, parseGeminiJson } from '@/lib/api-error';
 import type { GeminiModel } from '@/types/content';
 import { nanoid } from 'nanoid';
 
@@ -88,12 +89,14 @@ ${toneText}
     const result = await gemini.generateContent(prompt);
     const text = result.response.text();
 
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
+    const blogData = parseGeminiJson(text) as {
+      title: string;
+      sections: { type: string; header: string; text?: string; imagePlaceholder?: string; question?: string; answer?: string; points?: string[] }[];
+      tags?: string[];
+    } | null;
+    if (!blogData) {
       return NextResponse.json({ error: 'Failed to parse AI response' }, { status: 500 });
     }
-
-    const blogData = JSON.parse(jsonMatch[0]);
 
     // Fix HTML that AI may have escaped (e.g. &lt;strong&gt; → <strong>)
     const unescapeHtml = (str: string): string =>
@@ -112,7 +115,7 @@ ${toneText}
 
     // Add IDs and default fields to sections
     const sections = blogData.sections.map(
-      (sec: { type: string; header: string; text?: string; imagePlaceholder?: string; question?: string; answer?: string; points?: string[] }) => ({
+      (sec) => ({
         id: nanoid(),
         type: sec.type,
         header: stripHtml(sec.header || ''),
@@ -132,23 +135,6 @@ ${toneText}
       tags: blogData.tags || [],
     });
   } catch (error) {
-    console.error('AI blog generation error:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
-
-    // Surface specific Gemini API errors to the client
-    if (message.includes('503') || message.includes('Service Unavailable')) {
-      return NextResponse.json(
-        { error: '현재 선택한 AI 모델이 과부하 상태입니다. 잠시 후 다시 시도하거나 다른 모델을 선택해주세요.' },
-        { status: 503 },
-      );
-    }
-    if (message.includes('404') || message.includes('not found')) {
-      return NextResponse.json(
-        { error: '선택한 AI 모델을 찾을 수 없습니다. 다른 모델을 선택해주세요.' },
-        { status: 400 },
-      );
-    }
-
-    return NextResponse.json({ error: message }, { status: 500 });
+    return handleApiError(error, 'AI blog generation error');
   }
 }

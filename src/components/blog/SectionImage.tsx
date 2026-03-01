@@ -44,9 +44,13 @@ export function SectionImage({ imageUrl, placeholder, onImageChange, sectionHead
   const handleFile = useCallback(
     (file: File) => {
       if (file.type.startsWith('image/')) {
-        const url = URL.createObjectURL(file);
-        onImageChange(url);
-        addToHistory(url, file.name);
+        const reader = new FileReader();
+        reader.onload = () => {
+          const url = reader.result as string;
+          onImageChange(url);
+          addToHistory(url, file.name);
+        };
+        reader.readAsDataURL(file);
       }
     },
     [onImageChange, addToHistory],
@@ -98,14 +102,7 @@ export function SectionImage({ imageUrl, placeholder, onImageChange, sectionHead
         throw new Error(data.error || '이미지 생성에 실패했습니다');
       }
 
-      const byteChars = atob(data.image);
-      const byteNumbers = new Array(byteChars.length);
-      for (let i = 0; i < byteChars.length; i++) {
-        byteNumbers[i] = byteChars.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: data.mimeType });
-      const url = URL.createObjectURL(blob);
+      const url = `data:${data.mimeType};base64,${data.image}`;
 
       onImageChange(url);
       addToHistory(url, prompt);
