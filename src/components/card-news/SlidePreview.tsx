@@ -11,23 +11,23 @@ interface SlidePreviewProps {
 }
 
 export function SlidePreview({ slide, settings, size = 'sm' }: SlidePreviewProps) {
-  const theme = CARD_NEWS_COLOR_THEMES.find((c) => c.value === settings.colorTheme) ?? CARD_NEWS_COLOR_THEMES[0];
+  const theme =
+    CARD_NEWS_COLOR_THEMES.find((c) => c.value === settings.colorTheme) ??
+    CARD_NEWS_COLOR_THEMES[0];
   const isSquare = settings.ratio === '1:1';
-
-  const fontClass =
-    settings.font === 'noto-sans' ? 'font-[var(--font-noto)]' : 'font-[var(--font-pretendard)]';
 
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-md border border-border',
+        'relative overflow-hidden rounded-md border border-border w-full',
         isSquare ? 'aspect-square' : 'aspect-[9/16]',
-        size === 'sm' ? 'w-full' : 'w-full max-w-[280px]',
-        fontClass,
       )}
-      style={{ backgroundColor: theme.bg, color: theme.text }}
+      style={{
+        backgroundColor: theme.bg,
+        color: theme.text,
+      }}
     >
-      {/* Background image if present */}
+      {/* Background image */}
       {slide.imageUrl && (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -43,27 +43,39 @@ export function SlidePreview({ slide, settings, size = 'sm' }: SlidePreviewProps
       {/* Text overlay */}
       <div
         className={cn(
-          'relative flex h-full flex-col items-center justify-center p-3 text-center',
+          'relative flex h-full flex-col items-center justify-center text-center',
           slide.imageUrl && 'text-white',
-          settings.template === 'bold' && 'justify-end pb-6',
-          settings.template === 'magazine' && 'items-start justify-end pb-4 pl-4 text-left',
+          settings.template === 'bold' && 'justify-end',
+          settings.template === 'magazine' && 'items-start justify-end text-left',
         )}
+        style={{
+          padding: size === 'md' ? '16px' : '12px',
+          ...(settings.template === 'bold' && {
+            paddingBottom: size === 'md' ? '24px' : '16px',
+          }),
+          ...(settings.template === 'magazine' && {
+            paddingBottom: '16px',
+            paddingLeft: '16px',
+          }),
+        }}
       >
         <p
-          className={cn(
-            'font-bold leading-tight',
-            size === 'sm' ? 'text-xs' : 'text-sm',
-            settings.template === 'bold' && (size === 'sm' ? 'text-sm' : 'text-base'),
-          )}
+          style={{
+            fontSize: size === 'md' ? 16 : 12,
+            fontWeight: 700,
+            lineHeight: 1.3,
+          }}
         >
           {slide.headline || '헤드라인'}
         </p>
         {slide.body && (
           <p
-            className={cn(
-              'mt-1 leading-snug opacity-80',
-              size === 'sm' ? 'text-[10px]' : 'text-xs',
-            )}
+            style={{
+              fontSize: size === 'md' ? 12 : 10,
+              lineHeight: 1.5,
+              opacity: 0.85,
+              marginTop: 4,
+            }}
           >
             {slide.body}
           </p>

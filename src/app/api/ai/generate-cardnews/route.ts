@@ -52,32 +52,46 @@ ${blogContent}
       "type": "cover",
       "headline": "시선을 사로잡는 제목 (15~20자)",
       "body": "호기심 유발 부제목 (30~50자)",
-      "imagePlaceholder": "AI 이미지 생성용 상세 묘사 (2~3문장)"
+      "imagePrompt": "이 슬라이드를 완성된 하나의 이미지로 생성하기 위한 초상세 프롬프트"
     },
     {
       "type": "body",
       "headline": "핵심 포인트 (10~20자)",
       "body": "간결한 설명 (30~60자)",
-      "imagePlaceholder": "AI 이미지 생성용 상세 묘사 (2~3문장)"
+      "imagePrompt": "이 슬라이드를 완성된 하나의 이미지로 생성하기 위한 초상세 프롬프트"
     },
     {
       "type": "outro",
       "headline": "마무리/CTA (10~15자)",
       "body": "행동 유도 문구 (20~40자)",
-      "imagePlaceholder": "AI 이미지 생성용 상세 묘사 (2~3문장)"
+      "imagePrompt": "이 슬라이드를 완성된 하나의 이미지로 생성하기 위한 초상세 프롬프트"
     }
   ]
 }
 
-규칙:
-- 첫 번째 슬라이드는 반드시 type: "cover" (시선 끄는 제목 + 호기심 유발)
-- 마지막 슬라이드는 반드시 type: "outro" (요약, CTA, 팔로우 유도)
-- 나머지는 type: "body" (블로그 핵심 내용을 카드뉴스에 맞게 압축)
-- headline은 짧고 임팩트 있게 (한 줄에 보일 수 있는 길이)
-- body는 1~2문장으로 핵심만 전달 (스와이프하며 빠르게 읽을 수 있게)
-- imagePlaceholder는 AI 이미지 생성에 직접 사용됩니다. 반드시 2~3문장으로 구체적으로 묘사:
-  - 장소, 피사체, 구도, 분위기, 조명, 색감 포함
-  - 인스타그램 카드뉴스에 어울리는 깔끔하고 세련된 스타일
+★★★ 핵심: imagePrompt 작성 규칙 ★★★
+imagePrompt는 AI 이미지 생성 모델에 직접 전달되어 "텍스트가 포함된 완성된 카드뉴스 이미지"를 만듭니다.
+각 imagePrompt는 반드시 다음을 모두 포함해야 합니다:
+
+1. 레이아웃 지시: "인스타그램 카드뉴스 슬라이드. 정사각형(1:1) 비율."
+2. 배경 묘사: 주제에 맞는 배경 사진 또는 그라데이션 배경을 구체적으로 묘사
+3. 텍스트 배치: headline과 body 텍스트가 이미지 안에 깔끔하게 배치되도록 지시
+   - 예: "이미지 중앙에 '${'{headline}'}' 텍스트가 크고 굵은 흰색 글씨로 배치, 그 아래 작은 글씨로 '${'{body}'}'가 표시"
+4. 디자인 스타일: 깔끔하고 모던한 한국 인스타그램 카드뉴스 스타일
+5. 색감/분위기: 주제에 맞는 색감과 분위기
+
+좋은 imagePrompt 예시:
+"인스타그램 카드뉴스 슬라이드. 정사각형(1:1) 비율. 부드러운 크림색 배경에 미니멀한 카페 일러스트가 은은하게 깔림. 이미지 상단에 '카페 투어 꿀팁 5가지'라는 텍스트가 굵고 진한 갈색 산세리프 폰트로 크게 배치. 하단에 '당신이 몰랐던 숨은 카페 찾는 법'이라는 부제가 작은 회색 글씨로 표시. 전체적으로 깔끔하고 감성적인 한국 인스타그램 카드뉴스 디자인."
+
+나쁜 imagePrompt 예시:
+"카페 사진" (너무 짧음, 텍스트 배치 지시 없음)
+
+기타 규칙:
+- 첫 번째 슬라이드는 반드시 type: "cover"
+- 마지막 슬라이드는 반드시 type: "outro"
+- 나머지는 type: "body"
+- headline은 짧고 임팩트 있게
+- body는 1~2문장으로 핵심만 전달
 - 총 ${count}장의 슬라이드를 생성하세요
 - 반드시 위 JSON 형식만 출력하세요. 다른 텍스트는 포함하지 마세요.`;
 
@@ -92,13 +106,13 @@ ${blogContent}
     const data = JSON.parse(jsonMatch[0]);
 
     const slides = data.slides.map(
-      (sl: { type: string; headline: string; body: string; imagePlaceholder?: string }) => ({
+      (sl: { type: string; headline: string; body: string; imagePrompt?: string; imagePlaceholder?: string }) => ({
         id: nanoid(),
         type: sl.type || 'body',
         headline: sl.headline || '',
         body: sl.body || '',
         imageUrl: null,
-        imagePlaceholder: sl.imagePlaceholder || '',
+        imagePlaceholder: sl.imagePrompt || sl.imagePlaceholder || '',
       }),
     );
 
