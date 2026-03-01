@@ -2,26 +2,166 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
+
+/* =============================================
+   Light Mode — layered surface system
+   ============================================= */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Page canvas (the gray behind everything) */
+  --background: #f1f5f9;
+  --foreground: #0f172a;
+
+  /* Elevated surfaces: sidebar, header, panels, cards */
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+
+  /* Input fields — distinct from card surface */
+  --input: #f8fafc;
+  --input-border: #cbd5e1;
+
+  /* Borders & dividers */
+  --border: #e2e8f0;
+
+  /* Muted / subdued */
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+
+  /* Brand */
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+
+  /* Accent */
+  --accent: #eff6ff;
+  --accent-foreground: #1e40af;
+
+  /* Destructive */
+  --destructive: #ef4444;
+
+  /* Focus ring */
+  --ring: #2563eb;
+
+  /* Layout */
+  --sidebar-width: 280px;
+  --right-panel-width: 320px;
+  --header-height: 48px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* =============================================
+   Dark Mode
+   ============================================= */
+.dark {
+  --background: #080d19;
+  --foreground: #e2e8f0;
+
+  --card: #111827;
+  --card-foreground: #e2e8f0;
+
+  --input: #0c1222;
+  --input-border: #334155;
+
+  --border: #1e293b;
+
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+
+  --accent: #1e293b;
+  --accent-foreground: #93c5fd;
+
+  --destructive: #f87171;
+  --ring: #3b82f6;
 }
 
+/* =============================================
+   Base
+   ============================================= */
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont,
+    system-ui, Roboto, 'Noto Sans KR', 'Helvetica Neue', Arial, sans-serif;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+/* =============================================
+   Elevated surfaces (header, sidebar, panels)
+   ============================================= */
+header {
+  background: var(--card) !important;
+  border-color: var(--border) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+aside {
+  background: var(--card) !important;
+}
+
+/* =============================================
+   Inputs — clearly distinct from card surface
+   ============================================= */
+input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='hidden']),
+select,
+textarea {
+  background-color: var(--input) !important;
+  border-color: var(--input-border) !important;
+}
+
+input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='hidden']):focus,
+select:focus,
+textarea:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 15%, transparent) !important;
+}
+
+/* =============================================
+   Scrollbar
+   ============================================= */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+/* =============================================
+   Tiptap editor
+   ============================================= */
+.tiptap {
+  outline: none;
+}
+
+.tiptap p {
+  margin: 0.5em 0;
+}
+
+.tiptap h2,
+.tiptap h3 {
+  font-weight: 700;
+  margin: 1em 0 0.5em;
+}
+
+.tiptap ul,
+.tiptap ol {
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+}
+
+.tiptap blockquote {
+  border-left: 3px solid var(--border);
+  padding-left: 1em;
+  margin: 0.5em 0;
+  color: var(--muted-foreground);
 }
