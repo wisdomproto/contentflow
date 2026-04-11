@@ -24,7 +24,11 @@ export function LanguageSelector({ onTranslate, translationStatuses = {} }: Lang
   const { projects, selectedProjectId } = useProjectStore()
   const project = projects.find(p => p.id === selectedProjectId)
 
-  const targetLanguages = project?.target_languages || ['ko']
+  const rawLanguages = project?.target_languages ?? []
+  // ko is always first; if not present, prepend it
+  const targetLanguages = rawLanguages.includes('ko')
+    ? ['ko', ...rawLanguages.filter((l) => l !== 'ko')]
+    : ['ko', ...rawLanguages]
 
   // Don't render if only one language
   if (targetLanguages.length <= 1) return null
