@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, ChevronDown, Check } from 'lucide-react'
+import { Plus, ChevronDown, Check, MoreHorizontal, Settings } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useProjectStore } from '@/stores/project-store'
 import {
   DropdownMenu,
@@ -16,14 +17,16 @@ export function ProjectSwitcher() {
   const { projects, selectedProjectId, selectProject } = useProjectStore()
   const selectedProject = projects.find(p => p.id === selectedProjectId)
   const [createOpen, setCreateOpen] = useState(false)
+  const router = useRouter()
 
   return (
     <>
       <div className="p-3 border-b border-border">
-        <DropdownMenu>
-          <DropdownMenuTrigger
-              className="w-full flex items-center gap-2 bg-accent/50 hover:bg-accent px-3 py-2 rounded-lg transition-colors"
-            >
+        <div className="flex items-center gap-1">
+          <DropdownMenu>
+            <DropdownMenuTrigger
+                className="flex-1 flex items-center gap-2 bg-accent/50 hover:bg-accent px-3 py-2 rounded-lg transition-colors"
+              >
               <div className="w-7 h-7 bg-primary rounded-md flex items-center justify-center text-primary-foreground text-xs font-bold shrink-0">
                 {selectedProject?.name?.charAt(0) || '?'}
               </div>
@@ -65,6 +68,16 @@ export function ProjectSwitcher() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+          {selectedProjectId && (
+            <button
+              onClick={() => router.push('/settings')}
+              className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shrink-0"
+              title="프로젝트 설정"
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       <CreateProjectDialog open={createOpen} onOpenChange={setCreateOpen} />
