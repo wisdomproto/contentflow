@@ -9,9 +9,25 @@ export async function POST(req: NextRequest) {
 
   const wpApiUrl = `${siteUrl.replace(/\/$/, '')}/wp-json/wp/v2/posts`
 
+  // Clean content: remove markdown code block wrappers and extract pure HTML
+  let cleanContent = content || ''
+  // Remove ```html ... ``` wrapper
+  cleanContent = cleanContent.replace(/^```html\s*\n?/i, '').replace(/\n?```\s*$/i, '')
+  // Remove full HTML document wrapper if present (extract body content only)
+  const bodyMatch = cleanContent.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
+  if (bodyMatch) {
+    cleanContent = bodyMatch[1].trim()
+  }
+  // Remove <!DOCTYPE>, <html>, <head> tags if still present
+  cleanContent = cleanContent.replace(/<!DOCTYPE[^>]*>/gi, '')
+  cleanContent = cleanContent.replace(/<\/?html[^>]*>/gi, '')
+  cleanContent = cleanContent.replace(/<head>[\s\S]*?<\/head>/gi, '')
+  cleanContent = cleanContent.replace(/<\/?body[^>]*>/gi, '')
+  cleanContent = cleanContent.trim()
+
   const postData: Record<string, unknown> = {
     title,
-    content,
+    content: cleanContent,
     status: scheduledAt ? 'future' : (status || 'publish'),
     categories,
     tags,
