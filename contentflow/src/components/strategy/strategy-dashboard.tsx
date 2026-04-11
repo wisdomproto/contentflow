@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useMemo } from 'react';
+import { cn } from '@/lib/utils';
 import { useProjectStore } from '@/stores/project-store';
 import { useStrategyGeneration } from '@/hooks/use-strategy-generation';
 import { StrategyInputForm } from './strategy-input-form';
@@ -106,6 +107,7 @@ export function StrategyDashboard() {
   const [activeTab, setActiveTab] = useState<StrategyTab>('keywords');
   const [naverKeywords, setNaverKeywords] = useState<KeywordItem[]>([]);
   const [showDashboard, setShowDashboard] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState('ko');
 
   // 임포트된 전략 데이터를 탭 형식으로 변환
   const importedData = useMemo(() => {
@@ -248,6 +250,28 @@ export function StrategyDashboard() {
         projectName={project.name}
         stats={heroStats}
       />
+      {/* Country Tabs */}
+      {(project?.target_languages || []).length > 1 && (
+        <div className="flex gap-1 px-6 pt-3 mb-0">
+          {(project?.target_languages || ['ko']).map(lang => {
+            const labels: Record<string, { flag: string; name: string }> = {
+              ko: { flag: '🇰🇷', name: '한국' },
+              en: { flag: '🇺🇸', name: '미국' },
+              th: { flag: '🇹🇭', name: '태국' },
+              vi: { flag: '🇻🇳', name: '베트남' },
+            }
+            const info = labels[lang] || { flag: '🌐', name: lang }
+            return (
+              <button key={lang}
+                className={cn('px-4 py-1.5 rounded-md text-sm flex items-center gap-1',
+                  selectedCountry === lang ? 'bg-primary text-primary-foreground' : 'text-muted-foreground')}
+                onClick={() => setSelectedCountry(lang)}>
+                {info.flag} {info.name}
+              </button>
+            )
+          })}
+        </div>
+      )}
       {/* 임포트 출처 표시 */}
       {hasImported && !hasAiStrategy && importedStrategy && (
         <div className="bg-emerald-50 dark:bg-emerald-950/30 border-b border-emerald-200 dark:border-emerald-800 px-6 py-2 text-xs text-emerald-700 dark:text-emerald-400">
