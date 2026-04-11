@@ -162,7 +162,8 @@
       "Bash(taskkill /F /PID 28252 /PID 25836 /PID 3932)",
       "Bash(clip)",
       "Bash(npx supabase:*)",
-      "Bash(printf 'kil210:yEIw Q7fr LNvJ bqKg Weeg h40S')"
+      "Bash(printf 'kil210:yEIw Q7fr LNvJ bqKg Weeg h40S')",
+      "Bash(powershell -Command \"Get-Process -Name node -ErrorAction SilentlyContinue | Stop-Process -Force\")"
     ]
   }
 }
