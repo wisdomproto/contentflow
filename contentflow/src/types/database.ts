@@ -3,7 +3,7 @@ import type { FunnelConfig, GA4Config, ImportedStrategy } from './analytics';
 
 export type ThemePreference = 'light' | 'dark' | 'system';
 export type ContentStatus = 'draft' | 'in_progress' | 'published';
-export type ChannelType = 'blog' | 'instagram' | 'threads' | 'youtube';
+export type ChannelType = 'wordpress' | 'naver_blog' | 'instagram' | 'facebook' | 'threads' | 'youtube';
 export type CardType = 'text' | 'image' | 'divider' | 'quote' | 'list';
 export type AssetType = 'image' | 'audio' | 'video';
 export type FactcheckStatus = 'unchecked' | 'checking' | 'checked';
@@ -125,6 +125,7 @@ export interface Project {
   writing_guide_youtube: string | null;
   // API 키 (채널별)
   api_keys: ProjectApiKeys | null;
+  target_languages: string[];
   // 참고 자료 (프로젝트 기본)
   reference_files: ReferenceFile[] | null;
   bgm_files: BgmFile[] | null;
@@ -327,4 +328,29 @@ export interface WritingGuide {
   file_name: string | null;
   extracted_text: string | null;
   uploaded_at: string;
+}
+
+// === V2 Types ===
+
+export type MemberRole = 'admin' | 'editor' | 'viewer'
+
+export interface ProjectMember {
+  id: string
+  project_id: string
+  user_id: string
+  role: MemberRole
+  invited_at: string
+  created_at: string
+}
+
+export interface ChannelConnection {
+  id: string
+  project_id: string
+  platform: ChannelType
+  language: string
+  account_id: string | null
+  account_name: string | null
+  vault_secret_id: string | null
+  created_at: string
+  updated_at: string
 }
