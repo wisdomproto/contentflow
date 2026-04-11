@@ -15,6 +15,8 @@ import type {
   ChannelConnection,
   Translation,
   PublishRecord,
+  SeoAudit,
+  KeywordRanking,
 } from '@/types/database'
 
 function getClient() {
@@ -242,4 +244,33 @@ export const publishRecordQueries = {
     getClient().from('publish_records').update(data).eq('id', id),
   delete: (id: string) =>
     getClient().from('publish_records').delete().eq('id', id),
+}
+
+// --- SEO Audits ---
+
+export const seoAuditQueries = {
+  listByProject: (projectId: string) =>
+    getClient().from('seo_audits').select('*').eq('project_id', projectId).order('created_at', { ascending: false }),
+  create: (data: Partial<SeoAudit>) =>
+    getClient().from('seo_audits').insert(data).select().single(),
+  update: (id: string, data: Partial<SeoAudit>) =>
+    getClient().from('seo_audits').update(data).eq('id', id),
+  delete: (id: string) =>
+    getClient().from('seo_audits').delete().eq('id', id),
+}
+
+// --- Keyword Rankings ---
+
+export const keywordRankingQueries = {
+  listByProject: (projectId: string) =>
+    getClient().from('keyword_rankings').select('*').eq('project_id', projectId).order('date', { ascending: false }),
+  listByKeyword: (projectId: string, keyword: string) =>
+    getClient().from('keyword_rankings').select('*').eq('project_id', projectId).eq('keyword', keyword).order('date'),
+  listByDateRange: (projectId: string, start: string, end: string) =>
+    getClient().from('keyword_rankings').select('*').eq('project_id', projectId)
+      .gte('date', start).lte('date', end).order('date'),
+  create: (data: Partial<KeywordRanking>) =>
+    getClient().from('keyword_rankings').insert(data).select().single(),
+  delete: (id: string) =>
+    getClient().from('keyword_rankings').delete().eq('id', id),
 }

@@ -391,3 +391,35 @@ export interface PublishRecord {
   created_at: string
   updated_at: string
 }
+
+export interface SeoIssue {
+  severity: 'critical' | 'warning' | 'info'
+  message: string
+  engine: 'google' | 'naver' | 'geo' | 'tech'
+  fix_action?: string
+}
+
+export interface SeoAudit {
+  id: string
+  project_id: string
+  url: string
+  google_score: number | null
+  naver_score: number | null
+  geo_score: number | null
+  tech_score: number | null
+  issues: SeoIssue[]
+  meta_data: Record<string, unknown>
+  created_at: string
+}
+
+export interface KeywordRanking {
+  id: string
+  project_id: string
+  keyword: string
+  search_engine: 'google' | 'naver'
+  country: string
+  position: number | null
+  url: string | null
+  date: string
+  created_at: string
+}
