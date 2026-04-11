@@ -1,3 +1,6 @@
+// Re-export UI store for new code
+export { useUIStore } from './ui-store'
+
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval';
