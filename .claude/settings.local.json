@@ -163,7 +163,9 @@
       "Bash(clip)",
       "Bash(npx supabase:*)",
       "Bash(printf 'kil210:yEIw Q7fr LNvJ bqKg Weeg h40S')",
-      "Bash(powershell -Command \"Get-Process -Name node -ErrorAction SilentlyContinue | Stop-Process -Force\")"
+      "Bash(powershell -Command \"Get-Process -Name node -ErrorAction SilentlyContinue | Stop-Process -Force\")",
+      "Bash(git -C /c/projects/ContentFlow commit -m ':*)",
+      "Bash(powershell -Command \"Remove-Item -Recurse -Force 'C:\\\\projects\\\\ContentFlow\\\\contentflow\\\\.next' -ErrorAction SilentlyContinue\")"
     ]
   }
 }
