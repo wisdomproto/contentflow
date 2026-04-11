@@ -109,7 +109,7 @@ function YoutubePanelInner({ youtubeContent, content, project, hasBaseArticle, c
               subtitle_text: sec.subtitle_text ?? null,
             } as YoutubeCard;
             return {
-              id: generateId('yc'),
+              id: generateId(),
               youtube_content_id: youtubeContent.id,
               section_type: tempCard.section_type,
               narration_text: tempCard.narration_text,

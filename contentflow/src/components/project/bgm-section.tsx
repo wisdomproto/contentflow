@@ -34,7 +34,7 @@ export function BgmSection({ project, onUpdate }: BgmSectionProps) {
     const newFiles: BgmFile[] = [];
 
     for (const f of audioFiles) {
-      const id = generateId('bgm');
+      const id = generateId();
       const fileEntry: BgmFile = {
         id,
         name: f.name,

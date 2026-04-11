@@ -227,7 +227,7 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
 
           const now = new Date().toISOString();
           const newCards: BlogCard[] = sections.map((section, i) => ({
-            id: generateId('bc'),
+            id: generateId(),
             blog_content_id: blogContent.id,
             card_type: 'text' as const,
             content: {

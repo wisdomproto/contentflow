@@ -39,7 +39,7 @@ export function ReferenceFilesSection({ project, onUpdate }: ReferenceFilesSecti
     const newFiles: ReferenceFile[] = [];
 
     for (const f of Array.from(fileList)) {
-      const id = generateId('ref');
+      const id = generateId();
       // 서버에서 텍스트 추출 (PDF, DOCX, TXT 등)
       let extractedText: string | null = null;
       const extractableExts = ['.pdf', '.docx', '.doc', '.txt', '.md', '.markdown', '.csv', '.json', '.xml', '.html'];

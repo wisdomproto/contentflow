@@ -490,7 +490,7 @@ export function CardNewsCardItem({ card, index, onUpdate, onDelete, onGenerateIm
 
   const addBlock = useCallback(() => {
     const newBlock: TextBlock = {
-      id: generateId('tb'),
+      id: generateId(),
       text: '',
       x: 10, y: 40,
       fontSize: 14, color: '#ffffff',

@@ -306,7 +306,7 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
             };
 
             return {
-              id: generateId('ic'),
+              id: generateId(),
               instagram_content_id: igContent.id,
               text_content: combined || null,
               background_color: '#18181b',

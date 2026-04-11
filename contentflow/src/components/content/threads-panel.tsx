@@ -60,7 +60,7 @@ function ThreadsPanelInner({ threadsContent, content, project, hasBaseArticle, c
           const newCards: ThreadsCard[] = parsed.posts
             .sort((a, b) => a.order - b.order)
             .map((post, i) => ({
-              id: generateId('tp'),
+              id: generateId(),
               threads_content_id: threadsContent.id,
               text_content: post.text || '',
               media_url: null,
