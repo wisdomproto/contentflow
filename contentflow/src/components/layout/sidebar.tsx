@@ -23,7 +23,8 @@ const navGroups = [
     label: '분석',
     items: [
       { href: '/seo', icon: '🔍', label: 'SEO 분석' },
-      { href: '/analytics', icon: '📊', label: '애널리틱스' },
+      { href: '/analytics', icon: '📊', label: 'Google 애널리틱스' },
+      { href: '/meta-analytics', icon: '📱', label: '메타 채널 분석' },
       { href: '/competitors', icon: '🎯', label: '경쟁사 분석' },
     ],
   },
