@@ -9,6 +9,8 @@ import { OverviewCards } from './overview-cards';
 import { PageviewsChart } from './pageviews-chart';
 import { TrafficChart } from './traffic-chart';
 import { TopPagesTable } from './top-pages-table';
+import { ContentPerformance } from './content-performance';
+import { CountryTraffic } from './country-traffic';
 import type { GA4Config, FunnelConfig } from '@/types/analytics';
 
 export function AnalyticsDashboard() {
@@ -82,6 +84,10 @@ export function AnalyticsDashboard() {
             <TrafficChart data={traffic} />
           </div>
           <TopPagesTable data={topPages} websiteUrl={funnelConfig?.websiteUrl} />
+          <div className="grid grid-cols-2 gap-4 mt-6">
+            <ContentPerformance data={[]} />
+            <CountryTraffic data={[]} />
+          </div>
         </>
       )}
     </div>
