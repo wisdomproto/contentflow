@@ -22,8 +22,8 @@ interface Tab {
 
 const tabs: Tab[] = [
   { id: 'base-article', label: '기본글', icon: <FileText size={16} /> },
+  { id: 'blog', label: 'N 블로그', icon: <BookOpen size={16} /> },
   { id: 'wordpress', label: 'WordPress', icon: <Globe size={16} /> },
-  { id: 'blog', label: '블로그', icon: <BookOpen size={16} /> },
   { id: 'cardnews', label: '카드뉴스', icon: <Image size={16} /> },
   { id: 'threads', label: '스레드', icon: <MessageCircle size={16} /> },
   { id: 'youtube', label: '유튜브', icon: <Youtube size={16} /> },
