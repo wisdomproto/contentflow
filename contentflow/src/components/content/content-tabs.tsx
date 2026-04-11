@@ -1,17 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { FileText, BookOpen, Image, MessageCircle, Youtube } from 'lucide-react';
+import { FileText, BookOpen, Image, MessageCircle, Youtube, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useProjectStore } from '@/stores/project-store';
 import { BaseArticlePanel } from './base-article-panel';
 import { BlogPanel } from './blog-panel';
+import { WordpressPanel } from './wordpress-panel';
 import { CardNewsPanel } from './cardnews-panel';
 import { ThreadsPanel } from './threads-panel';
 import { YoutubePanel } from './youtube-panel';
 import { LanguageSelector } from './language-selector';
 
-type TabId = 'base-article' | 'blog' | 'cardnews' | 'threads' | 'youtube';
+type TabId = 'base-article' | 'wordpress' | 'blog' | 'cardnews' | 'threads' | 'youtube';
 
 interface Tab {
   id: TabId;
@@ -21,6 +22,7 @@ interface Tab {
 
 const tabs: Tab[] = [
   { id: 'base-article', label: '기본글', icon: <FileText size={16} /> },
+  { id: 'wordpress', label: 'WordPress', icon: <Globe size={16} /> },
   { id: 'blog', label: '블로그', icon: <BookOpen size={16} /> },
   { id: 'cardnews', label: '카드뉴스', icon: <Image size={16} /> },
   { id: 'threads', label: '스레드', icon: <MessageCircle size={16} /> },
@@ -61,6 +63,7 @@ export function ContentTabs() {
       {/* Tab Content */}
       <div className="flex-1 overflow-y-auto p-6 bg-muted/30">
         {activeTab === 'base-article' && <BaseArticlePanel />}
+        {activeTab === 'wordpress' && <WordpressPanel />}
         {activeTab === 'blog' && <BlogPanel />}
         {activeTab === 'cardnews' && <CardNewsPanel />}
         {activeTab === 'threads' && <ThreadsPanel />}
