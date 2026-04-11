@@ -12,7 +12,7 @@ interface ChannelContentListProps<T> {
   getId: (item: T) => string;
   getTitle: (item: T, index: number) => string;
   onTitleChange: (itemId: string, title: string) => void;
-  onAdd: () => string; // returns new item id
+  onAdd: () => Promise<string>; // returns new item id
   onDelete: (itemId: string) => void;
   onAddToQueue?: (itemId: string) => void;
   addLabel: string;
@@ -47,8 +47,8 @@ export function ChannelContentList<T>({
     });
   }, []);
 
-  const handleAdd = useCallback(() => {
-    const newId = onAdd();
+  const handleAdd = useCallback(async () => {
+    const newId = await onAdd();
     setExpandedIds((prev) => new Set(prev).add(newId));
   }, [onAdd]);
 

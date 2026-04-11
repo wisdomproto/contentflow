@@ -69,52 +69,52 @@ interface ProjectState {
   getBaseArticle: (contentId: string) => BaseArticle | undefined;
 
   // BlogContent CRUD (1:N — 하나의 Content에 여러 BlogContent)
-  addBlogContent: (contentId: string, data?: Partial<BlogContent>) => string;
+  addBlogContent: (contentId: string, data?: Partial<BlogContent>) => Promise<string>;
   updateBlogContent: (blogContentId: string, updates: Partial<BlogContent>) => void;
   deleteBlogContent: (blogContentId: string) => void;
   getBlogContents: (contentId: string) => BlogContent[];
   getBlogCards: (blogContentId: string) => BlogCard[];
   setBlogCardsForContent: (blogContentId: string, cards: BlogCard[]) => void;
-  addBlogCard: (blogContentId: string, cardType: BlogCard['card_type'], sortOrder: number) => void;
+  addBlogCard: (blogContentId: string, cardType: BlogCard['card_type'], sortOrder: number) => Promise<void>;
   updateBlogCard: (cardId: string, updates: Partial<BlogCard>) => void;
   deleteBlogCard: (cardId: string) => void;
-  reorderBlogCards: (blogContentId: string, cardIds: string[]) => void;
+  reorderBlogCards: (blogContentId: string, cardIds: string[]) => Promise<void>;
 
   // InstagramContent CRUD (1:N)
-  addInstagramContent: (contentId: string, data?: Partial<InstagramContent>) => string;
+  addInstagramContent: (contentId: string, data?: Partial<InstagramContent>) => Promise<string>;
   updateInstagramContent: (igContentId: string, updates: Partial<InstagramContent>) => void;
   deleteInstagramContent: (igContentId: string) => void;
   getInstagramContents: (contentId: string) => InstagramContent[];
   getInstagramCards: (instagramContentId: string) => InstagramCard[];
   setInstagramCardsForContent: (instagramContentId: string, cards: InstagramCard[]) => void;
-  addInstagramCard: (instagramContentId: string, sortOrder: number) => void;
+  addInstagramCard: (instagramContentId: string, sortOrder: number) => Promise<void>;
   updateInstagramCard: (cardId: string, updates: Partial<InstagramCard>) => void;
   deleteInstagramCard: (cardId: string) => void;
-  reorderInstagramCards: (instagramContentId: string, cardIds: string[]) => void;
+  reorderInstagramCards: (instagramContentId: string, cardIds: string[]) => Promise<void>;
 
   // ThreadsContent CRUD (1:N)
-  addThreadsContent: (contentId: string, data?: Partial<ThreadsContent>) => string;
+  addThreadsContent: (contentId: string, data?: Partial<ThreadsContent>) => Promise<string>;
   updateThreadsContent: (threadsContentId: string, updates: Partial<ThreadsContent>) => void;
   deleteThreadsContent: (threadsContentId: string) => void;
   getThreadsContents: (contentId: string) => ThreadsContent[];
   getThreadsCards: (threadsContentId: string) => ThreadsCard[];
   setThreadsCardsForContent: (threadsContentId: string, cards: ThreadsCard[]) => void;
-  addThreadsCard: (threadsContentId: string, sortOrder: number) => void;
+  addThreadsCard: (threadsContentId: string, sortOrder: number) => Promise<void>;
   updateThreadsCard: (cardId: string, updates: Partial<ThreadsCard>) => void;
   deleteThreadsCard: (cardId: string) => void;
-  reorderThreadsCards: (threadsContentId: string, cardIds: string[]) => void;
+  reorderThreadsCards: (threadsContentId: string, cardIds: string[]) => Promise<void>;
 
   // YoutubeContent CRUD (1:N)
-  addYoutubeContent: (contentId: string, data?: Partial<YoutubeContent>) => string;
+  addYoutubeContent: (contentId: string, data?: Partial<YoutubeContent>) => Promise<string>;
   updateYoutubeContent: (ytContentId: string, updates: Partial<YoutubeContent>) => void;
   deleteYoutubeContent: (ytContentId: string) => void;
   getYoutubeContents: (contentId: string) => YoutubeContent[];
   getYoutubeCards: (youtubeContentId: string) => YoutubeCard[];
   setYoutubeCardsForContent: (youtubeContentId: string, cards: YoutubeCard[]) => void;
-  addYoutubeCard: (youtubeContentId: string, sortOrder: number) => void;
+  addYoutubeCard: (youtubeContentId: string, sortOrder: number) => Promise<void>;
   updateYoutubeCard: (cardId: string, updates: Partial<YoutubeCard>) => void;
   deleteYoutubeCard: (cardId: string) => void;
-  reorderYoutubeCards: (youtubeContentId: string, cardIds: string[]) => void;
+  reorderYoutubeCards: (youtubeContentId: string, cardIds: string[]) => Promise<void>;
 
   // Strategy
   strategies: MarketingStrategy[];
@@ -761,7 +761,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
   },
 
   // BlogContent CRUD (1:N)
-  addBlogContent: (contentId, data) => {
+  addBlogContent: async (contentId, data) => {
     const supabase = createClient()
     const now = new Date().toISOString();
     const count = get().blogContents.filter((bc) => bc.content_id === contentId).length;
@@ -781,11 +781,9 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       updated_at: now,
       ...data,
     };
+    const { error } = await supabase.from('blog_contents').insert(newBlogContent as unknown as Record<string, unknown>)
+    if (error) { console.error('addBlogContent error:', error.message); }
     set((state) => ({ blogContents: [...state.blogContents, newBlogContent] }));
-
-    // Fire-and-forget Supabase insert
-    supabase.from('blog_contents').insert(newBlogContent as unknown as Record<string, unknown>)
-      .then(({ error }) => { if (error) console.error('addBlogContent error:', error.message) })
 
     return id;
   },
@@ -845,7 +843,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     }));
   },
 
-  addBlogCard: (blogContentId, cardType, sortOrder) => {
+  addBlogCard: async (blogContentId, cardType, sortOrder) => {
     const supabase = createClient()
     const now = new Date().toISOString();
     const defaultContent: Record<string, unknown> =
@@ -863,10 +861,9 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       created_at: now,
       updated_at: now,
     };
+    const { error } = await supabase.from('blog_cards').insert(newCard as unknown as Record<string, unknown>)
+    if (error) { console.error('addBlogCard error:', error.message); }
     set((state) => ({ blogCards: [...state.blogCards, newCard] }));
-
-    supabase.from('blog_cards').insert(newCard as unknown as Record<string, unknown>)
-      .then(({ error }) => { if (error) console.error('addBlogCard error:', error.message) })
   },
 
   updateBlogCard: async (cardId, updates) => {
@@ -894,7 +891,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     }));
   },
 
-  reorderBlogCards: (blogContentId, cardIds) => {
+  reorderBlogCards: async (blogContentId, cardIds) => {
     const supabase = createClient()
     set((state) => ({
       blogCards: state.blogCards.map((card) => {
@@ -904,14 +901,13 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       }),
     }));
 
-    // Fire-and-forget batch update sort orders
-    Promise.all(cardIds.map((id, index) =>
+    await Promise.all(cardIds.map((id, index) =>
       supabase.from('blog_cards').update({ sort_order: index }).eq('id', id)
     )).catch(err => console.error('reorderBlogCards error:', err))
   },
 
   // InstagramContent CRUD (1:N)
-  addInstagramContent: (contentId, data) => {
+  addInstagramContent: async (contentId, data) => {
     const supabase = createClient()
     const now = new Date().toISOString();
     const count = get().instagramContents.filter((ic) => ic.content_id === contentId).length;
@@ -931,10 +927,9 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       updated_at: now,
       ...data,
     };
+    const { error } = await supabase.from('instagram_contents').insert(newIgContent as unknown as Record<string, unknown>)
+    if (error) { console.error('addInstagramContent error:', error.message); }
     set((state) => ({ instagramContents: [...state.instagramContents, newIgContent] }));
-
-    supabase.from('instagram_contents').insert(newIgContent as unknown as Record<string, unknown>)
-      .then(({ error }) => { if (error) console.error('addInstagramContent error:', error.message) })
 
     return id;
   },
@@ -993,7 +988,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     }));
   },
 
-  addInstagramCard: (instagramContentId, sortOrder) => {
+  addInstagramCard: async (instagramContentId, sortOrder) => {
     const supabase = createClient()
     const now = new Date().toISOString();
     const newCard: InstagramCard = {
@@ -1007,10 +1002,9 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       created_at: now,
       updated_at: now,
     };
+    const { error } = await supabase.from('instagram_cards').insert(newCard as unknown as Record<string, unknown>)
+    if (error) { console.error('addInstagramCard error:', error.message); }
     set((state) => ({ instagramCards: [...state.instagramCards, newCard] }));
-
-    supabase.from('instagram_cards').insert(newCard as unknown as Record<string, unknown>)
-      .then(({ error }) => { if (error) console.error('addInstagramCard error:', error.message) })
   },
 
   updateInstagramCard: async (cardId, updates) => {
@@ -1038,7 +1032,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     }));
   },
 
-  reorderInstagramCards: (instagramContentId, cardIds) => {
+  reorderInstagramCards: async (instagramContentId, cardIds) => {
     const supabase = createClient()
     set((state) => ({
       instagramCards: state.instagramCards.map((card) => {
@@ -1048,13 +1042,13 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       }),
     }));
 
-    Promise.all(cardIds.map((id, index) =>
+    await Promise.all(cardIds.map((id, index) =>
       supabase.from('instagram_cards').update({ sort_order: index }).eq('id', id)
     )).catch(err => console.error('reorderInstagramCards error:', err))
   },
 
   // ThreadsContent CRUD (1:N)
-  addThreadsContent: (contentId, data) => {
+  addThreadsContent: async (contentId, data) => {
     const supabase = createClient()
     const now = new Date().toISOString();
     const count = get().threadsContents.filter((tc) => tc.content_id === contentId).length;
@@ -1071,10 +1065,9 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       updated_at: now,
       ...data,
     };
+    const { error } = await supabase.from('threads_contents').insert(newTC as unknown as Record<string, unknown>)
+    if (error) { console.error('addThreadsContent error:', error.message); }
     set((state) => ({ threadsContents: [...state.threadsContents, newTC] }));
-
-    supabase.from('threads_contents').insert(newTC as unknown as Record<string, unknown>)
-      .then(({ error }) => { if (error) console.error('addThreadsContent error:', error.message) })
 
     return id;
   },
@@ -1133,7 +1126,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     }));
   },
 
-  addThreadsCard: (threadsContentId, sortOrder) => {
+  addThreadsCard: async (threadsContentId, sortOrder) => {
     const supabase = createClient()
     const now = new Date().toISOString();
     const newCard: ThreadsCard = {
@@ -1146,10 +1139,9 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       created_at: now,
       updated_at: now,
     };
+    const { error } = await supabase.from('threads_cards').insert(newCard as unknown as Record<string, unknown>)
+    if (error) { console.error('addThreadsCard error:', error.message); }
     set((state) => ({ threadsCards: [...state.threadsCards, newCard] }));
-
-    supabase.from('threads_cards').insert(newCard as unknown as Record<string, unknown>)
-      .then(({ error }) => { if (error) console.error('addThreadsCard error:', error.message) })
   },
 
   updateThreadsCard: async (cardId, updates) => {
@@ -1177,7 +1169,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     }));
   },
 
-  reorderThreadsCards: (threadsContentId, cardIds) => {
+  reorderThreadsCards: async (threadsContentId, cardIds) => {
     const supabase = createClient()
     set((state) => ({
       threadsCards: state.threadsCards.map((card) => {
@@ -1187,13 +1179,13 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       }),
     }));
 
-    Promise.all(cardIds.map((id, index) =>
+    await Promise.all(cardIds.map((id, index) =>
       supabase.from('threads_cards').update({ sort_order: index }).eq('id', id)
     )).catch(err => console.error('reorderThreadsCards error:', err))
   },
 
   // YoutubeContent CRUD (1:N)
-  addYoutubeContent: (contentId, data) => {
+  addYoutubeContent: async (contentId, data) => {
     const supabase = createClient()
     const now = new Date().toISOString();
     const count = get().youtubeContents.filter((yc) => yc.content_id === contentId).length;
@@ -1216,10 +1208,9 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       updated_at: now,
       ...data,
     };
+    const { error } = await supabase.from('youtube_contents').insert(newYC as unknown as Record<string, unknown>)
+    if (error) { console.error('addYoutubeContent error:', error.message); }
     set((state) => ({ youtubeContents: [...state.youtubeContents, newYC] }));
-
-    supabase.from('youtube_contents').insert(newYC as unknown as Record<string, unknown>)
-      .then(({ error }) => { if (error) console.error('addYoutubeContent error:', error.message) })
 
     return id;
   },
@@ -1278,7 +1269,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     }));
   },
 
-  addYoutubeCard: (youtubeContentId, sortOrder) => {
+  addYoutubeCard: async (youtubeContentId, sortOrder) => {
     const supabase = createClient()
     const now = new Date().toISOString();
     const newCard: YoutubeCard = {
@@ -1295,10 +1286,9 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       created_at: now,
       updated_at: now,
     };
+    const { error } = await supabase.from('youtube_cards').insert(newCard as unknown as Record<string, unknown>)
+    if (error) { console.error('addYoutubeCard error:', error.message); }
     set((state) => ({ youtubeCards: [...state.youtubeCards, newCard] }));
-
-    supabase.from('youtube_cards').insert(newCard as unknown as Record<string, unknown>)
-      .then(({ error }) => { if (error) console.error('addYoutubeCard error:', error.message) })
   },
 
   updateYoutubeCard: async (cardId, updates) => {
@@ -1326,7 +1316,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     }));
   },
 
-  reorderYoutubeCards: (youtubeContentId, cardIds) => {
+  reorderYoutubeCards: async (youtubeContentId, cardIds) => {
     const supabase = createClient()
     set((state) => ({
       youtubeCards: state.youtubeCards.map((card) => {
@@ -1336,7 +1326,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       }),
     }));
 
-    Promise.all(cardIds.map((id, index) =>
+    await Promise.all(cardIds.map((id, index) =>
       supabase.from('youtube_cards').update({ sort_order: index }).eq('id', id)
     )).catch(err => console.error('reorderYoutubeCards error:', err))
   },
