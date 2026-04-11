@@ -250,6 +250,7 @@ export function ThreadsPanel() {
         onAdd={() => addThreadsContent(content.id)}
         onDelete={(id) => deleteThreadsContent(id)}
         addLabel="새 스레드 추가"
+        onAddToQueue={(id) => alert(`발행 큐에 추가되었습니다 (ID: ${id})`)}
         renderContent={(threadsContent) => (
           <ThreadsPanelInner
             key={threadsContent.id}
