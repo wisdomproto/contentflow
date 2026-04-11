@@ -359,6 +359,7 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
       funnel_config: null,
       ga4_config: null,
       imported_strategy: null,
+      target_languages: [],
       sort_order: get().projects.length,
       created_at: now,
       updated_at: now,
