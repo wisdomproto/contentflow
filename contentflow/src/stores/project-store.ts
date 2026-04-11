@@ -144,8 +144,8 @@ interface ProjectState {
 
 export const useProjectStore = create<ProjectState>()((set, get) => ({
   projects: [],
-  selectedProjectId: null,
-  selectedContentId: null,
+  selectedProjectId: (typeof window !== 'undefined' ? localStorage.getItem('cf_selectedProjectId') : null),
+  selectedContentId: (typeof window !== 'undefined' ? localStorage.getItem('cf_selectedContentId') : null),
   contents: [],
   baseArticles: [],
   blogContents: [],
@@ -172,10 +172,25 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     const { data: projects, error } = await supabase.from('projects').select('*').order('sort_order')
     if (error) { console.error('loadFromSupabase error:', error.message); return }
     if (projects) set({ projects: projects as Project[] })
+
+    // Restore saved selection
+    const savedProjectId = typeof window !== 'undefined' ? localStorage.getItem('cf_selectedProjectId') : null
+    if (savedProjectId && projects?.some(p => p.id === savedProjectId)) {
+      await get().selectProject(savedProjectId)
+      const savedContentId = typeof window !== 'undefined' ? localStorage.getItem('cf_selectedContentId') : null
+      if (savedContentId) {
+        get().selectContent(savedContentId)
+      }
+    }
   },
 
   setProjects: (projects) => set({ projects }),
   selectProject: async (projectId) => {
+    if (typeof window !== 'undefined') {
+      if (projectId) localStorage.setItem('cf_selectedProjectId', projectId)
+      else localStorage.removeItem('cf_selectedProjectId')
+      localStorage.removeItem('cf_selectedContentId')
+    }
     set({
       selectedProjectId: projectId, selectedContentId: null, showProjectSettings: false, showStrategy: false, showAnalytics: false,
       contents: [], baseArticles: [],
@@ -194,6 +209,10 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     // TODO: marketing_strategies table does not exist yet — load strategies when table is created
   },
   selectContent: (contentId) => {
+    if (typeof window !== 'undefined') {
+      if (contentId) localStorage.setItem('cf_selectedContentId', contentId)
+      else localStorage.removeItem('cf_selectedContentId')
+    }
     if (contentId) {
       const content = get().contents.find(c => c.id === contentId);
       set({
@@ -828,11 +847,15 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
 
   setBlogCardsForContent: async (blogContentId, cards) => {
     const supabase = createClient()
+    console.log('[DEBUG] setBlogCardsForContent called, blogContentId:', blogContentId, 'cards:', cards.length)
     // Delete existing cards for this blog content, then insert new ones
-    await supabase.from('blog_cards').delete().eq('blog_content_id', blogContentId)
+    const { error: delError } = await supabase.from('blog_cards').delete().eq('blog_content_id', blogContentId)
+    if (delError) console.error('[DEBUG] delete error:', delError.message)
     if (cards.length > 0) {
-      const { error } = await supabase.from('blog_cards').insert(cards as unknown as Record<string, unknown>[])
-      if (error) console.error('setBlogCardsForContent error:', error.message)
+      console.log('[DEBUG] inserting cards, first id:', cards[0].id, 'type:', typeof cards[0].id)
+      const { data, error } = await supabase.from('blog_cards').insert(cards as unknown as Record<string, unknown>[]).select()
+      if (error) console.error('[DEBUG] setBlogCardsForContent INSERT error:', error.message, error.details, error.hint)
+      else console.log('[DEBUG] setBlogCardsForContent INSERT success:', data?.length, 'cards')
     }
 
     set((state) => ({
