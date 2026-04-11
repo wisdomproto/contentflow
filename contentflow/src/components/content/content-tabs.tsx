@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { FileText, BookOpen, Image, MessageCircle, Youtube, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useProjectStore } from '@/stores/project-store';
+import { useUIStore } from '@/stores/ui-store';
 import { BaseArticlePanel } from './base-article-panel';
 import { BlogPanel } from './blog-panel';
 import { WordpressPanel } from './wordpress-panel';
@@ -11,8 +12,17 @@ import { CardNewsPanel } from './cardnews-panel';
 import { ThreadsPanel } from './threads-panel';
 import { YoutubePanel } from './youtube-panel';
 import { LanguageSelector } from './language-selector';
+import { PublishBar } from './publish-bar';
 
 type TabId = 'base-article' | 'wordpress' | 'blog' | 'cardnews' | 'threads' | 'youtube';
+
+const TAB_TO_CHANNEL: Record<string, string> = {
+  blog: 'naver_blog',
+  wordpress: 'wordpress',
+  cardnews: 'instagram',
+  threads: 'threads',
+  youtube: 'youtube',
+};
 
 interface Tab {
   id: TabId;
@@ -32,6 +42,7 @@ const tabs: Tab[] = [
 export function ContentTabs() {
   const [activeTab, setActiveTab] = useState<TabId>('base-article');
   const { selectedContentId, getBaseArticle } = useProjectStore();
+  const { selectedLanguage } = useUIStore();
   const hasBaseArticle = selectedContentId ? !!getBaseArticle(selectedContentId) : false;
 
   return (
@@ -69,6 +80,15 @@ export function ContentTabs() {
         {activeTab === 'threads' && <ThreadsPanel />}
         {activeTab === 'youtube' && <YoutubePanel />}
       </div>
+
+      {/* Publish Bar — shown for all channel tabs except base-article */}
+      {activeTab !== 'base-article' && (
+        <PublishBar
+          channel={TAB_TO_CHANNEL[activeTab]}
+          language={selectedLanguage}
+          isConnected={false}
+        />
+      )}
     </div>
   );
 }
