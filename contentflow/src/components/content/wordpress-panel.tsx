@@ -69,6 +69,7 @@ function WordpressPanelInner({ blogContent, content, project, hasBaseArticle, ch
   const [metaDescription, setMetaDescription] = useState('');
   const [urlSlug, setUrlSlug] = useState('');
   const [structureGenerating, setStructureGenerating] = useState(false);
+  const [keywordGenerating, setKeywordGenerating] = useState(false);
 
   const handleMetaTitleChange = (value: string) => {
     setMetaTitle(value);
@@ -223,8 +224,62 @@ function WordpressPanelInner({ blogContent, content, project, hasBaseArticle, ch
       {/* Step 1: 키워드 설정 */}
       {currentStep === 1 && (
         <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
-          <h3 className="text-sm font-semibold flex items-center gap-2">🎯 타겟 키워드 설정</h3>
-          <p className="text-xs text-muted-foreground">Google 검색에서 노출될 핵심 키워드를 설정합니다. 주 키워드 1개와 보조 키워드 3~5개를 권장합니다.</p>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold flex items-center gap-2">🎯 타겟 키워드 설정</h3>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs gap-1"
+              disabled={keywordGenerating}
+              onClick={async () => {
+                setKeywordGenerating(true);
+                try {
+                  const articleText = baseArticle?.body_plain_text || baseArticle?.body || content.title || '';
+                  const prompt = `You are a Google SEO keyword researcher. Suggest optimal keywords for a blog post.
+
+${project.industry ? `Industry: ${project.industry}` : ''}
+${project.brand_name ? `Brand: ${project.brand_name}` : ''}
+Article title: "${content.title}"
+${articleText ? `Article content (first 500 chars): ${articleText.substring(0, 500)}` : ''}
+
+Return ONLY valid JSON (no explanation):
+{
+  "primaryKeyword": "주요 키워드 1개 (한국어, 검색량 높은 것)",
+  "secondaryKeywords": ["보조 키워드1", "보조 키워드2", "보조 키워드3", "보조 키워드4", "보조 키워드5"],
+  "searchIntent": "informational|commercial|transactional|navigational"
+}`;
+                  const res = await fetch('/api/ai/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt, model: channelModels.textModel }),
+                  });
+                  const reader = res.body?.getReader();
+                  if (!reader) throw new Error('No reader');
+                  const decoder = new TextDecoder();
+                  let fullText = '';
+                  while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    fullText += decoder.decode(value);
+                  }
+                  const jsonMatch = fullText.match(/\{[\s\S]*\}/);
+                  if (jsonMatch) {
+                    const parsed = JSON.parse(jsonMatch[0]);
+                    if (parsed.primaryKeyword) setPrimaryKeyword(parsed.primaryKeyword);
+                    if (parsed.secondaryKeywords) setSecondaryKeywords(parsed.secondaryKeywords.join(', '));
+                    if (parsed.searchIntent) setSearchIntent(parsed.searchIntent);
+                  }
+                } catch (err) {
+                  console.error('Keyword generation error:', err);
+                } finally {
+                  setKeywordGenerating(false);
+                }
+              }}
+            >
+              {keywordGenerating ? '추천 중...' : '✨ AI 키워드 추천'}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">기본글 내용과 업종을 기반으로 AI가 키워드를 추천합니다.</p>
           <div>
             <label className="text-xs text-muted-foreground mb-1 block">주 키워드 (Primary)</label>
             <Input
