@@ -423,7 +423,38 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       updated_at: now,
     };
 
-    const { error } = await supabase.from('projects').insert(newProject as unknown as Record<string, unknown>)
+    // Only send columns that exist in the Supabase projects table
+    const dbProject = {
+      id: newProject.id,
+      name: newProject.name,
+      description: newProject.description,
+      cover_image_url: newProject.cover_image_url,
+      industry: newProject.industry,
+      brand_name: newProject.brand_name,
+      brand_description: newProject.brand_description,
+      target_audience: newProject.target_audience,
+      usp: newProject.usp,
+      brand_tone: newProject.brand_tone,
+      banned_keywords: newProject.banned_keywords,
+      brand_logo_url: newProject.brand_logo_url,
+      marketer_name: newProject.marketer_name,
+      marketer_expertise: newProject.marketer_expertise,
+      marketer_style: newProject.marketer_style,
+      marketer_phrases: newProject.marketer_phrases,
+      sns_goal: newProject.sns_goal,
+      blog_tone_prompt: newProject.blog_tone_prompt,
+      blog_image_style_prompt: newProject.blog_image_style_prompt,
+      instagram_tone_prompt: newProject.instagram_tone_prompt,
+      instagram_image_style_prompt: newProject.instagram_image_style_prompt,
+      threads_tone_prompt: newProject.threads_tone_prompt,
+      youtube_tone_prompt: newProject.youtube_tone_prompt,
+      youtube_image_style_prompt: newProject.youtube_image_style_prompt,
+      ai_model_settings: newProject.ai_model_settings,
+      sort_order: newProject.sort_order,
+      created_at: newProject.created_at,
+      updated_at: newProject.updated_at,
+    }
+    const { error } = await supabase.from('projects').insert(dbProject as unknown as Record<string, unknown>)
     if (error) { console.error('createProject error:', error.message); return }
 
     set((state) => ({
@@ -437,9 +468,28 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
   updateProject: async (projectId, updates) => {
     const supabase = createClient()
     const updatedData = { ...updates, updated_at: new Date().toISOString() }
-    const { error } = await supabase.from('projects').update(updatedData as unknown as Record<string, unknown>).eq('id', projectId)
-    if (error) { console.error('updateProject error:', error.message); return }
 
+    // Filter out fields that don't exist in the Supabase projects table
+    const DB_COLUMNS = new Set([
+      'name', 'description', 'cover_image_url', 'industry', 'brand_name', 'brand_description',
+      'target_audience', 'usp', 'brand_tone', 'banned_keywords', 'brand_logo_url',
+      'marketer_name', 'marketer_expertise', 'marketer_style', 'marketer_phrases', 'sns_goal',
+      'blog_tone_prompt', 'blog_image_style_prompt', 'instagram_tone_prompt',
+      'instagram_image_style_prompt', 'threads_tone_prompt', 'youtube_tone_prompt',
+      'youtube_image_style_prompt', 'ai_model_settings', 'sort_order', 'target_languages',
+      'created_at', 'updated_at',
+    ])
+    const dbUpdates: Record<string, unknown> = {}
+    for (const [key, value] of Object.entries(updatedData)) {
+      if (DB_COLUMNS.has(key)) dbUpdates[key] = value
+    }
+
+    if (Object.keys(dbUpdates).length > 0) {
+      const { error } = await supabase.from('projects').update(dbUpdates).eq('id', projectId)
+      if (error) console.error('updateProject error:', error.message)
+    }
+
+    // Always update local state (including non-DB fields)
     set((state) => ({
       projects: state.projects.map((p) =>
         p.id === projectId
