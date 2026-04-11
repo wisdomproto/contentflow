@@ -354,3 +354,40 @@ export interface ChannelConnection {
   created_at: string
   updated_at: string
 }
+
+export type TranslationStatus = 'pending' | 'translating' | 'review' | 'completed'
+
+export interface Translation {
+  id: string
+  content_id: string
+  language: string
+  channel_type: string
+  status: TranslationStatus
+  title: string | null
+  body: string | null
+  cards_json: Record<string, unknown>[] | null
+  seo_title: string | null
+  seo_description: string | null
+  translated_at: string | null
+  reviewed_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface PublishRecord {
+  id: string
+  content_id: string
+  project_id: string
+  channel: string
+  language: string
+  status: string
+  scheduled_at: string | null
+  published_at: string | null
+  platform_post_id: string | null
+  published_url: string | null
+  error_message: string | null
+  retry_count: number
+  metadata: Record<string, unknown>
+  created_at: string
+  updated_at: string
+}

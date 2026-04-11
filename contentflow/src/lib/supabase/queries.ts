@@ -13,6 +13,8 @@ import type {
   YoutubeCard,
   ProjectMember,
   ChannelConnection,
+  Translation,
+  PublishRecord,
 } from '@/types/database'
 
 function getClient() {
@@ -206,4 +208,38 @@ export const channelConnectionQueries = {
     getClient().from('channel_connections').update(data).eq('id', id),
   delete: (id: string) =>
     getClient().from('channel_connections').delete().eq('id', id),
+}
+
+// --- Translations (V2) ---
+
+export const translationQueries = {
+  listByContent: (contentId: string) =>
+    getClient().from('translations').select('*').eq('content_id', contentId),
+  getByContentLanguageChannel: (contentId: string, language: string, channelType: string) =>
+    getClient().from('translations').select('*')
+      .eq('content_id', contentId).eq('language', language).eq('channel_type', channelType).single(),
+  create: (data: Partial<Translation>) =>
+    getClient().from('translations').insert(data).select().single(),
+  update: (id: string, data: Partial<Translation>) =>
+    getClient().from('translations').update(data).eq('id', id),
+  delete: (id: string) =>
+    getClient().from('translations').delete().eq('id', id),
+}
+
+// --- PublishRecords (V2) ---
+
+export const publishRecordQueries = {
+  listByProject: (projectId: string) =>
+    getClient().from('publish_records').select('*').eq('project_id', projectId).order('created_at', { ascending: false }),
+  listScheduled: (projectId: string) =>
+    getClient().from('publish_records').select('*').eq('project_id', projectId).eq('status', 'scheduled').order('scheduled_at'),
+  listByDateRange: (projectId: string, start: string, end: string) =>
+    getClient().from('publish_records').select('*').eq('project_id', projectId)
+      .gte('scheduled_at', start).lte('scheduled_at', end),
+  create: (data: Partial<PublishRecord>) =>
+    getClient().from('publish_records').insert(data).select().single(),
+  update: (id: string, data: Partial<PublishRecord>) =>
+    getClient().from('publish_records').update(data).eq('id', id),
+  delete: (id: string) =>
+    getClient().from('publish_records').delete().eq('id', id),
 }
