@@ -41,6 +41,11 @@ export function Sidebar() {
       <ProjectSwitcher />
 
       <nav className="flex-1 overflow-y-auto p-2 space-y-4">
+        {/* Project Settings — always first */}
+        <div className="space-y-0.5">
+          <SidebarNavItem href="/settings" icon="⚙️" label="프로젝트 설정" />
+        </div>
+
         {navGroups.map((group) => (
           <div key={group.label}>
             <div className="px-3 py-1 text-[10px] uppercase tracking-wider text-muted-foreground font-medium">

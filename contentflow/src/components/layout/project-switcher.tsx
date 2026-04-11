@@ -68,15 +68,6 @@ export function ProjectSwitcher() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-          {selectedProjectId && (
-            <button
-              onClick={() => router.push('/settings')}
-              className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shrink-0"
-              title="프로젝트 설정"
-            >
-              <MoreHorizontal className="w-4 h-4" />
-            </button>
-          )}
         </div>
       </div>
 
