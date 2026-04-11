@@ -268,7 +268,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     const supabase = createClient()
     const now = new Date().toISOString();
     const newProject: Project = {
-      id: generateId('proj'),
+      id: generateId(),
       user_id: 'user-1',
       name: data.name,
       description: data.description ?? null,
@@ -547,7 +547,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     if (!original) return;
 
     const now = new Date().toISOString();
-    const newProjectId = generateId('proj');
+    const newProjectId = generateId();
     const duplicated: Project = {
       ...original,
       id: newProjectId,
@@ -563,7 +563,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     const originalContents = contents.filter((c) => c.project_id === projectId);
     const duplicatedContents: Content[] = originalContents.map((c) => ({
       ...c,
-      id: generateId('cont'),
+      id: generateId(),
       project_id: newProjectId,
       created_at: now,
       updated_at: now,
@@ -585,7 +585,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     const supabase = createClient()
     const now = new Date().toISOString();
     const newContent: Content = {
-      id: generateId('cont'),
+      id: generateId(),
       project_id: data.project_id,
       user_id: 'user-1',
       title: data.title,
@@ -715,7 +715,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       }));
     } else {
       const newArticle: BaseArticle = {
-        id: generateId('ba'),
+        id: generateId(),
         content_id: contentId,
         title: data.title ?? null,
         body: data.body ?? '',
@@ -745,7 +745,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     const supabase = createClient()
     const now = new Date().toISOString();
     const count = get().blogContents.filter((bc) => bc.content_id === contentId).length;
-    const id = generateId('blog');
+    const id = generateId();
     const newBlogContent: BlogContent = {
       id,
       content_id: contentId,
@@ -835,7 +835,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       : cardType === 'list' ? { items: [''], ordered: false }
       : {};
     const newCard: BlogCard = {
-      id: generateId('bc'),
+      id: generateId(),
       blog_content_id: blogContentId,
       card_type: cardType,
       content: defaultContent,
@@ -895,7 +895,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     const supabase = createClient()
     const now = new Date().toISOString();
     const count = get().instagramContents.filter((ic) => ic.content_id === contentId).length;
-    const id = generateId('ig');
+    const id = generateId();
     const newIgContent: InstagramContent = {
       id,
       content_id: contentId,
@@ -977,7 +977,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     const supabase = createClient()
     const now = new Date().toISOString();
     const newCard: InstagramCard = {
-      id: generateId('ic'),
+      id: generateId(),
       instagram_content_id: instagramContentId,
       text_content: '',
       background_color: '#1a1a2e',
@@ -1038,7 +1038,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     const supabase = createClient()
     const now = new Date().toISOString();
     const count = get().threadsContents.filter((tc) => tc.content_id === contentId).length;
-    const id = generateId('th');
+    const id = generateId();
     const newTC: ThreadsContent = {
       id,
       content_id: contentId,
@@ -1117,7 +1117,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     const supabase = createClient()
     const now = new Date().toISOString();
     const newCard: ThreadsCard = {
-      id: generateId('tp'),
+      id: generateId(),
       threads_content_id: threadsContentId,
       text_content: '',
       media_url: null,
@@ -1177,7 +1177,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     const supabase = createClient()
     const now = new Date().toISOString();
     const count = get().youtubeContents.filter((yc) => yc.content_id === contentId).length;
-    const id = generateId('yt');
+    const id = generateId();
     const newYC: YoutubeContent = {
       id,
       content_id: contentId,
@@ -1262,7 +1262,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     const supabase = createClient()
     const now = new Date().toISOString();
     const newCard: YoutubeCard = {
-      id: generateId('yc'),
+      id: generateId(),
       youtube_content_id: youtubeContentId,
       section_type: 'main',
       narration_text: '',
@@ -1344,7 +1344,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       return existing.id;
     }
 
-    const id = generateId('strategy');
+    const id = generateId();
     const newStrategy: MarketingStrategy = {
       id,
       projectId,
