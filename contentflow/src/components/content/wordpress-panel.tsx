@@ -89,7 +89,12 @@ function WordpressPanelInner({ blogContent, content, project, hasBaseArticle, ch
   const [showPromptDialog, setShowPromptDialog] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [generatedPrompt, setGeneratedPrompt] = useState('');
-  const [currentStep, setCurrentStep] = useState<WorkflowStep>(1);
+  const [currentStep, setCurrentStep] = useState<WorkflowStep>(() => {
+    // If cards already exist, jump to Step 3 (AI 생성)
+    const existingCards = getBlogCards(blogContent.id);
+    if (existingCards.length > 0) return 3;
+    return 1;
+  });
 
   // Keyword fields
   const [primaryKeyword, setPrimaryKeyword] = useState(content.tags?.[0] ?? '');
