@@ -12,8 +12,6 @@ import { CardNewsPanel } from './cardnews-panel';
 import { ThreadsPanel } from './threads-panel';
 import { YoutubePanel } from './youtube-panel';
 import { LanguageSelector } from './language-selector';
-import { PublishBar } from './publish-bar';
-
 type TabId = 'base-article' | 'wordpress' | 'blog' | 'cardnews' | 'threads' | 'youtube';
 
 const TAB_TO_CHANNEL: Record<string, string> = {
@@ -47,8 +45,8 @@ export function ContentTabs() {
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      {/* Tab Bar + Publish */}
-      <div className="border-b border-border bg-background flex items-center">
+      {/* Tab Bar */}
+      <div className="border-b border-border bg-background">
         <nav className="flex gap-1 px-4">
           {tabs.map((tab) => (
             <button
@@ -66,22 +64,12 @@ export function ContentTabs() {
             </button>
           ))}
         </nav>
-
-        {/* Publish buttons — right side of tab bar */}
-        {activeTab !== 'base-article' && (
-          <div className="ml-auto pr-4">
-            <PublishBar
-              channel={TAB_TO_CHANNEL[activeTab]}
-              language={selectedLanguage}
-              isConnected={false}
-              compact
-            />
-          </div>
-        )}
       </div>
 
-      {/* Language Selector */}
-      <LanguageSelector />
+      {/* Language Selector + Publish (on the same row) */}
+      <LanguageSelector
+        channel={activeTab !== 'base-article' ? TAB_TO_CHANNEL[activeTab] : undefined}
+      />
 
       {/* Tab Content */}
       <div className="flex-1 overflow-y-auto p-6 bg-muted/30">
