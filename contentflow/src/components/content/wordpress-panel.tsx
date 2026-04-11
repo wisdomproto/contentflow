@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,12 +89,14 @@ function WordpressPanelInner({ blogContent, content, project, hasBaseArticle, ch
   const [showPromptDialog, setShowPromptDialog] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [generatedPrompt, setGeneratedPrompt] = useState('');
-  const [currentStep, setCurrentStep] = useState<WorkflowStep>(() => {
-    // If cards already exist, jump to Step 3 (AI 생성)
-    const existingCards = getBlogCards(blogContent.id);
-    if (existingCards.length > 0) return 3;
-    return 1;
-  });
+  const [currentStep, setCurrentStep] = useState<WorkflowStep>(1);
+
+  // Auto-jump to Step 3 when cards are loaded from DB
+  useEffect(() => {
+    if (cards.length > 0 && currentStep === 1) {
+      setCurrentStep(3);
+    }
+  }, [cards.length]);
 
   // Keyword fields
   const [primaryKeyword, setPrimaryKeyword] = useState(content.tags?.[0] ?? '');
