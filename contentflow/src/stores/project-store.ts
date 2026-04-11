@@ -266,10 +266,12 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
   // Project CRUD
   createProject: async (data) => {
     const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { console.error('createProject: not authenticated'); return }
     const now = new Date().toISOString();
     const newProject: Project = {
       id: generateId(),
-      user_id: 'user-1',
+      user_id: user.id,
       name: data.name,
       description: data.description ?? null,
       cover_image_url: null,
@@ -426,6 +428,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     // Only send columns that exist in the Supabase projects table
     const dbProject = {
       id: newProject.id,
+      user_id: newProject.user_id,
       name: newProject.name,
       description: newProject.description,
       cover_image_url: newProject.cover_image_url,
@@ -583,11 +586,12 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
   // Content CRUD
   createContent: async (data) => {
     const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
     const now = new Date().toISOString();
     const newContent: Content = {
       id: generateId(),
       project_id: data.project_id,
-      user_id: 'user-1',
+      user_id: user?.id || '',
       title: data.title,
       category: data.category ?? null,
       tags: data.tags ?? null,

@@ -1,8 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, ChevronDown, Check, MoreHorizontal, Settings } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { Plus, ChevronDown, Check, Trash2 } from 'lucide-react'
 import { useProjectStore } from '@/stores/project-store'
 import {
   DropdownMenu,
@@ -14,10 +13,9 @@ import {
 import { CreateProjectDialog } from '@/components/project/create-project-dialog'
 
 export function ProjectSwitcher() {
-  const { projects, selectedProjectId, selectProject } = useProjectStore()
+  const { projects, selectedProjectId, selectProject, deleteProject } = useProjectStore()
   const selectedProject = projects.find(p => p.id === selectedProjectId)
   const [createOpen, setCreateOpen] = useState(false)
-  const router = useRouter()
 
   return (
     <>
@@ -47,7 +45,7 @@ export function ProjectSwitcher() {
               <DropdownMenuItem
                 key={project.id}
                 onClick={() => selectProject(project.id)}
-                className="flex items-center gap-2 cursor-pointer"
+                className="flex items-center gap-2 cursor-pointer group"
               >
                 <div className="w-6 h-6 bg-primary rounded flex items-center justify-center text-primary-foreground text-xs font-bold shrink-0">
                   {project.name.charAt(0)}
@@ -56,6 +54,17 @@ export function ProjectSwitcher() {
                 {project.id === selectedProjectId && (
                   <Check className="w-4 h-4 text-primary shrink-0" />
                 )}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (confirm(`"${project.name}" 프로젝트를 삭제하시겠습니까?`)) {
+                      deleteProject(project.id)
+                    }
+                  }}
+                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive shrink-0"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
