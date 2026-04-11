@@ -9,14 +9,14 @@ const navGroups = [
     items: [
       { href: '/content', icon: '📝', label: '콘텐츠 생성' },
       { href: '/ideas', icon: '💡', label: '아이디어' },
+      { href: '/publish', icon: '🚀', label: '발행' },
       { href: '/calendar', icon: '📅', label: '캘린더' },
     ],
   },
   {
-    label: '발행',
+    label: '성장',
     items: [
-      { href: '/publish', icon: '🚀', label: '채널 발행' },
-      { href: '/monitoring', icon: '💬', label: '모니터링' },
+      { href: '/monitoring', icon: '💬', label: '모니터링 / 댓글' },
     ],
   },
   {
