@@ -21,8 +21,7 @@ export function ProjectSwitcher() {
     <>
       <div className="p-3 border-b border-border">
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
+          <DropdownMenuTrigger
               className="w-full flex items-center gap-2 bg-accent/50 hover:bg-accent px-3 py-2 rounded-lg transition-colors"
             >
               <div className="w-7 h-7 bg-primary rounded-md flex items-center justify-center text-primary-foreground text-xs font-bold shrink-0">
@@ -34,7 +33,6 @@ export function ProjectSwitcher() {
                 </div>
               </div>
               <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
-            </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent side="bottom" align="start" className="w-64">
             {projects.length === 0 && (
