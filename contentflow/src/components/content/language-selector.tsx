@@ -6,6 +6,7 @@ import { useProjectStore } from '@/stores/project-store'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Send, Clock, Link2Off } from 'lucide-react'
+import type { BlogCard } from '@/types/database'
 import { Input } from '@/components/ui/input'
 import {
   Dialog,
@@ -43,7 +44,7 @@ interface LanguageSelectorProps {
 
 export function LanguageSelector({ onTranslate, translationStatuses = {}, channel }: LanguageSelectorProps) {
   const { selectedLanguage, setSelectedLanguage } = useUIStore()
-  const { projects, selectedProjectId, selectedContentId, contents, getBaseArticle } = useProjectStore()
+  const { projects, selectedProjectId, selectedContentId, contents, getBaseArticle, getBlogContents, getBlogCards } = useProjectStore()
   const project = projects.find(p => p.id === selectedProjectId)
 
   const [showSchedule, setShowSchedule] = useState(false)
@@ -100,14 +101,61 @@ export function LanguageSelector({ onTranslate, translationStatuses = {}, channe
         return
       }
 
-      // 콘텐츠 제목과 본문 가져오기
+      // 콘텐츠 제목과 본문 가져오기 (WordPress cards 우선, 없으면 기본글)
       const contentMeta = contents.find(c => c.id === selectedContentId)
-      const title = contentMeta?.title || 'Untitled'
-      const baseArticle = getBaseArticle(selectedContentId)
-      const body = baseArticle?.body || ''
+      const blogContents = getBlogContents(selectedContentId)
+      let title = contentMeta?.title || 'Untitled'
+      let body = ''
+
+      if (blogContents.length > 0) {
+        const bc = blogContents[0]
+        if (bc.seo_title) title = bc.seo_title
+        const cards: BlogCard[] = getBlogCards(bc.id)
+
+        if (cards.length > 0) {
+          // Build HTML from blog cards
+          const htmlParts: string[] = []
+          for (const card of cards) {
+            const c = card.content as Record<string, unknown>
+            const text = (c?.text as string) || ''
+            const imgUrl = (c?.url as string) || ''
+            const alt = (c?.alt as string) || ''
+
+            if (text) htmlParts.push(text)
+            if (imgUrl) {
+              // Compress base64 image to JPEG if it's base64
+              let finalUrl = imgUrl
+              if (imgUrl.startsWith('data:')) {
+                try {
+                  const canvas = document.createElement('canvas')
+                  const img = new Image()
+                  await new Promise<void>((resolve, reject) => {
+                    img.onload = () => resolve()
+                    img.onerror = reject
+                    img.src = imgUrl
+                  })
+                  canvas.width = Math.min(img.width, 1200) // max 1200px width
+                  canvas.height = Math.round(img.height * (canvas.width / img.width))
+                  const ctx = canvas.getContext('2d')
+                  ctx?.drawImage(img, 0, 0, canvas.width, canvas.height)
+                  finalUrl = canvas.toDataURL('image/jpeg', 0.7) // 70% quality JPEG
+                } catch {}
+              }
+              htmlParts.push(`<figure><img src="${finalUrl}" alt="${alt}" style="max-width:100%;height:auto;" />${alt ? `<figcaption>${alt}</figcaption>` : ''}</figure>`)
+            }
+          }
+          body = htmlParts.join('\n\n')
+        }
+      }
+
+      // Fallback to base article
+      if (!body.trim()) {
+        const baseArticle = getBaseArticle(selectedContentId)
+        body = baseArticle?.body || ''
+      }
 
       if (!body.trim()) {
-        alert('발행할 본문이 없습니다. 기본글 탭에서 내용을 작성해주세요.')
+        alert('발행할 본문이 없습니다. WordPress 탭에서 AI 생성하거나 기본글을 작성해주세요.')
         return
       }
 
