@@ -11,6 +11,7 @@ const pageTitles: Record<string, string> = {
   '/seo': 'SEO 분석',
   '/analytics': 'Google 애널리틱스',
   '/meta-analytics': '메타 채널 분석',
+  '/keywords': '키워드 분석',
   '/competitors': '경쟁사 분석',
   '/strategy': '마케팅 전략',
   '/settings': '설정',
