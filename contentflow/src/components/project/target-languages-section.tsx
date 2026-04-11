@@ -39,6 +39,8 @@ const AVAILABLE_LANGUAGES = [
   { code: 'vi', label: 'Tiếng Việt', flag: '🇻🇳' },
   { code: 'ja', label: '日本語', flag: '🇯🇵' },
   { code: 'zh', label: '中文', flag: '🇨🇳' },
+  { code: 'ms', label: 'Bahasa Melayu', flag: '🇲🇾' },
+  { code: 'id', label: 'Bahasa Indonesia', flag: '🇮🇩' },
 ];
 
 interface TargetLanguagesSectionProps {

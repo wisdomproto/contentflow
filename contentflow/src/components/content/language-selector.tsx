@@ -12,6 +12,8 @@ const LANGUAGE_INFO: Record<string, { label: string; flag: string }> = {
   vi: { label: 'VI', flag: '🇻🇳' },
   ja: { label: 'JA', flag: '🇯🇵' },
   zh: { label: 'ZH', flag: '🇨🇳' },
+  ms: { label: 'MS', flag: '🇲🇾' },
+  id: { label: 'ID', flag: '🇮🇩' },
 }
 
 interface LanguageSelectorProps {

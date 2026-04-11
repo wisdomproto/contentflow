@@ -9,7 +9,7 @@ interface TranslationContext {
 }
 
 const LANG_NAMES: Record<string, string> = {
-  ko: 'Korean', en: 'English', th: 'Thai', vi: 'Vietnamese', ja: 'Japanese', zh: 'Chinese'
+  ko: 'Korean', en: 'English', th: 'Thai', vi: 'Vietnamese', ja: 'Japanese', zh: 'Chinese', ms: 'Malay', id: 'Indonesian'
 }
 
 export function buildTranslationPrompt(context: TranslationContext): string {
