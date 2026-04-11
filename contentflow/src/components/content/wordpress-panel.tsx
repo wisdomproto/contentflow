@@ -10,6 +10,7 @@ import { ChannelModelSelector } from './channel-model-selector';
 import { cn } from '@/lib/utils';
 import { ChannelContentList } from './channel-content-list';
 import { PromptEditDialog } from './prompt-edit-dialog';
+import { WordpressPreviewDialog } from './wordpress-preview-dialog';
 import { useAiGeneration } from '@/hooks/use-ai-generation';
 import { useCardImageGeneration } from '@/hooks/use-card-image-generation';
 import { useProjectStore } from '@/stores/project-store';
@@ -86,6 +87,7 @@ function WordpressPanelInner({ blogContent, content, project, hasBaseArticle, ch
   const cards = getBlogCards(blogContent.id);
 
   const [showPromptDialog, setShowPromptDialog] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const [generatedPrompt, setGeneratedPrompt] = useState('');
   const [currentStep, setCurrentStep] = useState<WorkflowStep>(1);
 
@@ -510,6 +512,9 @@ Return ONLY valid JSON (no explanation) with this exact structure:
           )}
         </div>
         <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => setShowPreview(true)} disabled={cards.length === 0}>
+            미리보기
+          </Button>
           <GenerationButton
             variant="text"
             isGenerating={isGenerating}
@@ -631,6 +636,16 @@ Return ONLY valid JSON (no explanation) with this exact structure:
         isGenerating={isGenerating}
         onGenerate={handleStartGeneration}
         onAbort={abort}
+      />
+
+      {/* Preview Dialog */}
+      <WordpressPreviewDialog
+        open={showPreview}
+        onOpenChange={setShowPreview}
+        title={content.title}
+        metaTitle={metaTitle}
+        metaDescription={metaDescription}
+        cards={cards}
       />
     </div>
   );
