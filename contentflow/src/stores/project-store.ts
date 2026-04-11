@@ -2,26 +2,12 @@
 export { useUIStore } from './ui-store'
 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval';
 import type { Project, Content, ContentStatus, BaseArticle, BlogContent, BlogCard, InstagramContent, InstagramCard, ThreadsContent, ThreadsCard, YoutubeContent, YoutubeCard } from '@/types/database';
 import type { MarketingStrategy, StrategyInput, GenerationStatus, StrategyTab } from '@/types/strategy';
 import { DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL } from '@/lib/ai-models';
 import type { ImportedStrategy } from '@/types/analytics';
 import { generateId } from '@/lib/utils';
-
-// IndexedDB storage adapter (localStorage 5MB 제한 해결)
-const idbStorage = createJSONStorage(() => ({
-  getItem: async (name: string): Promise<string | null> => {
-    return (await idbGet(name)) ?? null;
-  },
-  setItem: async (name: string, value: string): Promise<void> => {
-    await idbSet(name, value);
-  },
-  removeItem: async (name: string): Promise<void> => {
-    await idbDel(name);
-  },
-}));
+import { createClient } from '@/lib/supabase/client';
 
 interface ProjectState {
   projects: Project[];
@@ -47,6 +33,9 @@ interface ProjectState {
   filterStatus: ContentStatus | 'all';
   sortBy: 'name' | 'date';
   sortOrder: 'asc' | 'desc';
+
+  // Supabase loading
+  loadFromSupabase: () => Promise<void>;
 
   // Basic setters
   setProjects: (projects: Project[]) => void;
@@ -153,7 +142,7 @@ interface ProjectState {
   setSortOrder: (order: 'asc' | 'desc') => void;
 }
 
-export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
+export const useProjectStore = create<ProjectState>()((set, get) => ({
   projects: [],
   selectedProjectId: null,
   selectedContentId: null,
@@ -177,9 +166,33 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
   sortBy: 'name',
   sortOrder: 'asc',
 
+  // Load all projects from Supabase on app start
+  loadFromSupabase: async () => {
+    const supabase = createClient()
+    const { data: projects, error } = await supabase.from('projects').select('*').order('sort_order')
+    if (error) { console.error('loadFromSupabase error:', error.message); return }
+    if (projects) set({ projects: projects as Project[] })
+  },
+
   setProjects: (projects) => set({ projects }),
-  selectProject: (projectId) =>
-    set({ selectedProjectId: projectId, selectedContentId: null, showProjectSettings: false, showStrategy: false, showAnalytics: false }),
+  selectProject: async (projectId) => {
+    set({
+      selectedProjectId: projectId, selectedContentId: null, showProjectSettings: false, showStrategy: false, showAnalytics: false,
+      contents: [], baseArticles: [],
+      blogContents: [], blogCards: [],
+      instagramContents: [], instagramCards: [],
+      threadsContents: [], threadsCards: [],
+      youtubeContents: [], youtubeCards: [],
+      strategies: [],
+    })
+    if (!projectId) return
+
+    const supabase = createClient()
+    const { data: contents } = await supabase.from('contents').select('*').eq('project_id', projectId).order('sort_order')
+    if (contents) set({ contents: contents as Content[] })
+
+    // TODO: marketing_strategies table does not exist yet — load strategies when table is created
+  },
   selectContent: (contentId) => {
     if (contentId) {
       const content = get().contents.find(c => c.id === contentId);
@@ -190,6 +203,50 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
         showStrategy: false,
         showAnalytics: false,
       });
+
+      // Load all channel data for this content from Supabase
+      const supabase = createClient()
+      const loadChannelData = async () => {
+        const [baseRes, blogRes, igRes, thRes, ytRes] = await Promise.all([
+          supabase.from('base_articles').select('*').eq('content_id', contentId),
+          supabase.from('blog_contents').select('*').eq('content_id', contentId).order('created_at'),
+          supabase.from('instagram_contents').select('*').eq('content_id', contentId).order('created_at'),
+          supabase.from('threads_contents').select('*').eq('content_id', contentId).order('created_at'),
+          supabase.from('youtube_contents').select('*').eq('content_id', contentId).order('created_at'),
+        ])
+
+        const updates: Partial<ProjectState> = {}
+        if (baseRes.data) updates.baseArticles = baseRes.data as BaseArticle[]
+        if (blogRes.data) updates.blogContents = blogRes.data as BlogContent[]
+        if (igRes.data) updates.instagramContents = igRes.data as InstagramContent[]
+        if (thRes.data) updates.threadsContents = thRes.data as ThreadsContent[]
+        if (ytRes.data) updates.youtubeContents = ytRes.data as YoutubeContent[]
+        set(updates as Parameters<typeof set>[0])
+
+        // Load cards for all channel contents
+        const blogIds = (blogRes.data ?? []).map(b => b.id)
+        const igIds = (igRes.data ?? []).map(i => i.id)
+        const thIds = (thRes.data ?? []).map(t => t.id)
+        const ytIds = (ytRes.data ?? []).map(y => y.id)
+
+        if (blogIds.length > 0) {
+          const { data } = await supabase.from('blog_cards').select('*').in('blog_content_id', blogIds).order('sort_order')
+          if (data) set({ blogCards: data as BlogCard[] })
+        }
+        if (igIds.length > 0) {
+          const { data } = await supabase.from('instagram_cards').select('*').in('instagram_content_id', igIds).order('sort_order')
+          if (data) set({ instagramCards: data as InstagramCard[] })
+        }
+        if (thIds.length > 0) {
+          const { data } = await supabase.from('threads_cards').select('*').in('threads_content_id', thIds).order('sort_order')
+          if (data) set({ threadsCards: data as ThreadsCard[] })
+        }
+        if (ytIds.length > 0) {
+          const { data } = await supabase.from('youtube_cards').select('*').in('youtube_content_id', ytIds).order('sort_order')
+          if (data) set({ youtubeCards: data as YoutubeCard[] })
+        }
+      }
+      loadChannelData().catch(err => console.error('selectContent load error:', err))
     } else {
       set({ selectedContentId: null });
     }
@@ -207,7 +264,8 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
   toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
 
   // Project CRUD
-  createProject: (data) => {
+  createProject: async (data) => {
+    const supabase = createClient()
     const now = new Date().toISOString();
     const newProject: Project = {
       id: generateId('proj'),
@@ -364,6 +422,10 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
       created_at: now,
       updated_at: now,
     };
+
+    const { error } = await supabase.from('projects').insert(newProject as unknown as Record<string, unknown>)
+    if (error) { console.error('createProject error:', error.message); return }
+
     set((state) => ({
       projects: [...state.projects, newProject],
       selectedProjectId: newProject.id,
@@ -372,17 +434,27 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
     }));
   },
 
-  updateProject: (projectId, updates) => {
+  updateProject: async (projectId, updates) => {
+    const supabase = createClient()
+    const updatedData = { ...updates, updated_at: new Date().toISOString() }
+    const { error } = await supabase.from('projects').update(updatedData as unknown as Record<string, unknown>).eq('id', projectId)
+    if (error) { console.error('updateProject error:', error.message); return }
+
     set((state) => ({
       projects: state.projects.map((p) =>
         p.id === projectId
-          ? { ...p, ...updates, updated_at: new Date().toISOString() }
+          ? { ...p, ...updatedData }
           : p
       ),
     }));
   },
 
-  deleteProject: (projectId) => {
+  deleteProject: async (projectId) => {
+    const supabase = createClient()
+    // Supabase cascade delete handles children (contents, cards etc.)
+    const { error } = await supabase.from('projects').delete().eq('id', projectId)
+    if (error) { console.error('deleteProject error:', error.message); return }
+
     const contentIds = get().contents.filter((c) => c.project_id === projectId).map((c) => c.id);
     const blogContentIds = get().blogContents.filter((bc) => contentIds.includes(bc.content_id)).map((bc) => bc.id);
     const igContentIds = get().instagramContents.filter((ic) => contentIds.includes(ic.content_id)).map((ic) => ic.id);
@@ -418,7 +490,8 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
     });
   },
 
-  duplicateProject: (projectId) => {
+  duplicateProject: async (projectId) => {
+    const supabase = createClient()
     const { projects, contents } = get();
     const original = projects.find((p) => p.id === projectId);
     if (!original) return;
@@ -434,6 +507,9 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
       updated_at: now,
     };
 
+    const { error: projErr } = await supabase.from('projects').insert(duplicated as unknown as Record<string, unknown>)
+    if (projErr) { console.error('duplicateProject error:', projErr.message); return }
+
     const originalContents = contents.filter((c) => c.project_id === projectId);
     const duplicatedContents: Content[] = originalContents.map((c) => ({
       ...c,
@@ -443,6 +519,11 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
       updated_at: now,
     }));
 
+    if (duplicatedContents.length > 0) {
+      const { error: contErr } = await supabase.from('contents').insert(duplicatedContents as unknown as Record<string, unknown>[])
+      if (contErr) console.error('duplicateProject contents error:', contErr.message)
+    }
+
     set((state) => ({
       projects: [...state.projects, duplicated],
       contents: [...state.contents, ...duplicatedContents],
@@ -450,7 +531,8 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
   },
 
   // Content CRUD
-  createContent: (data) => {
+  createContent: async (data) => {
+    const supabase = createClient()
     const now = new Date().toISOString();
     const newContent: Content = {
       id: generateId('cont'),
@@ -467,6 +549,10 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
       created_at: now,
       updated_at: now,
     };
+
+    const { error } = await supabase.from('contents').insert(newContent as unknown as Record<string, unknown>)
+    if (error) { console.error('createContent error:', error.message); return }
+
     set((state) => ({
       contents: [...state.contents, newContent],
       selectedContentId: newContent.id,
@@ -475,17 +561,27 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
     }));
   },
 
-  updateContent: (contentId, updates) => {
+  updateContent: async (contentId, updates) => {
+    const supabase = createClient()
+    const updatedData = { ...updates, updated_at: new Date().toISOString() }
+    const { error } = await supabase.from('contents').update(updatedData as unknown as Record<string, unknown>).eq('id', contentId)
+    if (error) { console.error('updateContent error:', error.message); return }
+
     set((state) => ({
       contents: state.contents.map((c) =>
         c.id === contentId
-          ? { ...c, ...updates, updated_at: new Date().toISOString() }
+          ? { ...c, ...updatedData }
           : c
       ),
     }));
   },
 
-  deleteContent: (contentId) => {
+  deleteContent: async (contentId) => {
+    const supabase = createClient()
+    // Supabase cascade delete handles children
+    const { error } = await supabase.from('contents').delete().eq('id', contentId)
+    if (error) { console.error('deleteContent error:', error.message); return }
+
     const state = get();
     const blogContentIds = state.blogContents.filter((bc) => bc.content_id === contentId).map((bc) => bc.id);
     const igContentIds = state.instagramContents.filter((ic) => ic.content_id === contentId).map((ic) => ic.id);
@@ -500,7 +596,7 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
     state.blogCards
       .filter((c) => blogContentIds.includes(c.blog_content_id))
       .forEach((c) => {
-        const imgUrl = (c.content as Record<string, unknown>)?.image_url;
+        const imgUrl = (c.content as unknown as Record<string, unknown>)?.image_url;
         if (typeof imgUrl === 'string' && imgUrl.startsWith('http')) imageUrls.push(imgUrl);
       });
 
@@ -550,19 +646,24 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
   },
 
   // BaseArticle CRUD
-  createOrUpdateBaseArticle: (contentId, data) => {
-    set((state) => {
-      const existing = state.baseArticles.find((a) => a.content_id === contentId);
-      if (existing) {
-        return {
-          baseArticles: state.baseArticles.map((a) =>
-            a.content_id === contentId
-              ? { ...a, ...data, updated_at: new Date().toISOString() }
-              : a
-          ),
-        };
-      }
-      const now = new Date().toISOString();
+  createOrUpdateBaseArticle: async (contentId, data) => {
+    const supabase = createClient()
+    const existing = get().baseArticles.find((a) => a.content_id === contentId);
+    const now = new Date().toISOString();
+
+    if (existing) {
+      const updatedData = { ...data, updated_at: now }
+      const { error } = await supabase.from('base_articles').update(updatedData as unknown as Record<string, unknown>).eq('id', existing.id)
+      if (error) { console.error('updateBaseArticle error:', error.message); return }
+
+      set((state) => ({
+        baseArticles: state.baseArticles.map((a) =>
+          a.content_id === contentId
+            ? { ...a, ...updatedData }
+            : a
+        ),
+      }));
+    } else {
       const newArticle: BaseArticle = {
         id: generateId('ba'),
         content_id: contentId,
@@ -577,8 +678,12 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
         created_at: now,
         updated_at: now,
       };
-      return { baseArticles: [...state.baseArticles, newArticle] };
-    });
+
+      const { error } = await supabase.from('base_articles').insert(newArticle as unknown as Record<string, unknown>)
+      if (error) { console.error('createBaseArticle error:', error.message); return }
+
+      set((state) => ({ baseArticles: [...state.baseArticles, newArticle] }));
+    }
   },
 
   getBaseArticle: (contentId) => {
@@ -587,6 +692,7 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
 
   // BlogContent CRUD (1:N)
   addBlogContent: (contentId, data) => {
+    const supabase = createClient()
     const now = new Date().toISOString();
     const count = get().blogContents.filter((bc) => bc.content_id === contentId).length;
     const id = generateId('blog');
@@ -606,20 +712,34 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
       ...data,
     };
     set((state) => ({ blogContents: [...state.blogContents, newBlogContent] }));
+
+    // Fire-and-forget Supabase insert
+    supabase.from('blog_contents').insert(newBlogContent as unknown as Record<string, unknown>)
+      .then(({ error }) => { if (error) console.error('addBlogContent error:', error.message) })
+
     return id;
   },
 
-  updateBlogContent: (blogContentId, updates) => {
+  updateBlogContent: async (blogContentId, updates) => {
+    const supabase = createClient()
+    const updatedData = { ...updates, updated_at: new Date().toISOString() }
+    const { error } = await supabase.from('blog_contents').update(updatedData as unknown as Record<string, unknown>).eq('id', blogContentId)
+    if (error) { console.error('updateBlogContent error:', error.message); return }
+
     set((state) => ({
       blogContents: state.blogContents.map((bc) =>
         bc.id === blogContentId
-          ? { ...bc, ...updates, updated_at: new Date().toISOString() }
+          ? { ...bc, ...updatedData }
           : bc
       ),
     }));
   },
 
-  deleteBlogContent: (blogContentId) => {
+  deleteBlogContent: async (blogContentId) => {
+    const supabase = createClient()
+    const { error } = await supabase.from('blog_contents').delete().eq('id', blogContentId)
+    if (error) { console.error('deleteBlogContent error:', error.message); return }
+
     set((state) => ({
       blogContents: state.blogContents.filter((bc) => bc.id !== blogContentId),
       blogCards: state.blogCards.filter((card) => card.blog_content_id !== blogContentId),
@@ -638,7 +758,15 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
       .sort((a, b) => a.sort_order - b.sort_order);
   },
 
-  setBlogCardsForContent: (blogContentId, cards) => {
+  setBlogCardsForContent: async (blogContentId, cards) => {
+    const supabase = createClient()
+    // Delete existing cards for this blog content, then insert new ones
+    await supabase.from('blog_cards').delete().eq('blog_content_id', blogContentId)
+    if (cards.length > 0) {
+      const { error } = await supabase.from('blog_cards').insert(cards as unknown as Record<string, unknown>[])
+      if (error) console.error('setBlogCardsForContent error:', error.message)
+    }
+
     set((state) => ({
       blogCards: [
         ...state.blogCards.filter((c) => c.blog_content_id !== blogContentId),
@@ -648,6 +776,7 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
   },
 
   addBlogCard: (blogContentId, cardType, sortOrder) => {
+    const supabase = createClient()
     const now = new Date().toISOString();
     const defaultContent: Record<string, unknown> =
       cardType === 'text' ? { text: '' }
@@ -665,25 +794,38 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
       updated_at: now,
     };
     set((state) => ({ blogCards: [...state.blogCards, newCard] }));
+
+    supabase.from('blog_cards').insert(newCard as unknown as Record<string, unknown>)
+      .then(({ error }) => { if (error) console.error('addBlogCard error:', error.message) })
   },
 
-  updateBlogCard: (cardId, updates) => {
+  updateBlogCard: async (cardId, updates) => {
+    const supabase = createClient()
+    const updatedData = { ...updates, updated_at: new Date().toISOString() }
+    const { error } = await supabase.from('blog_cards').update(updatedData as unknown as Record<string, unknown>).eq('id', cardId)
+    if (error) { console.error('updateBlogCard error:', error.message); return }
+
     set((state) => ({
       blogCards: state.blogCards.map((card) =>
         card.id === cardId
-          ? { ...card, ...updates, updated_at: new Date().toISOString() }
+          ? { ...card, ...updatedData }
           : card
       ),
     }));
   },
 
-  deleteBlogCard: (cardId) => {
+  deleteBlogCard: async (cardId) => {
+    const supabase = createClient()
+    const { error } = await supabase.from('blog_cards').delete().eq('id', cardId)
+    if (error) { console.error('deleteBlogCard error:', error.message); return }
+
     set((state) => ({
       blogCards: state.blogCards.filter((card) => card.id !== cardId),
     }));
   },
 
   reorderBlogCards: (blogContentId, cardIds) => {
+    const supabase = createClient()
     set((state) => ({
       blogCards: state.blogCards.map((card) => {
         if (card.blog_content_id !== blogContentId) return card;
@@ -691,10 +833,16 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
         return newOrder >= 0 ? { ...card, sort_order: newOrder } : card;
       }),
     }));
+
+    // Fire-and-forget batch update sort orders
+    Promise.all(cardIds.map((id, index) =>
+      supabase.from('blog_cards').update({ sort_order: index }).eq('id', id)
+    )).catch(err => console.error('reorderBlogCards error:', err))
   },
 
   // InstagramContent CRUD (1:N)
   addInstagramContent: (contentId, data) => {
+    const supabase = createClient()
     const now = new Date().toISOString();
     const count = get().instagramContents.filter((ic) => ic.content_id === contentId).length;
     const id = generateId('ig');
@@ -714,20 +862,33 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
       ...data,
     };
     set((state) => ({ instagramContents: [...state.instagramContents, newIgContent] }));
+
+    supabase.from('instagram_contents').insert(newIgContent as unknown as Record<string, unknown>)
+      .then(({ error }) => { if (error) console.error('addInstagramContent error:', error.message) })
+
     return id;
   },
 
-  updateInstagramContent: (igContentId, updates) => {
+  updateInstagramContent: async (igContentId, updates) => {
+    const supabase = createClient()
+    const updatedData = { ...updates, updated_at: new Date().toISOString() }
+    const { error } = await supabase.from('instagram_contents').update(updatedData as unknown as Record<string, unknown>).eq('id', igContentId)
+    if (error) { console.error('updateInstagramContent error:', error.message); return }
+
     set((state) => ({
       instagramContents: state.instagramContents.map((ic) =>
         ic.id === igContentId
-          ? { ...ic, ...updates, updated_at: new Date().toISOString() }
+          ? { ...ic, ...updatedData }
           : ic
       ),
     }));
   },
 
-  deleteInstagramContent: (igContentId) => {
+  deleteInstagramContent: async (igContentId) => {
+    const supabase = createClient()
+    const { error } = await supabase.from('instagram_contents').delete().eq('id', igContentId)
+    if (error) { console.error('deleteInstagramContent error:', error.message); return }
+
     set((state) => ({
       instagramContents: state.instagramContents.filter((ic) => ic.id !== igContentId),
       instagramCards: state.instagramCards.filter((card) => card.instagram_content_id !== igContentId),
@@ -746,7 +907,14 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
       .sort((a, b) => a.sort_order - b.sort_order);
   },
 
-  setInstagramCardsForContent: (instagramContentId, cards) => {
+  setInstagramCardsForContent: async (instagramContentId, cards) => {
+    const supabase = createClient()
+    await supabase.from('instagram_cards').delete().eq('instagram_content_id', instagramContentId)
+    if (cards.length > 0) {
+      const { error } = await supabase.from('instagram_cards').insert(cards as unknown as Record<string, unknown>[])
+      if (error) console.error('setInstagramCardsForContent error:', error.message)
+    }
+
     set((state) => ({
       instagramCards: [
         ...state.instagramCards.filter((c) => c.instagram_content_id !== instagramContentId),
@@ -756,6 +924,7 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
   },
 
   addInstagramCard: (instagramContentId, sortOrder) => {
+    const supabase = createClient()
     const now = new Date().toISOString();
     const newCard: InstagramCard = {
       id: generateId('ic'),
@@ -769,25 +938,38 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
       updated_at: now,
     };
     set((state) => ({ instagramCards: [...state.instagramCards, newCard] }));
+
+    supabase.from('instagram_cards').insert(newCard as unknown as Record<string, unknown>)
+      .then(({ error }) => { if (error) console.error('addInstagramCard error:', error.message) })
   },
 
-  updateInstagramCard: (cardId, updates) => {
+  updateInstagramCard: async (cardId, updates) => {
+    const supabase = createClient()
+    const updatedData = { ...updates, updated_at: new Date().toISOString() }
+    const { error } = await supabase.from('instagram_cards').update(updatedData as unknown as Record<string, unknown>).eq('id', cardId)
+    if (error) { console.error('updateInstagramCard error:', error.message); return }
+
     set((state) => ({
       instagramCards: state.instagramCards.map((card) =>
         card.id === cardId
-          ? { ...card, ...updates, updated_at: new Date().toISOString() }
+          ? { ...card, ...updatedData }
           : card
       ),
     }));
   },
 
-  deleteInstagramCard: (cardId) => {
+  deleteInstagramCard: async (cardId) => {
+    const supabase = createClient()
+    const { error } = await supabase.from('instagram_cards').delete().eq('id', cardId)
+    if (error) { console.error('deleteInstagramCard error:', error.message); return }
+
     set((state) => ({
       instagramCards: state.instagramCards.filter((card) => card.id !== cardId),
     }));
   },
 
   reorderInstagramCards: (instagramContentId, cardIds) => {
+    const supabase = createClient()
     set((state) => ({
       instagramCards: state.instagramCards.map((card) => {
         if (card.instagram_content_id !== instagramContentId) return card;
@@ -795,10 +977,15 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
         return newOrder >= 0 ? { ...card, sort_order: newOrder } : card;
       }),
     }));
+
+    Promise.all(cardIds.map((id, index) =>
+      supabase.from('instagram_cards').update({ sort_order: index }).eq('id', id)
+    )).catch(err => console.error('reorderInstagramCards error:', err))
   },
 
   // ThreadsContent CRUD (1:N)
   addThreadsContent: (contentId, data) => {
+    const supabase = createClient()
     const now = new Date().toISOString();
     const count = get().threadsContents.filter((tc) => tc.content_id === contentId).length;
     const id = generateId('th');
@@ -815,20 +1002,33 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
       ...data,
     };
     set((state) => ({ threadsContents: [...state.threadsContents, newTC] }));
+
+    supabase.from('threads_contents').insert(newTC as unknown as Record<string, unknown>)
+      .then(({ error }) => { if (error) console.error('addThreadsContent error:', error.message) })
+
     return id;
   },
 
-  updateThreadsContent: (threadsContentId, updates) => {
+  updateThreadsContent: async (threadsContentId, updates) => {
+    const supabase = createClient()
+    const updatedData = { ...updates, updated_at: new Date().toISOString() }
+    const { error } = await supabase.from('threads_contents').update(updatedData as unknown as Record<string, unknown>).eq('id', threadsContentId)
+    if (error) { console.error('updateThreadsContent error:', error.message); return }
+
     set((state) => ({
       threadsContents: state.threadsContents.map((tc) =>
         tc.id === threadsContentId
-          ? { ...tc, ...updates, updated_at: new Date().toISOString() }
+          ? { ...tc, ...updatedData }
           : tc
       ),
     }));
   },
 
-  deleteThreadsContent: (threadsContentId) => {
+  deleteThreadsContent: async (threadsContentId) => {
+    const supabase = createClient()
+    const { error } = await supabase.from('threads_contents').delete().eq('id', threadsContentId)
+    if (error) { console.error('deleteThreadsContent error:', error.message); return }
+
     set((state) => ({
       threadsContents: state.threadsContents.filter((tc) => tc.id !== threadsContentId),
       threadsCards: state.threadsCards.filter((card) => card.threads_content_id !== threadsContentId),
@@ -847,7 +1047,14 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
       .sort((a, b) => a.sort_order - b.sort_order);
   },
 
-  setThreadsCardsForContent: (threadsContentId, cards) => {
+  setThreadsCardsForContent: async (threadsContentId, cards) => {
+    const supabase = createClient()
+    await supabase.from('threads_cards').delete().eq('threads_content_id', threadsContentId)
+    if (cards.length > 0) {
+      const { error } = await supabase.from('threads_cards').insert(cards as unknown as Record<string, unknown>[])
+      if (error) console.error('setThreadsCardsForContent error:', error.message)
+    }
+
     set((state) => ({
       threadsCards: [
         ...state.threadsCards.filter((c) => c.threads_content_id !== threadsContentId),
@@ -857,6 +1064,7 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
   },
 
   addThreadsCard: (threadsContentId, sortOrder) => {
+    const supabase = createClient()
     const now = new Date().toISOString();
     const newCard: ThreadsCard = {
       id: generateId('tp'),
@@ -869,25 +1077,38 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
       updated_at: now,
     };
     set((state) => ({ threadsCards: [...state.threadsCards, newCard] }));
+
+    supabase.from('threads_cards').insert(newCard as unknown as Record<string, unknown>)
+      .then(({ error }) => { if (error) console.error('addThreadsCard error:', error.message) })
   },
 
-  updateThreadsCard: (cardId, updates) => {
+  updateThreadsCard: async (cardId, updates) => {
+    const supabase = createClient()
+    const updatedData = { ...updates, updated_at: new Date().toISOString() }
+    const { error } = await supabase.from('threads_cards').update(updatedData as unknown as Record<string, unknown>).eq('id', cardId)
+    if (error) { console.error('updateThreadsCard error:', error.message); return }
+
     set((state) => ({
       threadsCards: state.threadsCards.map((card) =>
         card.id === cardId
-          ? { ...card, ...updates, updated_at: new Date().toISOString() }
+          ? { ...card, ...updatedData }
           : card
       ),
     }));
   },
 
-  deleteThreadsCard: (cardId) => {
+  deleteThreadsCard: async (cardId) => {
+    const supabase = createClient()
+    const { error } = await supabase.from('threads_cards').delete().eq('id', cardId)
+    if (error) { console.error('deleteThreadsCard error:', error.message); return }
+
     set((state) => ({
       threadsCards: state.threadsCards.filter((card) => card.id !== cardId),
     }));
   },
 
   reorderThreadsCards: (threadsContentId, cardIds) => {
+    const supabase = createClient()
     set((state) => ({
       threadsCards: state.threadsCards.map((card) => {
         if (card.threads_content_id !== threadsContentId) return card;
@@ -895,10 +1116,15 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
         return newOrder >= 0 ? { ...card, sort_order: newOrder } : card;
       }),
     }));
+
+    Promise.all(cardIds.map((id, index) =>
+      supabase.from('threads_cards').update({ sort_order: index }).eq('id', id)
+    )).catch(err => console.error('reorderThreadsCards error:', err))
   },
 
   // YoutubeContent CRUD (1:N)
   addYoutubeContent: (contentId, data) => {
+    const supabase = createClient()
     const now = new Date().toISOString();
     const count = get().youtubeContents.filter((yc) => yc.content_id === contentId).length;
     const id = generateId('yt');
@@ -921,20 +1147,33 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
       ...data,
     };
     set((state) => ({ youtubeContents: [...state.youtubeContents, newYC] }));
+
+    supabase.from('youtube_contents').insert(newYC as unknown as Record<string, unknown>)
+      .then(({ error }) => { if (error) console.error('addYoutubeContent error:', error.message) })
+
     return id;
   },
 
-  updateYoutubeContent: (ytContentId, updates) => {
+  updateYoutubeContent: async (ytContentId, updates) => {
+    const supabase = createClient()
+    const updatedData = { ...updates, updated_at: new Date().toISOString() }
+    const { error } = await supabase.from('youtube_contents').update(updatedData as unknown as Record<string, unknown>).eq('id', ytContentId)
+    if (error) { console.error('updateYoutubeContent error:', error.message); return }
+
     set((state) => ({
       youtubeContents: state.youtubeContents.map((yc) =>
         yc.id === ytContentId
-          ? { ...yc, ...updates, updated_at: new Date().toISOString() }
+          ? { ...yc, ...updatedData }
           : yc
       ),
     }));
   },
 
-  deleteYoutubeContent: (ytContentId) => {
+  deleteYoutubeContent: async (ytContentId) => {
+    const supabase = createClient()
+    const { error } = await supabase.from('youtube_contents').delete().eq('id', ytContentId)
+    if (error) { console.error('deleteYoutubeContent error:', error.message); return }
+
     set((state) => ({
       youtubeContents: state.youtubeContents.filter((yc) => yc.id !== ytContentId),
       youtubeCards: state.youtubeCards.filter((card) => card.youtube_content_id !== ytContentId),
@@ -953,7 +1192,14 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
       .sort((a, b) => a.sort_order - b.sort_order);
   },
 
-  setYoutubeCardsForContent: (youtubeContentId, cards) => {
+  setYoutubeCardsForContent: async (youtubeContentId, cards) => {
+    const supabase = createClient()
+    await supabase.from('youtube_cards').delete().eq('youtube_content_id', youtubeContentId)
+    if (cards.length > 0) {
+      const { error } = await supabase.from('youtube_cards').insert(cards as unknown as Record<string, unknown>[])
+      if (error) console.error('setYoutubeCardsForContent error:', error.message)
+    }
+
     set((state) => ({
       youtubeCards: [
         ...state.youtubeCards.filter((c) => c.youtube_content_id !== youtubeContentId),
@@ -963,6 +1209,7 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
   },
 
   addYoutubeCard: (youtubeContentId, sortOrder) => {
+    const supabase = createClient()
     const now = new Date().toISOString();
     const newCard: YoutubeCard = {
       id: generateId('yc'),
@@ -979,25 +1226,38 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
       updated_at: now,
     };
     set((state) => ({ youtubeCards: [...state.youtubeCards, newCard] }));
+
+    supabase.from('youtube_cards').insert(newCard as unknown as Record<string, unknown>)
+      .then(({ error }) => { if (error) console.error('addYoutubeCard error:', error.message) })
   },
 
-  updateYoutubeCard: (cardId, updates) => {
+  updateYoutubeCard: async (cardId, updates) => {
+    const supabase = createClient()
+    const updatedData = { ...updates, updated_at: new Date().toISOString() }
+    const { error } = await supabase.from('youtube_cards').update(updatedData as unknown as Record<string, unknown>).eq('id', cardId)
+    if (error) { console.error('updateYoutubeCard error:', error.message); return }
+
     set((state) => ({
       youtubeCards: state.youtubeCards.map((card) =>
         card.id === cardId
-          ? { ...card, ...updates, updated_at: new Date().toISOString() }
+          ? { ...card, ...updatedData }
           : card
       ),
     }));
   },
 
-  deleteYoutubeCard: (cardId) => {
+  deleteYoutubeCard: async (cardId) => {
+    const supabase = createClient()
+    const { error } = await supabase.from('youtube_cards').delete().eq('id', cardId)
+    if (error) { console.error('deleteYoutubeCard error:', error.message); return }
+
     set((state) => ({
       youtubeCards: state.youtubeCards.filter((card) => card.id !== cardId),
     }));
   },
 
   reorderYoutubeCards: (youtubeContentId, cardIds) => {
+    const supabase = createClient()
     set((state) => ({
       youtubeCards: state.youtubeCards.map((card) => {
         if (card.youtube_content_id !== youtubeContentId) return card;
@@ -1005,9 +1265,16 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
         return newOrder >= 0 ? { ...card, sort_order: newOrder } : card;
       }),
     }));
+
+    Promise.all(cardIds.map((id, index) =>
+      supabase.from('youtube_cards').update({ sort_order: index }).eq('id', id)
+    )).catch(err => console.error('reorderYoutubeCards error:', err))
   },
 
   // ====== Strategy ======
+  // TODO: marketing_strategies table does not exist in Supabase yet.
+  // Strategy CRUD currently operates on local Zustand state only.
+  // Migrate to Supabase when the table is created.
   getStrategy: (projectId) => {
     return get().strategies.find((s) => s.projectId === projectId);
   },
@@ -1095,18 +1362,28 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
     }));
   },
 
-  importStrategy: (projectId, data) => {
+  importStrategy: async (projectId, data) => {
+    const supabase = createClient()
+    const updatedData = { imported_strategy: data, updated_at: new Date().toISOString() }
+    const { error } = await supabase.from('projects').update(updatedData as unknown as Record<string, unknown>).eq('id', projectId)
+    if (error) console.error('importStrategy error:', error.message)
+
     set((state) => ({
       projects: state.projects.map((p) =>
-        p.id === projectId ? { ...p, imported_strategy: data, updated_at: new Date().toISOString() } : p
+        p.id === projectId ? { ...p, ...updatedData } : p
       ),
     }));
   },
 
-  clearImportedStrategy: (projectId) => {
+  clearImportedStrategy: async (projectId) => {
+    const supabase = createClient()
+    const updatedData = { imported_strategy: null, updated_at: new Date().toISOString() }
+    const { error } = await supabase.from('projects').update(updatedData).eq('id', projectId)
+    if (error) console.error('clearImportedStrategy error:', error.message)
+
     set((state) => ({
       projects: state.projects.map((p) =>
-        p.id === projectId ? { ...p, imported_strategy: null, updated_at: new Date().toISOString() } : p
+        p.id === projectId ? { ...p, ...updatedData } : p
       ),
     }));
   },
@@ -1119,7 +1396,7 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
   // Channel model helpers
   getChannelModels: (projectId, channel) => {
     const project = get().projects.find((p) => p.id === projectId);
-    const settings = (project?.ai_model_settings ?? {}) as Record<string, unknown>;
+    const settings = (project?.ai_model_settings ?? {}) as unknown as Record<string, unknown>;
     const channels = (settings.channels ?? {}) as Record<string, Record<string, string>>;
     const channelSettings = channels[channel] ?? {};
     // Default aspect ratios per channel
@@ -1139,7 +1416,7 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
   setChannelModels: (projectId, channel, models) => {
     const project = get().projects.find((p) => p.id === projectId);
     if (!project) return;
-    const settings = { ...((project.ai_model_settings ?? {}) as Record<string, unknown>) };
+    const settings = { ...((project.ai_model_settings ?? {}) as unknown as Record<string, unknown>) };
     const channels = { ...((settings.channels ?? {}) as Record<string, Record<string, string>>) };
     channels[channel] = { ...channels[channel], ...models };
     settings.channels = channels;
@@ -1163,85 +1440,4 @@ export const useProjectStore = create<ProjectState>()(persist((set, get) => ({
   setFilterStatus: (status) => set({ filterStatus: status }),
   setSortBy: (sortBy) => set({ sortBy }),
   setSortOrder: (order) => set({ sortOrder: order }),
-}), {
-  name: 'contentflow-store',
-  storage: idbStorage,
-  partialize: (state) => ({
-    projects: state.projects,
-    contents: state.contents,
-    baseArticles: state.baseArticles,
-    blogContents: state.blogContents,
-    blogCards: state.blogCards,
-    instagramContents: state.instagramContents,
-    instagramCards: state.instagramCards,
-    threadsContents: state.threadsContents,
-    threadsCards: state.threadsCards,
-    youtubeContents: state.youtubeContents,
-    youtubeCards: state.youtubeCards,
-    strategies: state.strategies,
-    selectedProjectId: state.selectedProjectId,
-    selectedContentId: state.selectedContentId,
-  }),
-  onRehydrateStorage: () => {
-    // IndexedDB 복원 완료 후 R2에서 최신 데이터 로드
-    return (_state, error) => {
-      if (error) return;
-      loadFromCloud();
-    };
-  },
 }));
-
-// ─── R2 클라우드 동기화 ───
-
-const SYNC_FIELDS = [
-  'projects', 'contents', 'baseArticles',
-  'blogContents', 'blogCards',
-  'instagramContents', 'instagramCards',
-  'threadsContents', 'threadsCards',
-  'youtubeContents', 'youtubeCards',
-  'strategies', 'selectedProjectId', 'selectedContentId',
-] as const;
-
-function getPartialState() {
-  const state = useProjectStore.getState();
-  const partial: Record<string, unknown> = {};
-  for (const key of SYNC_FIELDS) partial[key] = state[key];
-  return partial;
-}
-
-let syncTimer: ReturnType<typeof setTimeout> | null = null;
-
-function saveToCloud() {
-  if (syncTimer) clearTimeout(syncTimer);
-  syncTimer = setTimeout(async () => {
-    try {
-      await fetch('/api/storage/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data: getPartialState() }),
-      });
-    } catch {
-      // 오프라인이면 무시 — IndexedDB에는 이미 저장됨
-    }
-  }, 3000); // 3초 디바운스
-}
-
-async function loadFromCloud() {
-  try {
-    const res = await fetch('/api/storage/sync');
-    if (!res.ok) return;
-    const { data } = await res.json();
-    if (!data) return;
-
-    // R2 데이터가 로컬보다 프로젝트가 더 많으면 R2 데이터 사용
-    const local = useProjectStore.getState();
-    if (data.projects?.length > 0 && data.projects.length >= (local.projects?.length ?? 0)) {
-      useProjectStore.setState(data);
-    }
-  } catch {
-    // 실패 시 무시 — 로컬 데이터 유지
-  }
-}
-
-// 스토어 변경 구독 → 자동 클라우드 저장
-useProjectStore.subscribe(saveToCloud);
