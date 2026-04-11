@@ -36,8 +36,8 @@ export function ChannelModelSelector({
   const hasImageSettings = showImageSettings && showImageModel;
 
   return (
-    <div className="space-y-2">
-      {/* Row 1: Models */}
+    <div>
+      {/* All settings in one row */}
       <div className="flex items-center gap-2 flex-wrap">
         <div className="flex items-center gap-1.5">
           <Cpu size={14} className="text-muted-foreground shrink-0" />
@@ -67,11 +67,8 @@ export function ChannelModelSelector({
             </Select>
           </div>
         )}
-      </div>
-
-      {/* Row 2: Image settings (aspect ratio + style) */}
       {hasImageSettings && (
-        <div className="flex items-center gap-2 flex-wrap">
+        <>
           {onAspectRatioChange && (
             <div className="flex items-center gap-1.5">
               <RectangleHorizontal size={14} className="text-muted-foreground shrink-0" />
@@ -95,8 +92,9 @@ export function ChannelModelSelector({
               <ImageStyleSelector value={imageStyle || ''} onChange={onImageStyleChange} compact />
             </div>
           )}
-        </div>
+        </>
       )}
+      </div>
     </div>
   );
 }

@@ -99,8 +99,8 @@ export function ContentTabs() {
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      {/* Tab Bar + Publish */}
-      <div className="border-b border-border bg-background flex items-center">
+      {/* Tab Bar */}
+      <div className="border-b border-border bg-background">
         <nav className="flex gap-1 px-4">
           {tabs.map((tab) => (
             <button
@@ -118,37 +118,6 @@ export function ContentTabs() {
             </button>
           ))}
         </nav>
-
-        {/* Publish buttons — right side */}
-        {channel && (
-          <div className="ml-auto pr-4 flex items-center gap-2">
-            {channel === 'naver_blog' ? (
-              <Button size="sm" variant="outline" className="h-7 text-xs gap-1">
-                📋 복사
-              </Button>
-            ) : (
-              <>
-                <Button
-                  size="sm" variant="outline"
-                  className={cn('h-7 text-xs gap-1', !isConnected && 'opacity-60')}
-                  onClick={() => !isConnected ? setShowConnectDialog(true) : null}
-                >
-                  <Clock className="w-3 h-3" /> 예약
-                </Button>
-                <Button
-                  size="sm"
-                  className={cn('h-7 text-xs gap-1', !isConnected && 'opacity-60')}
-                  onClick={handlePublish}
-                >
-                  <Send className="w-3 h-3" /> 발행
-                </Button>
-                {!isConnected && (
-                  <Link2Off className="w-3.5 h-3.5 text-muted-foreground" />
-                )}
-              </>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Tab Content */}
@@ -160,6 +129,39 @@ export function ContentTabs() {
         {activeTab === 'threads' && <ThreadsPanel />}
         {activeTab === 'youtube' && <YoutubePanel />}
       </div>
+
+      {/* Publish Bar — bottom */}
+      {channel && (
+        <div className="border-t border-border bg-card px-4 py-2.5 flex items-center justify-end gap-2 shrink-0">
+          {channel === 'naver_blog' ? (
+            <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5">
+              📋 네이버 포맷 복사
+            </Button>
+          ) : (
+            <>
+              {!isConnected && (
+                <span className="text-xs text-muted-foreground mr-2 flex items-center gap-1">
+                  <Link2Off className="w-3 h-3" /> 채널 미연결
+                </span>
+              )}
+              <Button
+                size="sm" variant="outline"
+                className={cn('h-8 text-xs gap-1.5', !isConnected && 'opacity-60')}
+                onClick={() => !isConnected ? setShowConnectDialog(true) : null}
+              >
+                <Clock className="w-3.5 h-3.5" /> 예약 발행
+              </Button>
+              <Button
+                size="sm"
+                className={cn('h-8 text-xs gap-1.5', !isConnected && 'opacity-60')}
+                onClick={handlePublish}
+              >
+                <Send className="w-3.5 h-3.5" /> 발행
+              </Button>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Channel Connection Dialog */}
       <Dialog open={showConnectDialog} onOpenChange={setShowConnectDialog}>
