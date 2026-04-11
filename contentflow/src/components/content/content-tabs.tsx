@@ -9,6 +9,7 @@ import { BlogPanel } from './blog-panel';
 import { CardNewsPanel } from './cardnews-panel';
 import { ThreadsPanel } from './threads-panel';
 import { YoutubePanel } from './youtube-panel';
+import { LanguageSelector } from './language-selector';
 
 type TabId = 'base-article' | 'blog' | 'cardnews' | 'threads' | 'youtube';
 
@@ -53,6 +54,9 @@ export function ContentTabs() {
           ))}
         </nav>
       </div>
+
+      {/* Language Selector */}
+      <LanguageSelector />
 
       {/* Tab Content */}
       <div className="flex-1 overflow-y-auto p-6 bg-muted/30">

@@ -11,6 +11,7 @@ interface UIState {
   filterStatus: string
   sortBy: 'name' | 'date'
   sortOrder: 'asc' | 'desc'
+  selectedLanguage: string
 
   selectProject: (id: string | null) => void
   selectContent: (id: string | null) => void
@@ -22,6 +23,7 @@ interface UIState {
   setFilterStatus: (status: string) => void
   setSortBy: (sort: 'name' | 'date') => void
   setSortOrder: (order: 'asc' | 'desc') => void
+  setSelectedLanguage: (lang: string) => void
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -35,6 +37,7 @@ export const useUIStore = create<UIState>((set) => ({
   filterStatus: 'all',
   sortBy: 'date',
   sortOrder: 'desc',
+  selectedLanguage: 'ko',
 
   selectProject: (id) => set({ selectedProjectId: id, selectedContentId: null, showProjectSettings: false }),
   selectContent: (id) => set({ selectedContentId: id, showProjectSettings: false }),
@@ -46,4 +49,5 @@ export const useUIStore = create<UIState>((set) => ({
   setFilterStatus: (status) => set({ filterStatus: status }),
   setSortBy: (sort) => set({ sortBy: sort }),
   setSortOrder: (order) => set({ sortOrder: order }),
+  setSelectedLanguage: (lang) => set({ selectedLanguage: lang }),
 }))
