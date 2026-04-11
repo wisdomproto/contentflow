@@ -192,6 +192,13 @@ export interface BlogContent {
   seo_score: number | null;
   seo_details: Record<string, unknown> | null;
   naver_keywords: Record<string, unknown> | null;
+  meta_description: string | null;
+  url_slug: string | null;
+  primary_keyword: string | null;
+  secondary_keywords: string[] | null;
+  search_intent: string | null;
+  heading_structure: string | null;
+  channel: string | null;
   status: ContentStatus;
   published_url: string | null;
   published_at: string | null;

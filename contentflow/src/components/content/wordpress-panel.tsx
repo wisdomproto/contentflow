@@ -99,17 +99,19 @@ function WordpressPanelInner({ blogContent, content, project, hasBaseArticle, ch
   }, [cards.length]);
 
   // Keyword fields
-  const [primaryKeyword, setPrimaryKeyword] = useState(content.tags?.[0] ?? '');
-  const [secondaryKeywords, setSecondaryKeywords] = useState(content.tags?.slice(1)?.join(', ') ?? '');
-  const [searchIntent, setSearchIntent] = useState<string>('informational');
+  const [primaryKeyword, setPrimaryKeyword] = useState(blogContent.primary_keyword ?? content.tags?.[0] ?? '');
+  const [secondaryKeywords, setSecondaryKeywords] = useState(
+    blogContent.secondary_keywords?.join(', ') ?? content.tags?.slice(1)?.join(', ') ?? ''
+  );
+  const [searchIntent, setSearchIntent] = useState<string>(blogContent.search_intent ?? 'informational');
 
   // Structure fields
-  const [headingStructure, setHeadingStructure] = useState('');
+  const [headingStructure, setHeadingStructure] = useState(blogContent.heading_structure ?? '');
 
   // SEO meta fields
   const [metaTitle, setMetaTitle] = useState(blogContent.seo_title ?? '');
-  const [metaDescription, setMetaDescription] = useState('');
-  const [urlSlug, setUrlSlug] = useState('');
+  const [metaDescription, setMetaDescription] = useState(blogContent.meta_description ?? '');
+  const [urlSlug, setUrlSlug] = useState(blogContent.url_slug ?? '');
   const [structureGenerating, setStructureGenerating] = useState(false);
   const [keywordGenerating, setKeywordGenerating] = useState(false);
 
@@ -297,6 +299,12 @@ Return ONLY valid JSON (no explanation):
                     if (parsed.primaryKeyword) setPrimaryKeyword(parsed.primaryKeyword);
                     if (parsed.secondaryKeywords) setSecondaryKeywords(parsed.secondaryKeywords.join(', '));
                     if (parsed.searchIntent) setSearchIntent(parsed.searchIntent);
+                    // Save to DB immediately after AI recommendation
+                    updateBlogContent(blogContent.id, {
+                      primary_keyword: parsed.primaryKeyword || null,
+                      secondary_keywords: parsed.secondaryKeywords || [],
+                      search_intent: parsed.searchIntent || null,
+                    });
                   }
                 } catch (err) {
                   console.error('Keyword generation error:', err);
@@ -353,7 +361,18 @@ Return ONLY valid JSON (no explanation):
             </div>
           </div>
           <div className="flex justify-end">
-            <Button size="sm" onClick={() => setCurrentStep(2)} disabled={!primaryKeyword.trim()}>
+            <Button
+              size="sm"
+              onClick={() => {
+                updateBlogContent(blogContent.id, {
+                  primary_keyword: primaryKeyword || null,
+                  secondary_keywords: secondaryKeywords.split(',').map(k => k.trim()).filter(Boolean),
+                  search_intent: searchIntent,
+                });
+                setCurrentStep(2);
+              }}
+              disabled={!primaryKeyword.trim()}
+            >
               다음: 구조 설계 →
             </Button>
           </div>
@@ -397,6 +416,13 @@ Return ONLY valid JSON (no explanation) with this exact structure:
                     if (parsed.metaDescription) setMetaDescription(parsed.metaDescription);
                     if (parsed.urlSlug) setUrlSlug(parsed.urlSlug);
                     if (parsed.headingStructure) setHeadingStructure(parsed.headingStructure);
+                    // Save to DB immediately after AI structure generation
+                    updateBlogContent(blogContent.id, {
+                      seo_title: parsed.metaTitle || null,
+                      meta_description: parsed.metaDescription || null,
+                      url_slug: parsed.urlSlug || null,
+                      heading_structure: parsed.headingStructure || null,
+                    });
                   }
                 } catch (err) {
                   console.error('Structure generation error:', err);
@@ -493,7 +519,20 @@ Return ONLY valid JSON (no explanation) with this exact structure:
 
           <div className="flex justify-between">
             <Button size="sm" variant="outline" onClick={() => setCurrentStep(1)}>← 키워드 설정</Button>
-            <Button size="sm" onClick={() => setCurrentStep(3)}>다음: AI 생성 →</Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                updateBlogContent(blogContent.id, {
+                  seo_title: metaTitle || null,
+                  meta_description: metaDescription || null,
+                  url_slug: urlSlug || null,
+                  heading_structure: headingStructure || null,
+                });
+                setCurrentStep(3);
+              }}
+            >
+              다음: AI 생성 →
+            </Button>
           </div>
         </div>
       )}
