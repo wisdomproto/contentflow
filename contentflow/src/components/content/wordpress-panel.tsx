@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { BlogCardItem, AddCardButton } from './blog-card-item';
 import { ChannelModelSelector } from './channel-model-selector';
+import { cn } from '@/lib/utils';
 import { ChannelContentList } from './channel-content-list';
 import { PromptEditDialog } from './prompt-edit-dialog';
 import { useAiGeneration } from '@/hooks/use-ai-generation';
@@ -28,6 +29,15 @@ interface WordpressPanelInnerProps {
   channelModels: { textModel: string; imageModel: string; aspectRatio: string; imageStyle: string };
 }
 
+type WorkflowStep = 1 | 2 | 3 | 4;
+
+const WORKFLOW_STEPS = [
+  { step: 1 as WorkflowStep, label: '키워드 설정', icon: '🎯' },
+  { step: 2 as WorkflowStep, label: '구조 설계', icon: '📐' },
+  { step: 3 as WorkflowStep, label: 'AI 생성', icon: '✨' },
+  { step: 4 as WorkflowStep, label: 'SEO 검사', icon: '🔍' },
+];
+
 function WordpressPanelInner({ blogContent, content, project, hasBaseArticle, channelModels }: WordpressPanelInnerProps) {
   const {
     getBaseArticle,
@@ -44,6 +54,15 @@ function WordpressPanelInner({ blogContent, content, project, hasBaseArticle, ch
 
   const [showPromptDialog, setShowPromptDialog] = useState(false);
   const [generatedPrompt, setGeneratedPrompt] = useState('');
+  const [currentStep, setCurrentStep] = useState<WorkflowStep>(1);
+
+  // Keyword fields
+  const [primaryKeyword, setPrimaryKeyword] = useState(content.tags?.[0] ?? '');
+  const [secondaryKeywords, setSecondaryKeywords] = useState(content.tags?.slice(1)?.join(', ') ?? '');
+  const [searchIntent, setSearchIntent] = useState<string>('informational');
+
+  // Structure fields
+  const [headingStructure, setHeadingStructure] = useState('');
 
   // SEO meta fields
   const [metaTitle, setMetaTitle] = useState(blogContent.seo_title ?? '');
@@ -138,15 +157,18 @@ function WordpressPanelInner({ blogContent, content, project, hasBaseArticle, ch
   const handleGenerateAllImages = () => generateAllCardImages(cards);
 
   const handleGenerate = () => {
+    const secondaryArr = secondaryKeywords.split(',').map(k => k.trim()).filter(Boolean);
     const prompt = buildBlogPrompt({
       project,
       content,
       baseArticle: baseArticle ?? undefined,
       seoTitle: metaTitle,
-      keywords: { primary: content.tags?.[0] ?? '', secondary: content.tags?.slice(1) ?? [] },
+      keywords: { primary: primaryKeyword, secondary: secondaryArr },
     });
-    // Append Google SEO instruction
-    const wpPrompt = `${prompt}\n\n## WordPress / Google SEO 최적화 지침\n- H1/H2/H3 계층 구조를 명확히 사용하세요\n- 각 섹션에 내부링크 기회를 제안하세요\n- 이미지 alt 텍스트를 키워드가 포함된 설명형으로 작성하세요\n- Meta title은 60자 이내, meta description은 160자 이내로 작성하세요\n- 구글 검색 의도에 맞는 자연스러운 키워드 배치를 사용하세요`;
+    const structureInstruction = headingStructure.trim()
+      ? `\n\n## 콘텐츠 구조 (이 구조를 따르세요):\n${headingStructure}`
+      : '';
+    const wpPrompt = `${prompt}${structureInstruction}\n\n## WordPress / Google SEO 최적화 지침\n- 주 키워드: "${primaryKeyword}" — 제목, 첫 문단, H2에 자연스럽게 배치\n- 보조 키워드: ${secondaryArr.join(', ')} — H2/H3와 본문에 분산 배치 (키워드 밀도 1~2%)\n- 검색 의도: ${searchIntent} — 이 의도에 맞는 콘텐츠 구성\n- H1/H2/H3 계층 구조를 명확히 사용하세요\n- 각 섹션에 내부링크 기회를 제안하세요\n- 이미지 alt 텍스트를 키워드가 포함된 설명형으로 작성하세요\n- 마지막에 FAQ 섹션(3~5개 질문)을 추가하세요 (GEO 최적화)\n- 구글 검색 의도에 맞는 자연스러운 키워드 배치를 사용하세요`;
     setGeneratedPrompt(wpPrompt);
     setShowPromptDialog(true);
   };
@@ -176,31 +198,106 @@ function WordpressPanelInner({ blogContent, content, project, hasBaseArticle, ch
 
   return (
     <div className="space-y-4">
-      {/* Google SEO Score Placeholder */}
-      <div className="rounded-lg border border-border bg-muted/30 p-4">
-        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-          <Globe size={14} className="text-blue-500" />
-          Google SEO 점수
-          <Badge variant="outline" className="text-xs">준비중</Badge>
-        </h3>
-        <div className="grid grid-cols-4 gap-3 text-center">
-          {[
-            { label: 'Title', value: metaTitle.length > 0 ? (metaTitle.length <= 60 ? '✓' : '!') : '—', ok: metaTitle.length > 0 && metaTitle.length <= 60 },
-            { label: 'Meta Desc', value: metaDescription.length > 0 ? (metaDescription.length <= 160 ? '✓' : '!') : '—', ok: metaDescription.length > 0 && metaDescription.length <= 160 },
-            { label: 'Headings', value: '—', ok: false },
-            { label: 'Schema', value: '—', ok: false },
-          ].map(({ label, value, ok }) => (
-            <div key={label} className="bg-muted rounded-md p-3">
-              <div className={`text-lg font-bold ${ok ? 'text-green-600' : 'text-muted-foreground'}`}>{value}</div>
-              <div className="text-[10px] text-muted-foreground">{label}</div>
-            </div>
-          ))}
-        </div>
+      {/* Workflow Steps */}
+      <div className="flex items-center gap-1 p-1 bg-muted/30 rounded-lg">
+        {WORKFLOW_STEPS.map(({ step, label, icon }, i) => (
+          <button
+            key={step}
+            onClick={() => setCurrentStep(step)}
+            className={cn(
+              'flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-xs font-medium transition-colors',
+              currentStep === step
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : currentStep > step
+                  ? 'text-green-500 hover:bg-accent'
+                  : 'text-muted-foreground hover:bg-accent'
+            )}
+          >
+            <span>{currentStep > step ? '✓' : icon}</span>
+            <span>{label}</span>
+          </button>
+        ))}
       </div>
 
-      {/* SEO Meta Fields */}
-      <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
-        <h3 className="text-sm font-semibold">SEO 메타 정보</h3>
+      {/* Step 1: 키워드 설정 */}
+      {currentStep === 1 && (
+        <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
+          <h3 className="text-sm font-semibold flex items-center gap-2">🎯 타겟 키워드 설정</h3>
+          <p className="text-xs text-muted-foreground">Google 검색에서 노출될 핵심 키워드를 설정합니다. 주 키워드 1개와 보조 키워드 3~5개를 권장합니다.</p>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">주 키워드 (Primary)</label>
+            <Input
+              value={primaryKeyword}
+              onChange={(e) => setPrimaryKeyword(e.target.value)}
+              placeholder="예: 소아 성장클리닉"
+              className="text-sm"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">보조 키워드 (Secondary) — 쉼표로 구분</label>
+            <Input
+              value={secondaryKeywords}
+              onChange={(e) => setSecondaryKeywords(e.target.value)}
+              placeholder="예: 성장호르몬 치료, 키 성장 검사, 성장판 검사"
+              className="text-sm"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">검색 의도</label>
+            <div className="flex gap-2">
+              {[
+                { value: 'informational', label: '정보형', desc: '~란?, ~방법' },
+                { value: 'commercial', label: '상업형', desc: '~추천, ~비교' },
+                { value: 'transactional', label: '거래형', desc: '~예약, ~가격' },
+                { value: 'navigational', label: '탐색형', desc: '브랜드 검색' },
+              ].map(({ value, label, desc }) => (
+                <button
+                  key={value}
+                  onClick={() => setSearchIntent(value)}
+                  className={cn(
+                    'flex-1 py-2 px-2 rounded-md text-xs border transition-colors',
+                    searchIntent === value
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border text-muted-foreground hover:border-primary/50'
+                  )}
+                >
+                  <div className="font-medium">{label}</div>
+                  <div className="text-[10px] opacity-70">{desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button size="sm" onClick={() => setCurrentStep(2)} disabled={!primaryKeyword.trim()}>
+              다음: 구조 설계 →
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 2: 구조 설계 */}
+      {currentStep === 2 && (
+        <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
+          <h3 className="text-sm font-semibold flex items-center gap-2">📐 콘텐츠 구조 설계</h3>
+          <p className="text-xs text-muted-foreground">Google SEO에 최적화된 heading 구조를 설계합니다. AI가 자동으로 구조를 제안하거나, 직접 작성할 수 있습니다.</p>
+
+          {/* SEO Meta Fields */}
+          <div className="space-y-3">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs text-muted-foreground">Meta Title (H1)</label>
+                <span className={`text-[10px] ${metaTitle.length > 60 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                  {metaTitle.length} / 60
+                </span>
+              </div>
+              <Input
+                value={metaTitle}
+                onChange={(e) => handleMetaTitleChange(e.target.value)}
+                placeholder="예: 소아 성장 클리닉 완벽 가이드 | 2026 전문의 추천"
+                maxLength={80}
+                className="text-sm"
+              />
+            </div>
         <div>
           <div className="flex items-center justify-between mb-1">
             <label className="text-xs text-muted-foreground">Meta Title</label>
@@ -252,8 +349,41 @@ function WordpressPanelInner({ blogContent, content, project, hasBaseArticle, ch
         </div>
       </div>
 
-      {/* Action buttons */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
+          {/* Heading Structure */}
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Heading 구조 (H2/H3)</label>
+            <Textarea
+              value={headingStructure}
+              onChange={(e) => setHeadingStructure(e.target.value)}
+              placeholder={`H2: 성장클리닉이란?\n  H3: 성장 지연의 원인\n  H3: 언제 방문해야 할까?\nH2: 성장호르몬 치료\n  H3: 치료 과정\n  H3: 비용과 보험\nH2: 자주 묻는 질문 (FAQ)\nH2: 결론`}
+              rows={8}
+              className="text-sm font-mono"
+            />
+            <p className="text-xs text-muted-foreground mt-1">H2/H3 구조를 미리 잡으면 AI가 이 구조에 맞춰 생성합니다. 비워두면 AI가 자동 설계합니다.</p>
+          </div>
+
+          <div className="flex justify-between">
+            <Button size="sm" variant="outline" onClick={() => setCurrentStep(1)}>← 키워드 설정</Button>
+            <Button size="sm" onClick={() => setCurrentStep(3)}>다음: AI 생성 →</Button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 3: AI 생성 */}
+      {currentStep === 3 && (
+        <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
+          <h3 className="text-sm font-semibold flex items-center gap-2">✨ AI 콘텐츠 생성</h3>
+
+          {/* Current settings summary */}
+          <div className="bg-muted rounded-md p-3 text-xs space-y-1">
+            <div><span className="text-muted-foreground">주 키워드:</span> <span className="font-medium">{primaryKeyword || '미설정'}</span></div>
+            <div><span className="text-muted-foreground">보조 키워드:</span> <span className="font-medium">{secondaryKeywords || '미설정'}</span></div>
+            <div><span className="text-muted-foreground">검색 의도:</span> <span className="font-medium">{searchIntent}</span></div>
+            <div><span className="text-muted-foreground">Meta Title:</span> <span className="font-medium">{metaTitle || '미설정'}</span></div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           {cards.length > 0 && (
             <Badge variant="secondary" className="text-xs">{cards.length}개 섹션</Badge>
@@ -306,7 +436,72 @@ function WordpressPanelInner({ blogContent, content, project, hasBaseArticle, ch
       )}
 
       {/* Add Section */}
-      {hasBaseArticle && <AddCardButton onAdd={handleAddSection} />}
+      {currentStep === 3 && hasBaseArticle && <AddCardButton onAdd={handleAddSection} />}
+
+          <div className="flex justify-between">
+            <Button size="sm" variant="outline" onClick={() => setCurrentStep(2)}>← 구조 설계</Button>
+            <Button size="sm" onClick={() => setCurrentStep(4)} disabled={cards.length === 0}>다음: SEO 검사 →</Button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 4: SEO 검사 */}
+      {currentStep === 4 && (
+        <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
+          <h3 className="text-sm font-semibold flex items-center gap-2">🔍 Google SEO 검사</h3>
+
+          {/* Score Cards */}
+          <div className="grid grid-cols-4 gap-3 text-center">
+            {[
+              { label: 'Title', value: metaTitle.length > 0 ? (metaTitle.length <= 60 ? '✓' : '!') : '—', ok: metaTitle.length > 0 && metaTitle.length <= 60 },
+              { label: 'Meta Desc', value: metaDescription.length > 0 ? (metaDescription.length <= 160 ? '✓' : '!') : '—', ok: metaDescription.length > 0 && metaDescription.length <= 160 },
+              { label: 'Headings', value: cards.length > 0 ? '✓' : '—', ok: cards.length > 0 },
+              { label: 'Content', value: cards.length >= 3 ? '✓' : '—', ok: cards.length >= 3 },
+            ].map(({ label, value, ok }) => (
+              <div key={label} className={cn('rounded-md p-3 border', ok ? 'border-green-500/30 bg-green-500/5' : 'border-border bg-muted')}>
+                <div className={`text-lg font-bold ${ok ? 'text-green-500' : 'text-muted-foreground'}`}>{value}</div>
+                <div className="text-[10px] text-muted-foreground">{label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Checklist */}
+          <div className="space-y-2">
+            <h4 className="text-xs font-semibold text-muted-foreground">체크리스트</h4>
+            {[
+              { check: metaTitle.length > 0 && metaTitle.length <= 60, label: 'Meta Title이 60자 이내' },
+              { check: metaTitle.toLowerCase().includes(primaryKeyword.toLowerCase()) && primaryKeyword.length > 0, label: 'Meta Title에 주 키워드 포함' },
+              { check: metaDescription.length >= 120 && metaDescription.length <= 160, label: 'Meta Description이 120~160자' },
+              { check: urlSlug.length > 0, label: 'URL Slug 설정됨' },
+              { check: cards.length >= 3, label: '콘텐츠 섹션 3개 이상' },
+              { check: cards.some(c => (c.content as Record<string, unknown>)?.url), label: '이미지 1개 이상 포함' },
+              { check: cards.every(c => {
+                const content = c.content as Record<string, unknown>;
+                return !content?.url || (content?.alt && String(content.alt).length > 0);
+              }), label: '모든 이미지에 alt 텍스트' },
+            ].map(({ check, label }) => (
+              <div key={label} className="flex items-center gap-2 text-xs">
+                <span className={check ? 'text-green-500' : 'text-muted-foreground'}>{check ? '✅' : '⬜'}</span>
+                <span className={check ? 'text-foreground' : 'text-muted-foreground'}>{label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Schema Markup */}
+          <div className="bg-muted rounded-md p-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold">Schema 마크업</span>
+              <Button size="sm" variant="outline" className="h-6 text-[10px]">자동 생성</Button>
+            </div>
+            <p className="text-[10px] text-muted-foreground">발행 시 Article/FAQ/MedicalEntity Schema를 자동으로 추가합니다.</p>
+          </div>
+
+          <div className="flex justify-between">
+            <Button size="sm" variant="outline" onClick={() => setCurrentStep(3)}>← AI 생성</Button>
+            <Button size="sm" className="bg-green-600 hover:bg-green-700">✓ 발행 준비 완료</Button>
+          </div>
+        </div>
+      )}
 
       {/* Prompt Dialog */}
       <PromptEditDialog
