@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { ChevronDown, Plus, Trash2, Pencil, Check } from 'lucide-react';
+import { ChevronDown, Plus, Trash2, Pencil, Check, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -14,6 +14,7 @@ interface ChannelContentListProps<T> {
   onTitleChange: (itemId: string, title: string) => void;
   onAdd: () => string; // returns new item id
   onDelete: (itemId: string) => void;
+  onAddToQueue?: (itemId: string) => void;
   addLabel: string;
   renderContent: (item: T) => React.ReactNode;
 }
@@ -25,6 +26,7 @@ export function ChannelContentList<T>({
   onTitleChange,
   onAdd,
   onDelete,
+  onAddToQueue,
   addLabel,
   renderContent,
 }: ChannelContentListProps<T>) {
@@ -145,6 +147,18 @@ export function ChannelContentList<T>({
                   <Trash2 size={12} />
                 </Button>
               </div>
+
+              {/* Publish queue button — right end */}
+              {onAddToQueue && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => { e.stopPropagation(); onAddToQueue(id); }}
+                  className="h-6 text-[10px] gap-1 ml-auto shrink-0"
+                >
+                  <Send size={10} /> 발행 큐
+                </Button>
+              )}
             </div>
 
             {/* Content */}
