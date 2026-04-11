@@ -149,7 +149,8 @@
       "Bash(head -5 \"C:\\\\projects\\\\seomachine/.claude/agents\"/*.md)",
       "Bash(bash C:/projects/ContentFlow/.claude/skills/brainstorming/scripts/start-server.sh --project-dir C:/projects/ContentFlow)",
       "Bash(cat C:/projects/ContentFlow/.superpowers/brainstorm/*/.server-info)",
-      "Bash(xargs -I {} basename {})"
+      "Bash(xargs -I {} basename {})",
+      "Bash(npx vitest:*)"
     ]
   }
 }
