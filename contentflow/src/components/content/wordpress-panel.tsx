@@ -19,6 +19,39 @@ import { Globe } from 'lucide-react';
 import { generateId } from '@/lib/utils';
 import type { Content, Project, BlogContent, BlogCard } from '@/types/database';
 
+// Helper: fetch AI generate (SSE) and return full text
+async function fetchAiGenerate(prompt: string, model: string): Promise<string> {
+  const res = await fetch('/api/ai/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt, model }),
+  });
+  const reader = res.body?.getReader();
+  if (!reader) throw new Error('No reader');
+  const decoder = new TextDecoder();
+  let fullText = '';
+  let buffer = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        const data = line.slice(6);
+        if (data === '[DONE]') continue;
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed.text) fullText += parsed.text;
+          if (parsed.error) throw new Error(parsed.error);
+        } catch {}
+      }
+    }
+  }
+  return fullText;
+}
+
 // ─── Inner: 개별 WordPress 콘텐츠 ────────────────────────────────
 
 interface WordpressPanelInnerProps {
@@ -248,20 +281,7 @@ Return ONLY valid JSON (no explanation):
   "secondaryKeywords": ["보조 키워드1", "보조 키워드2", "보조 키워드3", "보조 키워드4", "보조 키워드5"],
   "searchIntent": "informational|commercial|transactional|navigational"
 }`;
-                  const res = await fetch('/api/ai/generate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt, model: channelModels.textModel }),
-                  });
-                  const reader = res.body?.getReader();
-                  if (!reader) throw new Error('No reader');
-                  const decoder = new TextDecoder();
-                  let fullText = '';
-                  while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    fullText += decoder.decode(value);
-                  }
+                  const fullText = await fetchAiGenerate(prompt, channelModels.textModel);
                   const jsonMatch = fullText.match(/\{[\s\S]*\}/);
                   if (jsonMatch) {
                     const parsed = JSON.parse(jsonMatch[0]);
@@ -360,20 +380,7 @@ Return ONLY valid JSON (no explanation) with this exact structure:
   "urlSlug": "english-url-slug",
   "headingStructure": "H2: 제목1\\n  H3: 소제목1\\n  H3: 소제목2\\nH2: 제목2\\n  H3: 소제목3\\nH2: FAQ\\nH2: 결론"
 }`;
-                  const res = await fetch('/api/ai/generate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt, model: channelModels.textModel }),
-                  });
-                  const reader = res.body?.getReader();
-                  if (!reader) throw new Error('No reader');
-                  const decoder = new TextDecoder();
-                  let fullText = '';
-                  while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    fullText += decoder.decode(value);
-                  }
+                  const fullText = await fetchAiGenerate(prompt, channelModels.textModel);
                   const jsonMatch = fullText.match(/\{[\s\S]*\}/);
                   if (jsonMatch) {
                     const parsed = JSON.parse(jsonMatch[0]);
