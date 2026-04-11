@@ -2,7 +2,6 @@
 
 import { ProjectSwitcher } from './project-switcher'
 import { SidebarNavItem } from './sidebar-nav-item'
-import { Settings } from 'lucide-react'
 
 const navGroups = [
   {
@@ -56,9 +55,6 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className="p-2 border-t border-border space-y-0.5">
-        <SidebarNavItem href="/settings" icon={<Settings size={16} />} label="설정" />
-      </div>
     </aside>
   )
 }
