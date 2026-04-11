@@ -1,0 +1,24 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "contentflow-dev",
+      "runtimeExecutable": "C:/Program Files/nodejs/node.exe",
+      "runtimeArgs": ["node_modules/next/dist/bin/next", "dev"],
+      "port": 3000,
+      "cwd": "contentflow"
+    },
+    {
+      "name": "html-preview",
+      "runtimeExecutable": "C:/Program Files/nodejs/node.exe",
+      "runtimeArgs": ["node_modules/.bin/serve", "-l", "3001", "-s", "."],
+      "port": 3001
+    },
+    {
+      "name": "homepage-preview",
+      "runtimeExecutable": "C:/Program Files/nodejs/node.exe",
+      "runtimeArgs": ["node_modules/serve/build/main.js", "-l", "3002", "-s", "C:/Users/101024/OneDrive/1. projects (new)/1. SB HC/4. 마케팅 전략/homepage"],
+      "port": 3002
+    }
+  ]
+}

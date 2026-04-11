@@ -1,0 +1,9 @@
+node_modules/
+.next/
+.env.local
+.env*.local
+*.log
+.superpowers/brainstorm/
+contentflow/node_modules/
+contentflow/.next/
+contentflow/.env.local

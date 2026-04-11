@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>연세새봄의원 187 성장클리닉 — 통합 마케팅 전략</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
+:root{--teal:#0F6E56;--teal-l:#E8F5F0;--amber:#BA7517;--amber-l:#FFF8E8;--coral:#993C1D;--coral-l:#FDF0EE;--purple:#534AB7;--purple-l:#F2EFFD;--gray:#444441;--gray-l:#F5F5F3;--bg:#FAFAF8;--surface:#FFF;--border:#E8E6E0;--text:#1A1A18;--muted:#6B6960;--light:#9B9890;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;}
+nav{position:sticky;top:0;z-index:100;background:rgba(250,250,248,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;height:52px;overflow-x:auto;}
+.nav-logo{font-weight:900;font-size:15px;color:var(--teal);margin-right:24px;white-space:nowrap;}
+.nav-links{display:flex;gap:0;overflow-x:auto;}
+.nav-links a{padding:0 12px;height:52px;display:flex;align-items:center;font-size:12px;font-weight:500;color:var(--muted);text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;transition:all .15s;}
+.nav-links a:hover{color:var(--text);}
+.nav-links a.active{color:var(--teal);border-bottom-color:var(--teal);}
+.container{max-width:1120px;margin:0 auto;padding:0 32px;}
+.hero{background:linear-gradient(135deg,#0F6E56 0%,#0D5A47 55%,#1A3A32 100%);padding:56px 32px 48px;color:white;}
+.hero-inner{max-width:1120px;margin:0 auto;}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500;margin-bottom:16px;}
+.hero h1{font-size:32px;font-weight:900;letter-spacing:-1px;margin-bottom:8px;line-height:1.2;}
+.hero p{font-size:14px;color:rgba(255,255,255,.72);max-width:600px;margin-bottom:24px;}
+.hero-stats{display:flex;gap:28px;flex-wrap:wrap;}
+.stat-num{font-size:26px;font-weight:900;letter-spacing:-1px;}
+.stat-lbl{font-size:11px;color:rgba(255,255,255,.58);margin-top:2px;}
+section{padding:48px 0;border-bottom:1px solid var(--border);}
+.section-tag{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--teal);margin-bottom:6px;}
+.section-title{font-size:24px;font-weight:900;letter-spacing:-.5px;}
+.section-sub{font-size:13px;color:var(--muted);margin-top:4px;}
+.section-header{margin-bottom:24px;}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;transition:box-shadow .2s;}
+.card:hover{box-shadow:0 4px 20px rgba(0,0,0,.07);}
+.card-label{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
+.card-title{font-size:15px;font-weight:700;margin-bottom:6px;}
+.card-desc{font-size:13px;color:var(--muted);line-height:1.65;}
+.sum-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:16px;}
+.sum-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
+.sum-num{font-size:26px;font-weight:900;letter-spacing:-1px;}
+.sum-lbl{font-size:12px;color:var(--muted);margin-top:2px;}
+.tip-box{background:var(--teal-l);border:1px solid #9FE1CB;border-radius:10px;padding:14px 18px;font-size:13px;color:#0A4F3D;margin-top:14px;}
+.tip-box strong{display:block;font-weight:700;margin-bottom:4px;}
+.warn-box{background:var(--amber-l);border:1px solid #E8C577;border-radius:10px;padding:14px 18px;font-size:13px;color:#7A4D0A;margin-top:12px;}
+.warn-box strong{display:block;font-weight:700;margin-bottom:4px;}
+.issue-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;}
+.issue-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;border-left:4px solid var(--coral);}
+.issue-card .issue-icon{font-size:20px;margin-bottom:6px;}
+.issue-card .issue-title{font-size:14px;font-weight:700;margin-bottom:4px;}
+.issue-card .issue-desc{font-size:12px;color:var(--muted);line-height:1.6;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:768px){.two-col{grid-template-columns:1fr;}}
+.cycle-row{display:flex;gap:0;margin-bottom:20px;flex-wrap:wrap;}
+.cycle-item{flex:1;min-width:120px;padding:14px;border:1px solid var(--border);border-right:none;background:var(--surface);}
+.cycle-item:first-child{border-radius:10px 0 0 10px;}
+.cycle-item:last-child{border-radius:0 10px 10px 0;border-right:1px solid var(--border);}
+.cycle-letter{font-size:22px;font-weight:900;margin-bottom:2px;}
+.cycle-name{font-size:13px;font-weight:700;margin-bottom:2px;}
+.cycle-desc{font-size:12px;color:var(--muted);}
+.schedule-table{width:100%;border-collapse:collapse;font-size:13px;}
+.schedule-table th{background:var(--gray-l);padding:8px 10px;font-size:11px;font-weight:700;color:var(--muted);text-align:center;border-bottom:2px solid var(--border);}
+.schedule-table th:first-child{text-align:left;}
+.schedule-table td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:center;}
+.schedule-table td:first-child{font-weight:700;text-align:left;}
+.sch-cell{display:inline-block;padding:2px 8px;border-radius:16px;font-size:11px;font-weight:600;white-space:nowrap;}
+.sch-teal{background:var(--teal-l);color:var(--teal);}
+.sch-pink{background:#FBEAF0;color:#993356;}
+.sch-gray{background:var(--gray-l);color:var(--gray);}
+.sch-red{background:#FCE8E8;color:#993333;}
+.sch-amber{background:var(--amber-l);color:var(--amber);}
+.sch-empty{color:var(--light);font-size:11px;}
+.sch-count{font-weight:900;font-size:15px;}
+.action-table{width:100%;border-collapse:collapse;font-size:13px;}
+.action-table th{background:var(--teal);color:white;padding:8px 10px;font-size:11px;font-weight:700;text-align:left;}
+.action-table td{padding:8px 10px;border-bottom:1px solid var(--border);}
+.action-table tr:hover td{background:#F9F9F7;}
+.p-now{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;background:#DCFCE7;color:#166534;}
+.p-soon{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;background:var(--amber-l);color:var(--amber);}
+.p-mid{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;background:var(--purple-l);color:var(--purple);}
+.metric-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+.metric-pill{padding:3px 10px;border-radius:14px;font-size:11px;font-weight:600;background:var(--gray-l);color:var(--gray);}
+.filter-bar{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;align-items:center;}
+.fbtn{padding:4px 12px;border-radius:18px;border:1.5px solid var(--border);cursor:pointer;font-size:12px;font-weight:600;color:var(--muted);background:var(--surface);transition:all .15s;font-family:'Noto Sans KR',sans-serif;}
+.fbtn:hover{border-color:var(--teal);color:var(--teal);}
+.fbtn.on{background:var(--teal);color:white;border-color:var(--teal);}
+.fcnt{font-size:12px;color:var(--muted);margin-left:auto;}
+.kw-table{width:100%;border-collapse:collapse;font-size:13px;}
+.kw-table th{padding:7px 10px;font-size:11px;font-weight:700;color:var(--muted);border-bottom:2px solid var(--border);text-align:left;white-space:nowrap;}
+.kw-table th.r{text-align:right;}
+.kw-table td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.kw-table tr:hover td{background:#F9F9F7;}
+.kw-table td.r{text-align:right;font-variant-numeric:tabular-nums;}
+.vol-bar{display:inline-block;height:6px;border-radius:3px;background:var(--teal);vertical-align:middle;margin-right:4px;}
+.comp-badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;white-space:nowrap;}
+.comp-high{background:#FCE8E8;color:#993333;}
+.comp-mid{background:var(--amber-l);color:var(--amber);}
+.comp-low{background:var(--teal-l);color:var(--teal);}
+.sbadge{display:inline-block;padding:2px 7px;border-radius:8px;font-size:11px;font-weight:600;white-space:nowrap;margin-right:2px;}
+.s-gold{background:#FFF3CD;color:#856404;}
+.s-core{background:#FCE8E8;color:#993333;}
+.s-habit{background:var(--purple-l);color:var(--purple);}
+.s-prod{background:var(--gray-l);color:var(--gray);}
+.topic-table{width:100%;border-collapse:collapse;font-size:13px;}
+.topic-table th{padding:7px 10px;font-size:11px;font-weight:700;color:var(--muted);border-bottom:2px solid var(--border);text-align:left;white-space:nowrap;}
+.topic-table td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top;}
+.topic-table tr:hover td{background:#F9F9F7;}
+.no-cell{font-size:11px;font-weight:700;color:var(--light);white-space:nowrap;}
+.status-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;white-space:nowrap;}
+.s-done{background:var(--teal-l);color:var(--teal);}
+.s-new{background:var(--purple-l);color:var(--purple);}
+.s-similar{background:var(--amber-l);color:var(--amber);}
+.cat-pill{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;font-weight:600;margin-right:4px;white-space:nowrap;}
+.cA{background:var(--teal-l);color:var(--teal);}
+.cB{background:var(--amber-l);color:var(--amber);}
+.cC{background:var(--coral-l);color:var(--coral);}
+.cD{background:var(--purple-l);color:var(--purple);}
+.cE{background:var(--gray-l);color:var(--gray);}
+.funnel-flow{display:flex;gap:0;margin:16px 0;flex-wrap:wrap;}
+.funnel-step{flex:1;min-width:110px;padding:14px 10px;text-align:center;background:var(--surface);border:1px solid var(--border);position:relative;}
+.funnel-step:first-child{border-radius:10px 0 0 10px;}
+.funnel-step:last-child{border-radius:0 10px 10px 0;}
+.funnel-step .f-icon{font-size:22px;margin-bottom:4px;}
+.funnel-step .f-title{font-size:12px;font-weight:700;margin-bottom:2px;}
+.funnel-step .f-desc{font-size:11px;color:var(--muted);line-height:1.4;}
+.funnel-arrow{position:absolute;right:-10px;top:50%;transform:translateY(-50%);z-index:2;color:var(--teal);font-size:16px;font-weight:900;}
+.kw-tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;margin:2px;white-space:nowrap;}
+footer{background:var(--text);color:rgba(255,255,255,.5);padding:24px 32px;text-align:center;font-size:12px;}
+footer strong{color:white;}
+details{border-bottom:1px solid var(--border);}
+details>summary{cursor:pointer;list-style:none;padding:20px 0;display:flex;align-items:center;gap:10px;}
+details>summary::-webkit-details-marker{display:none;}
+details>summary::before{content:'▶';font-size:10px;color:var(--muted);transition:transform .2s;flex-shrink:0;}
+details[open]>summary::before{transform:rotate(90deg);}
+details>summary .section-tag{margin-bottom:0;}
+details>summary:hover{opacity:.8;}
+details .section-content{padding-bottom:48px;}
+.hp-flow{display:flex;gap:0;margin:16px 0;flex-wrap:wrap;align-items:stretch;}
+.hp-step{flex:1;min-width:130px;padding:16px 12px;text-align:center;background:var(--surface);border:1px solid var(--border);position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.hp-step:first-child{border-radius:10px 0 0 10px;}
+.hp-step:last-child{border-radius:0 10px 10px 0;}
+.hp-step .hp-icon{font-size:24px;margin-bottom:6px;}
+.hp-step .hp-title{font-size:12px;font-weight:700;margin-bottom:2px;}
+.hp-step .hp-desc{font-size:11px;color:var(--muted);}
+.hp-arrow{position:absolute;right:-10px;top:50%;transform:translateY(-50%);z-index:2;color:var(--teal);font-size:16px;font-weight:900;}
+.hp-before-after{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:start;margin:16px 0;}
+.hp-before-after .hp-arrow-mid{display:flex;align-items:center;font-size:28px;color:var(--teal);font-weight:900;padding-top:30px;}
+
+/* === Phase Divider === */
+.phase-divider{padding:28px 0 0;border-bottom:none;}
+.phase-bar{max-width:1120px;margin:0 auto;padding:0 32px;}
+.phase-label{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:900;letter-spacing:0.5px;padding:6px 16px;border-radius:20px;color:white;}
+.phase-label .phase-num{font-size:15px;font-weight:900;margin-right:2px;}
+.phase-1 .phase-label{background:linear-gradient(135deg,#0F6E56,#0D5A47);}
+.phase-2 .phase-label{background:linear-gradient(135deg,#534AB7,#3F38A0);}
+.phase-3 .phase-label{background:linear-gradient(135deg,#BA7517,#9A6010);}
+.phase-4 .phase-label{background:linear-gradient(135deg,#993C1D,#7A3018);}
+
+/* === Strategy Map === */
+.strategy-map{background:var(--surface);border-bottom:1px solid var(--border);padding:40px 32px;}
+.strategy-map-inner{max-width:1120px;margin:0 auto;}
+.strategy-map-title{font-size:20px;font-weight:900;letter-spacing:-.5px;margin-bottom:4px;text-align:center;}
+.strategy-map-sub{font-size:12px;color:var(--muted);text-align:center;margin-bottom:24px;}
+.smap-phases{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.smap-phase{border-radius:12px;padding:16px 14px;position:relative;}
+.smap-phase-num{font-size:11px;font-weight:900;letter-spacing:1px;margin-bottom:6px;opacity:.7;}
+.smap-phase-title{font-size:15px;font-weight:900;margin-bottom:8px;line-height:1.3;}
+.smap-items{list-style:none;padding:0;}
+.smap-items li{font-size:11px;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.06);display:flex;align-items:center;gap:4px;}
+.smap-items li:last-child{border-bottom:none;}
+.smap-items li::before{content:'';width:4px;height:4px;border-radius:50%;flex-shrink:0;}
+.smap-arrow{display:flex;align-items:center;justify-content:center;position:absolute;right:-18px;top:50%;transform:translateY(-50%);z-index:2;font-size:20px;font-weight:900;width:24px;height:24px;}
+.smap-p1{background:#E8F5F0;color:#0F6E56;}
+.smap-p1 .smap-items li::before{background:#0F6E56;}
+.smap-p1 .smap-arrow{color:#534AB7;}
+.smap-p2{background:#F2EFFD;color:#534AB7;}
+.smap-p2 .smap-items li::before{background:#534AB7;}
+.smap-p2 .smap-arrow{color:#BA7517;}
+.smap-p3{background:#FFF8E8;color:#8A5A0E;}
+.smap-p3 .smap-items li::before{background:#BA7517;}
+.smap-p3 .smap-arrow{color:#993C1D;}
+.smap-p4{background:#FDF0EE;color:#993C1D;}
+.smap-p4 .smap-items li::before{background:#993C1D;}
+.smap-core{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:4px;}
+.smap-core-card{background:var(--bg);border:2px solid var(--border);border-radius:10px;padding:14px;text-align:center;}
+.smap-core-icon{font-size:24px;margin-bottom:4px;}
+.smap-core-title{font-size:13px;font-weight:900;margin-bottom:4px;}
+.smap-core-desc{font-size:11px;color:var(--muted);line-height:1.5;}
+.smap-core-card.highlight{border-color:var(--teal);background:var(--teal-l);}
+/* === Executive Diagram === */
+.exec-diagram{background:linear-gradient(180deg,#F8FAF9 0%,#FFF 100%);border-bottom:2px solid var(--border);padding:40px 32px 36px;}
+.exec-inner{max-width:1120px;margin:0 auto;}
+.exec-title-row{text-align:center;margin-bottom:24px;}
+.exec-title{font-size:22px;font-weight:900;letter-spacing:-.5px;margin-bottom:4px;}
+.exec-sub{font-size:12px;color:var(--muted);}
+.exec-flow{display:grid;grid-template-columns:1fr 32px 220px 32px 160px;gap:0;align-items:stretch;}
+.exec-arrow-col{display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;color:var(--teal);}
+/* Channel column */
+.ch-col{display:flex;flex-direction:column;gap:8px;}
+.ch-card{display:grid;grid-template-columns:44px 1fr auto;gap:8px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;transition:box-shadow .2s;}
+.ch-card:hover{box-shadow:0 2px 12px rgba(0,0,0,.06);}
+.ch-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:white;}
+.ch-icon.naver{background:#03C75A;}
+.ch-icon.youtube{background:#FF0000;}
+.ch-icon.insta{background:linear-gradient(135deg,#833AB4,#E1306C,#F77737);}
+.ch-icon.blogger{background:var(--coral);}
+.ch-icon.community{background:var(--gray);}
+.ch-icon.app{background:var(--teal);}
+.ch-name{font-size:13px;font-weight:700;margin-bottom:1px;}
+.ch-kw{font-size:10px;color:var(--teal);line-height:1.4;}
+.ch-right{text-align:right;min-width:80px;}
+/* Channel groups */
+.ch-group{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:box-shadow .2s;}
+.ch-group:hover{box-shadow:0 2px 12px rgba(0,0,0,.06);}
+.ch-group-header{display:flex;align-items:center;gap:8px;padding:8px 12px;}
+.ch-group-header .ch-icon{width:32px;height:32px;border-radius:8px;font-size:14px;}
+.ch-group-title{font-size:13px;font-weight:900;flex:1;}
+.ch-group-total{text-align:right;}
+.naver-bg{background:linear-gradient(135deg,#e8f8f0,#d4f1e4);}
+.youtube-bg{background:linear-gradient(135deg,#fef2f2,#fde8e8);}
+.insta-bg{background:linear-gradient(135deg,#fdf2f8,#fce7f3);}
+.community-bg{background:var(--gray-l);}
+.app-bg{background:linear-gradient(135deg,#0F6E56,#0D5A47);border-radius:9px 9px 0 0;}
+.ch-sub-list{padding:0 10px 6px;}
+.ch-sub{display:grid;grid-template-columns:auto 1fr auto auto;gap:4px 6px;align-items:center;padding:4px 4px;border-bottom:1px solid rgba(0,0,0,.04);font-size:11px;}
+.ch-sub:last-child{border-bottom:none;}
+.ch-sub-name{font-weight:700;white-space:nowrap;min-width:70px;font-size:11px;}
+.ch-sub-kw{color:var(--muted);font-size:10px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;}
+.ch-sub-cost{font-weight:700;color:var(--coral);white-space:nowrap;text-align:right;font-size:11px;min-width:40px;}
+.ch-sub-cost.ch-free{color:var(--teal);}
+.ch-sub-traffic{font-weight:700;color:var(--text);white-space:nowrap;text-align:right;font-size:11px;min-width:44px;}
+.ch-budget{font-size:20px;font-weight:900;letter-spacing:-1px;line-height:1;color:var(--coral);}
+.ch-budget-unit{font-size:11px;font-weight:700;}
+/* Homepage center */
+.hp-center{background:linear-gradient(135deg,#0F6E56,#0D5A47);border-radius:16px;padding:20px 16px;color:white;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;position:relative;}
+.hp-center-icon{font-size:32px;margin-bottom:6px;}
+.hp-center-title{font-size:16px;font-weight:900;margin-bottom:4px;}
+.hp-center-sub{font-size:11px;color:rgba(255,255,255,.65);margin-bottom:12px;}
+.hp-feature{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:6px 10px;font-size:11px;font-weight:600;width:100%;text-align:left;margin-bottom:4px;}
+.hp-feature-num{font-size:9px;color:rgba(255,255,255,.5);margin-right:4px;}
+.hp-total{margin-top:8px;padding-top:10px;border-top:1px solid rgba(255,255,255,.15);width:100%;}
+.hp-total-num{font-size:28px;font-weight:900;letter-spacing:-1px;line-height:1;}
+.hp-total-lbl{font-size:10px;color:rgba(255,255,255,.55);margin-top:2px;}
+/* Conversion column */
+.conv-col{display:flex;flex-direction:column;gap:8px;justify-content:center;}
+.conv-card{border-radius:12px;padding:14px 12px;text-align:center;border:2px solid;}
+.conv-card-icon{font-size:22px;margin-bottom:4px;}
+.conv-card-title{font-size:13px;font-weight:900;margin-bottom:2px;}
+.conv-card-num{font-size:20px;font-weight:900;letter-spacing:-1px;line-height:1;}
+.conv-card-sub{font-size:10px;margin-top:2px;}
+.conv-kakao{background:#FFF8E0;border-color:#F7D93E;color:#3B1E08;}
+.conv-visit{background:var(--teal-l);border-color:#9FE1CB;color:var(--teal);}
+.conv-loop{background:var(--purple-l);border-color:#B4ADEA;color:var(--purple);}
+/* Summary bar */
+.exec-summary{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:20px;padding-top:16px;border-top:2px solid var(--border);}
+.exec-sum-item{text-align:center;padding:8px;}
+.exec-sum-num{font-size:22px;font-weight:900;letter-spacing:-1px;}
+.exec-sum-lbl{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.3;}
+/* Loop arrow */
+.loop-arrow{display:flex;align-items:center;justify-content:center;padding:4px 0;}
+.loop-arrow-line{font-size:10px;color:var(--purple);font-weight:700;display:flex;align-items:center;gap:4px;}
+@media(max-width:768px){
+/* Layout */
+nav{padding:0 12px;}
+.hero{padding:32px 16px;}
+.hero h1{font-size:22px;}
+.hero-stats{gap:16px;}
+.stat-num{font-size:20px;}
+.container{padding:0 16px;}
+/* Cards & grids */
+.card-grid{grid-template-columns:1fr !important;}
+.two-col{grid-template-columns:1fr;}
+.issue-grid{grid-template-columns:1fr;}
+.sum-grid{grid-template-columns:repeat(3,1fr);}
+/* Funnel, cycle, hp flows */
+.funnel-flow,.cycle-row,.hp-flow{flex-direction:column;}
+.funnel-step,.cycle-item,.hp-step{min-width:auto;border-radius:10px !important;border-right:1px solid var(--border) !important;margin-bottom:-1px;}
+.funnel-arrow,.hp-arrow{right:auto;bottom:-10px;top:auto;transform:rotate(90deg);}
+.cycle-item{border-right:1px solid var(--border) !important;border-bottom:none;}
+/* Before/After */
+.hp-before-after{grid-template-columns:1fr;}
+.hp-before-after .hp-arrow-mid{justify-content:center;padding:8px 0;transform:rotate(90deg);}
+/* Strategy map */
+.smap-phases{grid-template-columns:1fr 1fr;}
+.smap-arrow{display:none;}
+.smap-core{grid-template-columns:1fr;}
+/* Executive diagram */
+.exec-flow{grid-template-columns:1fr;gap:12px;}
+.exec-arrow-col{transform:rotate(90deg);padding:4px 0;font-size:22px;}
+.exec-summary{grid-template-columns:repeat(3,1fr);gap:6px;}
+.exec-sum-num{font-size:18px;}
+/* Goal badges */
+.exec-goals{flex-direction:column !important;gap:8px !important;}
+/* Channel groups */
+.ch-sub{grid-template-columns:auto 1fr;gap:2px 6px;}
+.ch-sub-cost,.ch-sub-traffic{font-size:10px;}
+.ch-sub-kw{grid-column:1/-1;margin-bottom:2px;}
+.ch-group-header .ch-icon{width:28px;height:28px;font-size:12px;}
+.ch-group-title{font-size:12px;}
+.ch-budget{font-size:18px;}
+/* Tables */
+.schedule-table,.action-table,.kw-table,.topic-table{font-size:12px;}
+.action-table th,.action-table td{padding:6px 8px;}
+/* Section titles */
+.section-title{font-size:20px;}
+.strategy-map{padding:24px 16px;}
+.exec-diagram{padding:24px 16px;}
+.strategy-map-title,.exec-title{font-size:18px;}
+/* Phase divider */
+.phase-label{font-size:11px;padding:5px 12px;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+<div class="nav-logo">187 성장클리닉</div>
+<div class="nav-links">
+<a href="#exec-diagram" class="active">전체그림</a>
+<a href="#strategy-map">전략맵</a>
+<a href="#overview">개요</a>
+<a href="#issues">문제점</a>
+<a href="#competitors">경쟁사</a>
+<a href="#funnel">퍼널</a>
+<a href="#kw-insight">키워드</a>
+<a href="#channels">채널전략</a>
+<a href="#content">콘텐츠</a>
+<a href="#tools">DFlo+CF</a>
+<a href="#homepage">홈페이지</a>
+<a href="#action">액션플랜</a>
+<a href="#budget">예산</a>
+<a href="#blogger">체험단</a>
+<a href="#bid">입찰분석</a>
+<a href="#grade">A등급목표</a>
+<a href="#kpi">KPI</a>
+<a href="#global">해외</a>
+<a href="#kw-db">키워드DB</a>
+<a href="#topics">주제목록</a>
+<a href="#yt-check">유튜브대조</a>
+</div>
+</nav>
+
+<div class="hero">
+<div class="hero-inner">
+<div class="hero-badge">📋 통합 마케팅 전략 · 2026</div>
+<h1>연세새봄의원 187 성장클리닉<br>통합 마케팅 전략 대시보드</h1>
+<p>키워드 데이터 + 채널 전략 + DFlo 앱(예측키·식단·루틴) + ContentFlow(콘텐츠 자동 생성) + 해외 확장을 하나로 연결하는 마케팅 로드맵</p>
+<div class="hero-stats">
+<div><div class="stat-num">1,000+</div><div class="stat-lbl">치료 성공 사례</div></div>
+<div><div class="stat-num">90%+</div><div class="stat-lbl">치료 성공률</div></div>
+<div><div class="stat-num">259</div><div class="stat-lbl">분석 키워드</div></div>
+<div><div class="stat-num">78</div><div class="stat-lbl">콘텐츠 주제</div></div>
+<div><div class="stat-num">54</div><div class="stat-lbl">미게시 주제</div></div>
+<div><div class="stat-num">87%</div><div class="stat-lbl">모바일 검색 비중</div></div>
+</div>
+</div>
+</div>
+
+<!-- ========== EXECUTIVE DIAGRAM (원장님 보고용 핵심 다이어그램) ========== -->
+<div class="exec-diagram" id="exec-diagram">
+<div class="exec-inner">
+<div class="exec-title-row">
+<div class="exec-title">마케팅 전략 전체 그림</div>
+<div class="exec-sub">모든 채널 → 홈페이지 유입 → 카카오 상담 전환</div>
+<div class="exec-goals" style="display:flex;justify-content:center;gap:16px;margin-top:14px;flex-wrap:wrap;">
+<div style="display:flex;align-items:center;gap:8px;background:var(--teal-l);border:2px solid var(--teal);border-radius:10px;padding:8px 20px;">
+<span style="background:var(--teal);color:white;font-size:13px;font-weight:900;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;">1</span>
+<span><span style="font-size:14px;font-weight:900;color:var(--teal);display:block;line-height:1.2;">홈페이지 유입량 늘리기</span><span style="font-size:11px;color:#0A4F3D;">SNS 마케팅</span></span>
+</div>
+<div style="display:flex;align-items:center;gap:8px;background:var(--amber-l);border:2px solid var(--amber);border-radius:10px;padding:8px 20px;">
+<span style="background:var(--amber);color:white;font-size:13px;font-weight:900;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;">2</span>
+<span><span style="font-size:14px;font-weight:900;color:#7A4D0A;display:block;line-height:1.2;">카카오 상담 전환률 높이기</span><span style="font-size:11px;color:#7A4D0A;">홈페이지 리뉴얼</span></span>
+</div>
+</div>
+</div>
+
+<!-- Version Toggle -->
+<div style="display:flex;justify-content:center;gap:8px;margin-bottom:20px;">
+<button class="fbtn on" id="ver-conservative" onclick="switchVer('conservative')" style="font-size:13px;padding:6px 18px;">소심 — 월 300만</button>
+<button class="fbtn" id="ver-aggressive" onclick="switchVer('aggressive')" style="font-size:13px;padding:6px 18px;">적극 — 월 1,000만</button>
+</div>
+
+<div class="exec-flow">
+<!-- LEFT: 채널 유입 -->
+<div class="ch-col">
+
+<!-- 네이버 -->
+<div class="ch-group">
+<div class="ch-group-header naver-bg">
+<div class="ch-icon naver">N</div>
+<div class="ch-group-title">네이버</div>
+<div class="ch-group-total">
+<div class="ch-budget ver-c">135<span class="ch-budget-unit">만</span></div>
+<div class="ch-budget ver-a" style="display:none">450<span class="ch-budget-unit">만</span></div>
+</div>
+</div>
+<div class="ch-sub-list">
+<div class="ch-sub"><span class="ch-sub-name">파워링크</span><span class="ch-sub-kw">예상키계산법·계산기·성장주사·아이키커</span><span class="ch-sub-cost ver-c">100만</span><span class="ch-sub-cost ver-a" style="display:none">300만</span><span class="ch-sub-traffic ver-c">~480</span><span class="ch-sub-traffic ver-a" style="display:none">~1,800</span></div>
+<div class="ch-sub"><span class="ch-sub-name">블로그 (자체)</span><span class="ch-sub-kw">주 3회 · SEO · ContentFlow 자동화</span><span class="ch-sub-cost ch-free">0원</span><span class="ch-sub-traffic">자체유입</span></div>
+<div class="ch-sub"><span class="ch-sub-name">기자단</span><span class="ch-sub-kw">도서 리뷰 + DFlo 앱 리뷰 (의료광고 아님)</span><span class="ch-sub-cost ver-c">35만</span><span class="ch-sub-cost ver-a" style="display:none">80만</span><span class="ch-sub-traffic ver-c">~260</span><span class="ch-sub-traffic ver-a" style="display:none">~600</span></div>
+<div class="ch-sub"><span class="ch-sub-name">파워블로거 체험</span><span class="ch-sub-kw">실제 치료 제공 = 비용 0원 · 맘블로거</span><span class="ch-sub-cost ch-free">0원</span><span class="ch-sub-traffic ver-c">~300</span><span class="ch-sub-traffic ver-a" style="display:none">~1,000</span></div>
+<div class="ch-sub"><span class="ch-sub-name">플레이스</span><span class="ch-sub-kw">정보 100% · 후기 답변 · 사진 관리</span><span class="ch-sub-cost ch-free">0원</span><span class="ch-sub-traffic">노출</span></div>
+<div class="ch-sub"><span class="ch-sub-name">지식인</span><span class="ch-sub-kw">성장 관련 질문 전문 답변</span><span class="ch-sub-cost ch-free">0원</span><span class="ch-sub-traffic">노출</span></div>
+<div class="ch-sub" style="display:none" data-ver="a"><span class="ch-sub-name">GFA 배너</span><span class="ch-sub-kw">네이버 디스플레이 광고</span><span class="ch-sub-cost ver-a">70만</span><span class="ch-sub-traffic ver-a">~1,400</span></div>
+</div>
+</div>
+
+<!-- 유튜브 -->
+<div class="ch-group">
+<div class="ch-group-header youtube-bg">
+<div class="ch-icon youtube">▶</div>
+<div class="ch-group-title">유튜브</div>
+<div class="ch-group-total">
+<div class="ch-budget ver-c">30<span class="ch-budget-unit">만</span></div>
+<div class="ch-budget ver-a" style="display:none">100<span class="ch-budget-unit">만</span></div>
+</div>
+</div>
+<div class="ch-sub-list">
+<div class="ch-sub"><span class="ch-sub-name">본영상 (자체)</span><span class="ch-sub-kw">주 2회 · 미게시 54개 우선 소화 · 8~12분</span><span class="ch-sub-cost ch-free">0원</span><span class="ch-sub-traffic">자체유입</span></div>
+<div class="ch-sub"><span class="ch-sub-name">쇼츠 (자체)</span><span class="ch-sub-kw">주 3회 · 키크는법·초등학생평균키·성장통</span><span class="ch-sub-cost ch-free">0원</span><span class="ch-sub-traffic">알고리즘</span></div>
+<div class="ch-sub"><span class="ch-sub-name">유튜브 광고</span><span class="ch-sub-kw">인기 영상 부스팅 · 30~45세 여성</span><span class="ch-sub-cost ver-c">30만</span><span class="ch-sub-cost ver-a" style="display:none">100만</span><span class="ch-sub-traffic ver-c">~600</span><span class="ch-sub-traffic ver-a" style="display:none">~2,000</span></div>
+</div>
+</div>
+
+<!-- 인스타그램 -->
+<div class="ch-group">
+<div class="ch-group-header insta-bg">
+<div class="ch-icon insta">IG</div>
+<div class="ch-group-title">인스타그램</div>
+<div class="ch-group-total">
+<div class="ch-budget ver-c">135<span class="ch-budget-unit">만</span></div>
+<div class="ch-budget ver-a" style="display:none">450<span class="ch-budget-unit">만</span></div>
+</div>
+</div>
+<div class="ch-sub-list">
+<div class="ch-sub"><span class="ch-sub-name">자체 피드</span><span class="ch-sub-kw">릴스 3회 + 카드뉴스 2회 + 스토리 매일</span><span class="ch-sub-cost ch-free">0원</span><span class="ch-sub-traffic">자체유입</span></div>
+<div class="ch-sub"><span class="ch-sub-name">릴스 광고</span><span class="ch-sub-kw">반응 좋은 릴스 부스팅 · Meta Ads</span><span class="ch-sub-cost ver-c">45만</span><span class="ch-sub-cost ver-a" style="display:none">150만</span><span class="ch-sub-traffic ver-c">~900</span><span class="ch-sub-traffic ver-a" style="display:none">~3,000</span></div>
+<div class="ch-sub"><span class="ch-sub-name">인플루언서 기자단</span><span class="ch-sub-kw ver-c">도서/앱 리뷰 · 육아맘 18명 (10K)</span><span class="ch-sub-kw ver-a" style="display:none">도서/앱 리뷰 · 육아맘 60명 (10K~20K)</span><span class="ch-sub-cost ver-c">90만</span><span class="ch-sub-cost ver-a" style="display:none">300만</span><span class="ch-sub-traffic ver-c">~720</span><span class="ch-sub-traffic ver-a" style="display:none">~2,400</span></div>
+</div>
+</div>
+
+<!-- 커뮤니티 / 스레드 -->
+<div class="ch-group">
+<div class="ch-group-header community-bg">
+<div class="ch-icon community">C</div>
+<div class="ch-group-title">커뮤니티 / 스레드</div>
+<div class="ch-group-total">
+<div class="ch-budget" style="color:var(--teal);">0<span class="ch-budget-unit">원</span></div>
+</div>
+</div>
+<div class="ch-sub-list">
+<div class="ch-sub"><span class="ch-sub-name">스레드 (자체)</span><span class="ch-sub-kw">주 5회 · 팁형/사례형/Q&A · ContentFlow</span><span class="ch-sub-cost ch-free">0원</span><span class="ch-sub-traffic">자체유입</span></div>
+<div class="ch-sub"><span class="ch-sub-name">맘카페</span><span class="ch-sub-kw">육아 커뮤니티 자연스러운 정보 공유</span><span class="ch-sub-cost ch-free">0원</span><span class="ch-sub-traffic">자체유입</span></div>
+</div>
+</div>
+
+<!-- DFlo 앱 -->
+<div class="ch-group" style="border-color:var(--teal);background:var(--teal-l);">
+<div class="ch-group-header app-bg">
+<div class="ch-icon app">📱</div>
+<div class="ch-group-title" style="color:white;">DFlo 앱 바이럴</div>
+<div class="ch-group-total">
+<div class="ch-budget" style="color:var(--teal);">0<span class="ch-budget-unit">원</span></div>
+</div>
+</div>
+<div class="ch-sub-list">
+<div class="ch-sub"><span class="ch-sub-name">예측키 공유</span><span class="ch-sub-kw">결과 카드 SNS 공유 → 신규 유입 루프</span><span class="ch-sub-cost ch-free">0원</span><span class="ch-sub-traffic" style="color:var(--teal);">바이럴∞</span></div>
+</div>
+</div>
+
+</div>
+
+<!-- ARROW -->
+<div class="exec-arrow-col">→</div>
+
+<!-- CENTER: 홈페이지 -->
+<div class="hp-center">
+<div class="hp-center-icon">🌐</div>
+<div class="hp-center-title">홈페이지</div>
+<div class="hp-center-sub">모든 유입의 착지점 · 전환 허브</div>
+<div class="hp-feature"><span class="hp-feature-num">①</span> 예측키 측정 위젯</div>
+<div class="hp-feature"><span class="hp-feature-num">②</span> 치료사례 수치 카드 9건</div>
+<div class="hp-feature"><span class="hp-feature-num">③</span> 성장가이드 14개</div>
+<div class="hp-feature"><span class="hp-feature-num">④</span> 성장레시피 10개</div>
+<div class="hp-feature" style="background:rgba(255,255,0,.15);border-color:rgba(255,255,0,.25);"><span class="hp-feature-num">⭐</span> 카톡 상담 1클릭 CTA</div>
+<div class="hp-total">
+<div class="hp-total-num ver-c">4,800~7,800</div>
+<div class="hp-total-num ver-a" style="display:none">14,700~17,700</div>
+<div class="hp-total-lbl">월 총 유입 (유료+자체)</div>
+</div>
+</div>
+
+<!-- ARROW -->
+<div class="exec-arrow-col">→</div>
+
+<!-- RIGHT: 전환 -->
+<div class="conv-col">
+<div class="conv-card conv-kakao">
+<div class="conv-card-icon">💬</div>
+<div class="conv-card-title">카카오 상담</div>
+<div class="conv-card-num ver-c">96~234</div>
+<div class="conv-card-num ver-a" style="display:none">294~531</div>
+<div class="conv-card-sub">건/월 (전환율 2~3%)</div>
+</div>
+<div style="text-align:center;font-size:20px;font-weight:900;color:var(--teal);">↓</div>
+<div class="conv-card conv-visit">
+<div class="conv-card-icon">🏥</div>
+<div class="conv-card-title">내원 예약</div>
+<div class="conv-card-num">성장검사</div>
+<div class="conv-card-sub">→ 맞춤 치료 프로그램</div>
+</div>
+<div style="text-align:center;font-size:20px;font-weight:900;color:var(--teal);">↓</div>
+<div class="conv-card conv-loop">
+<div class="conv-card-icon">🔄</div>
+<div class="conv-card-title">앱 관리 + 공유</div>
+<div class="conv-card-num">바이럴 루프</div>
+<div class="conv-card-sub">결과 공유 → 신규 유입</div>
+</div>
+</div>
+</div>
+
+<!-- Summary Bar -->
+<div class="exec-summary">
+<div class="exec-sum-item">
+<div class="exec-sum-num ver-c" style="color:var(--coral);">300<span style="font-size:13px;">만</span></div>
+<div class="exec-sum-num ver-a" style="display:none;color:var(--coral);">1,000<span style="font-size:13px;">만</span></div>
+<div class="exec-sum-lbl">월 유료 광고비</div>
+</div>
+<div class="exec-sum-item">
+<div class="exec-sum-num" style="color:var(--teal);">0<span style="font-size:13px;">원</span></div>
+<div class="exec-sum-lbl">자체 콘텐츠 비용<br>(ContentFlow 자동화)</div>
+</div>
+<div class="exec-sum-item">
+<div class="exec-sum-num">16~17</div>
+<div class="exec-sum-lbl">주간 포스팅 수<br>(1주제→전채널)</div>
+</div>
+<div class="exec-sum-item">
+<div class="exec-sum-num" style="color:var(--amber);">4<span style="font-size:13px;">개</span></div>
+<div class="exec-sum-lbl">황금 키워드<br>(경쟁↓ 검색↑)</div>
+</div>
+<div class="exec-sum-item">
+<div class="exec-sum-num" style="color:var(--purple);">54<span style="font-size:13px;">개</span></div>
+<div class="exec-sum-lbl">미게시 주제<br>(≈2년치 파이프라인)</div>
+</div>
+</div>
+
+</div>
+</div>
+
+<!-- ========== STRATEGY MAP (전략 전체 조감도) ========== -->
+<div class="strategy-map" id="strategy-map">
+<div class="strategy-map-inner">
+<div class="strategy-map-title">전략 로드맵 한눈에 보기</div>
+<div class="strategy-map-sub">4단계 순서로 읽으면 전체 전략이 보입니다 — 각 섹션을 클릭하면 해당 내용으로 이동</div>
+
+<div class="smap-phases">
+<div class="smap-phase smap-p1">
+<div class="smap-phase-num">PHASE 1</div>
+<div class="smap-phase-title">현황 분석</div>
+<ul class="smap-items">
+<li><a href="#overview" style="color:inherit;text-decoration:none;">병원 현황 & 핵심 차별화</a></li>
+<li><a href="#issues" style="color:inherit;text-decoration:none;">현재 문제점 6가지</a></li>
+<li><a href="#competitors" style="color:inherit;text-decoration:none;">경쟁사 3그룹 분석</a></li>
+</ul>
+<div class="smap-arrow">→</div>
+</div>
+<div class="smap-phase smap-p2">
+<div class="smap-phase-num">PHASE 2</div>
+<div class="smap-phase-title">전략 설계</div>
+<ul class="smap-items">
+<li><a href="#funnel" style="color:inherit;text-decoration:none;">유입 퍼널 → 홈페이지 (카카오 상담)</a></li>
+<li><a href="#kw-insight" style="color:inherit;text-decoration:none;">259개 키워드 + 황금 4개</a></li>
+<li><a href="#channels" style="color:inherit;text-decoration:none;">6채널 역할 분담</a></li>
+<li><a href="#content" style="color:inherit;text-decoration:none;">5카테고리 콘텐츠 순환</a></li>
+<li><a href="#tools" style="color:inherit;text-decoration:none;">DFlo 앱 + ContentFlow</a></li>
+</ul>
+<div class="smap-arrow">→</div>
+</div>
+<div class="smap-phase smap-p3">
+<div class="smap-phase-num">PHASE 3</div>
+<div class="smap-phase-title">실행 계획</div>
+<ul class="smap-items">
+<li><a href="#homepage" style="color:inherit;text-decoration:none;">홈페이지 15일 개선</a></li>
+<li><a href="#action" style="color:inherit;text-decoration:none;">9단계 액션 플랜</a></li>
+<li><a href="#budget" style="color:inherit;text-decoration:none;">예산 300만 vs 1,000만</a></li>
+<li><a href="#blogger" style="color:inherit;text-decoration:none;">체험단 & 기자단</a></li>
+<li><a href="#bid" style="color:inherit;text-decoration:none;">파워링크 입찰 분석</a></li>
+<li><a href="#grade" style="color:inherit;text-decoration:none;">채널 A등급 목표</a></li>
+<li><a href="#kpi" style="color:inherit;text-decoration:none;">KPI 체계</a></li>
+</ul>
+<div class="smap-arrow">→</div>
+</div>
+<div class="smap-phase smap-p4">
+<div class="smap-phase-num">PHASE 4</div>
+<div class="smap-phase-title">확장 & 데이터</div>
+<ul class="smap-items">
+<li><a href="#global" style="color:inherit;text-decoration:none;">해외 확장 (태국·중국)</a></li>
+<li><a href="#kw-db" style="color:inherit;text-decoration:none;">키워드 DB 259개</a></li>
+<li><a href="#topics" style="color:inherit;text-decoration:none;">콘텐츠 주제 78개</a></li>
+<li><a href="#yt-check" style="color:inherit;text-decoration:none;">유튜브 게시 대조표</a></li>
+</ul>
+</div>
+</div>
+
+<div class="smap-core">
+<div class="smap-core-card highlight">
+<div class="smap-core-icon">📱</div>
+<div class="smap-core-title">DFlo 앱 = 차별화 무기</div>
+<div class="smap-core-desc">예측키 바이럴 → 결과 카드 공유<br>경쟁사에 없는 유일한 앱</div>
+</div>
+<div class="smap-core-card highlight">
+<div class="smap-core-icon">🤖</div>
+<div class="smap-core-title">ContentFlow = 효율 엔진</div>
+<div class="smap-core-desc">1주제 → 블로그+카드뉴스+스레드+대본<br>주 16~17개 포스팅 자동화</div>
+</div>
+<div class="smap-core-card" style="border-color:var(--amber);background:var(--amber-l);">
+<div class="smap-core-icon">💬</div>
+<div class="smap-core-title">모든 경로 → 카카오 상담</div>
+<div class="smap-core-desc">검색·SNS·앱·홈페이지<br>전부 카카오 상담으로 수렴</div>
+</div>
+</div>
+
+</div>
+</div>
+
+<!-- ================================================================ -->
+<!-- PHASE 1: 현황 분석                                                -->
+<!-- ================================================================ -->
+<div class="phase-divider phase-1"><div class="phase-bar"><span class="phase-label"><span class="phase-num">01</span> 현황 분석 — 우리는 지금 어디에 있는가</span></div></div>
+
+<!-- 1. 개요 -->
+<section id="overview">
+<div class="container">
+<details>
+<summary>
+<div><div class="section-tag">Overview</div>
+<div class="section-title">병원 현황 & 핵심 차별화</div>
+<div class="section-sub">강남 압구정 · 채용현 원장 · 쌍둥이 아빠 의사 퍼스널 브랜딩</div></div>
+</summary>
+<div class="section-content">
+<div class="card-grid">
+<div class="card" style="border-top:3px solid var(--teal)">
+<div class="card-label" style="color:var(--teal)">핵심 차별화</div>
+<div class="card-title">1,000명+ 성공 사례 · 성공률 90%+</div>
+<div class="card-desc">호르몬 치료 전문의가 수면·영양·운동·자세·심리까지 통합 관리. 수치로 증명되는 치료 결과가 최고의 마케팅 자산. <strong>DFlo 앱</strong>으로 디지털 관리.</div>
+</div>
+<div class="card" style="border-top:3px solid var(--amber)">
+<div class="card-label" style="color:var(--amber)">퍼스널 브랜딩</div>
+<div class="card-title">쌍둥이 아빠 의사 채용현</div>
+<div class="card-desc">직접 키운 쌍둥이 아들 사례 + 아빠로서의 공감 코드. 전문성 + 부모 공감 동시에 잡는 브랜딩.</div>
+</div>
+<div class="card" style="border-top:3px solid var(--coral)">
+<div class="card-label" style="color:var(--coral)">보유 채널 (5+1)</div>
+<div class="card-title">네이버 · 유튜브 · 인스타 · 스레드 · 카카오 + DFlo앱</div>
+<div class="card-desc">ContentFlow로 1주제 → 전 채널 자동화. 주 1~2개 주제로 주 16~17개 포스팅 처리 가능.</div>
+</div>
+<div class="card" style="border-top:3px solid var(--purple)">
+<div class="card-label" style="color:var(--purple)">경쟁 우위 무기</div>
+<div class="card-title">DFlo 앱 + 해외 인프라</div>
+<div class="card-desc">경쟁사에 앱 가진 곳 거의 없음. 예측키 바이럴. 태국 오피스·중문 사이트 보유. K-Medical 포지셔닝.</div>
+</div>
+</div>
+</div>
+</details>
+</div>
+</section>
+
+<!-- 2. 문제점 -->
+<section id="issues">
+<div class="container">
+<details>
+<summary>
+<div><div class="section-tag">Current Issues</div>
+<div class="section-title">현재 문제점 & 기회</div>
+</div>
+</summary>
+<div class="section-content">
+<div class="issue-grid">
+<div class="issue-card"><div class="issue-icon">🔴</div><div class="issue-title">홈페이지가 전환을 못 만든다</div><div class="issue-desc">Wix 기반. 3초 안에 가치 전달 안 됨. 광고 ROI 급락.</div></div>
+<div class="issue-card"><div class="issue-icon">🔴</div><div class="issue-title">유입 경로 데이터가 없다</div><div class="issue-desc">"어떻게 알고 오셨어요?" 프로세스 없음. KPI 측정 불가.</div></div>
+<div class="issue-card" style="border-left-color:var(--amber)"><div class="issue-icon">🟡</div><div class="issue-title">54개 주제가 미게시</div><div class="issue-desc">78개 중 54개 유튜브 없음. 고임팩트 주제 공백.</div></div>
+<div class="issue-card" style="border-left-color:var(--amber)"><div class="issue-icon">🟡</div><div class="issue-title">3명이 수동 전 채널 운영</div><div class="issue-desc">ContentFlow 자동화 전까지 비효율. 역할 분담 불명확.</div></div>
+<div class="issue-card" style="border-left-color:var(--amber)"><div class="issue-icon">🟡</div><div class="issue-title">네이버 검색 유입 거의 없음</div><div class="issue-desc">파워링크·파워컨텐츠 미집행. 블로그 SEO 미흡. 플레이스 미완성.</div></div>
+<div class="issue-card" style="border-left-color:var(--teal)"><div class="issue-icon">🟢</div><div class="issue-title">앱 바이럴 기능 없음</div><div class="issue-desc">DFlo 앱 보유(최고 차별화)이나 예측키 결과 공유 기능 없음. 추가만 하면 폭발.</div></div>
+</div>
+</div>
+</details>
+</div>
+</section>
+
+<!-- 3. 경쟁사 -->
+<section id="competitors">
+<div class="container">
+<details>
+<summary>
+<div><div class="section-tag">Competitors</div>
+<div class="section-title">경쟁사 분석</div>
+</div>
+</summary>
+<div class="section-content">
+<div class="card-grid" style="grid-template-columns:repeat(3,1fr);">
+<div class="card" style="border-left:4px solid var(--coral)"><div class="card-label" style="color:var(--coral)">한의원 · 전국 11개</div><div class="card-title">하이키한의원</div><div class="card-desc">가장 공격적 마케팅. "하이키스타" 셀럽 협업. 한방이라 양방 차별화 가능.</div></div>
+<div class="card" style="border-left:4px solid var(--amber)"><div class="card-label" style="color:var(--amber)">성장전문 클리닉</div><div class="card-title">키네스 성장클리닉</div><div class="card-desc">방송 출연 적극 활용. 뉴로피드백 기기. 홈페이지 체계적.</div></div>
+<div class="card" style="border-left:4px solid var(--purple)"><div class="card-label" style="color:var(--purple)">대형 병원</div><div class="card-title">서울아산·강남차·세브란스</div><div class="card-desc">신뢰도 최고이나 접근성·친밀감 낮음. 퍼스널 브랜딩+앱이 우리 틈새.</div></div>
+</div>
+</div>
+</details>
+</div>
+</section>
+
+<!-- ================================================================ -->
+<!-- PHASE 2: 전략 설계                                                -->
+<!-- ================================================================ -->
+<div class="phase-divider phase-2"><div class="phase-bar"><span class="phase-label"><span class="phase-num">02</span> 전략 설계 — 어떻게 싸울 것인가</span></div></div>
+
+<!-- 4. 퍼널 -->
+<section id="funnel">
+<div class="container">
+<details>
+<summary>
+<div><div class="section-tag">Funnel Strategy</div>
+<div class="section-title">유입 퍼널 전략</div>
+<div class="section-sub">모든 경로는 카카오 상담으로 수렴</div></div>
+</summary>
+<div class="section-content">
+<div class="funnel-flow">
+<div class="funnel-step" style="background:var(--teal-l)"><div class="f-icon">🔍</div><div class="f-title">검색 / SNS</div><div class="f-desc">네이버·유튜브·인스타·지인추천</div><div class="funnel-arrow">→</div></div>
+<div class="funnel-step"><div class="f-icon">🌐</div><div class="f-title">홈페이지 / 앱</div><div class="f-desc">신뢰 확인 + 예측키 체험</div><div class="funnel-arrow">→</div></div>
+<div class="funnel-step" style="background:#FFF8E0"><div class="f-icon">💬</div><div class="f-title">카카오 상담</div><div class="f-desc">자동 응답 → 상담사 → 예약</div><div class="funnel-arrow">→</div></div>
+<div class="funnel-step" style="background:var(--teal-l)"><div class="f-icon">🏥</div><div class="f-title">내원 예약</div><div class="f-desc">성장검사 → 맞춤 치료</div><div class="funnel-arrow">→</div></div>
+<div class="funnel-step"><div class="f-icon">📱</div><div class="f-title">앱 관리</div><div class="f-desc">식단·루틴 → 장기 리텐션</div><div class="funnel-arrow">→</div></div>
+<div class="funnel-step" style="background:var(--purple-l)"><div class="f-icon">📤</div><div class="f-title">결과 공유</div><div class="f-desc">바이럴 → 신규 유입 루프</div></div>
+</div>
+<div class="two-col" style="margin-top:16px;">
+<div class="card" style="border-top:3px solid var(--coral)">
+<div class="card-label" style="color:var(--coral)">홈페이지 (리뉴얼 필수)</div>
+<div class="card-title">신규 방문자 → 카카오 상담 전환</div>
+<div class="card-desc">히어로: 통합 성장 프로그램 + 카카오 CTA. Before/After 3~4개 즉시 노출. 모든 페이지 하단 카카오 버튼 고정.</div>
+</div>
+<div class="card" style="border-top:3px solid var(--teal);background:var(--teal-l)">
+<div class="card-label" style="color:var(--teal)">DFlo 앱</div>
+<div class="card-title">신규 + 기존 환자 모두 → 카카오 전환</div>
+<div class="card-desc"><strong>신규:</strong> 예측키 무료 → 관심 → 카카오 CTA<br><strong>기존:</strong> 맞춤 식단/루틴 → 매일 접속 → 리텐션<br>결과 카드 공유 = 바이럴 루프 핵심</div>
+</div>
+</div>
+<div class="card-grid" style="grid-template-columns:repeat(3,1fr);margin-top:14px;">
+<div class="card" style="border-top:3px solid var(--coral);text-align:center"><div class="card-label" style="color:var(--coral)">A 담당</div><div class="card-title">촬영·편집</div><div class="card-desc">유튜브 본영상+쇼츠+릴스</div></div>
+<div class="card" style="border-top:3px solid var(--amber);text-align:center"><div class="card-label" style="color:var(--amber)">B 담당</div><div class="card-title">글 콘텐츠</div><div class="card-desc">블로그+스레드+카드뉴스</div></div>
+<div class="card" style="border-top:3px solid var(--purple);text-align:center"><div class="card-label" style="color:var(--purple)">C 담당</div><div class="card-title">배포·광고·성과</div><div class="card-desc">네이버/인스타 광고+KPI</div></div>
+</div>
+</div>
+</details>
+</div>
+</section>
+
+<!-- 5. 키워드 인사이트 -->
+<section id="kw-insight">
+<div class="container">
+<details>
+<summary>
+<div><div class="section-tag">Keyword Insights</div>
+<div class="section-title">키워드 핵심 인사이트 + 황금 키워드</div>
+<div class="section-sub">네이버 검색광고 API 실데이터 259개 키워드 분석 결과</div></div>
+</summary>
+<div class="section-content">
+<div class="sum-grid">
+<div class="sum-card"><div class="sum-num">259</div><div class="sum-lbl">분석 키워드 수</div></div>
+<div class="sum-card"><div class="sum-num" style="color:var(--coral)">36</div><div class="sum-lbl">고볼륨 (월 2,000+)</div></div>
+<div class="sum-card"><div class="sum-num" style="color:var(--teal)">4</div><div class="sum-lbl">황금 키워드 (경쟁↓)</div></div>
+<div class="sum-card"><div class="sum-num" style="color:var(--purple)">10,090</div><div class="sum-lbl">예상키 관련 합산</div></div>
+<div class="sum-card"><div class="sum-num" style="color:var(--coral)">13,540</div><div class="sum-lbl">성조숙증 월 검색</div></div>
+<div class="sum-card"><div class="sum-num">87%</div><div class="sum-lbl">평균 모바일 비중</div></div>
+</div>
+<div class="card-grid">
+<div class="card" style="border-top:3px solid var(--teal)"><div class="card-label" style="color:var(--teal)">인사이트 ①</div><div class="card-title">87%가 모바일 검색</div><div class="card-desc">블로그 모바일 최적화 필수. 릴스·쇼츠가 검색 유입과 직결.</div></div>
+<div class="card" style="border-top:3px solid var(--coral)"><div class="card-label" style="color:var(--coral)">인사이트 ②</div><div class="card-title">핵심 키워드 95% 경쟁 "높음"</div><div class="card-desc">단순 SEO 1페이지 불가. 황금키워드 우회 + 유튜브 + 앱 차별화.</div></div>
+<div class="card" style="border-top:3px solid var(--amber)"><div class="card-label" style="color:var(--amber)">인사이트 ③</div><div class="card-title">황금 키워드 4개 발견</div><div class="card-desc"><strong>예상키계산법</strong>(3,060·낮음), <strong>예상키계산기</strong>(3,840·중간), <strong>성장주사</strong>(4,130·중간), <strong>아이키커</strong>(7,560·중간)</div></div>
+<div class="card" style="border-top:3px solid var(--purple)"><div class="card-label" style="color:var(--purple)">인사이트 ④</div><div class="card-title">앱 예측키 = 월 1만 검색 수요</div><div class="card-desc">예상키 관련 합산 10,090회/월. 앱 공유 기능 추가 시 바이럴 루프 완성.</div></div>
+</div>
+
+<!-- 황금 키워드 -->
+<div style="margin-top:24px;">
+<div class="section-sub" style="font-weight:700;color:var(--text);margin-bottom:12px;">🥇 황금 키워드 — 지금 당장 공략 가능</div>
+<div class="card-grid">
+<div class="card" style="background:var(--teal-l);border-color:#9FE1CB"><div class="card-label" style="color:var(--teal)">#1 · 월 3,060 · 경쟁 낮음</div><div class="card-title">예상키계산법</div><div class="card-desc">"타너공식 + 오차 + 앱 예측키 CTA" 포스팅. <strong>1~2주 내 상단 노출 목표.</strong></div></div>
+<div class="card" style="background:var(--teal-l);border-color:#9FE1CB"><div class="card-label" style="color:var(--teal)">#2 · 월 3,840 · 경쟁 중간</div><div class="card-title">예상키계산기</div><div class="card-desc">앱 예측키 화면 스크린샷 + 사용법 블로그. 쇼츠 "30초 예상키 계산" 크로스포스팅.</div></div>
+<div class="card" style="background:var(--amber-l);border-color:#E8C577"><div class="card-label" style="color:var(--amber)">#3 · 월 4,130 · 경쟁 중간</div><div class="card-title">성장주사</div><div class="card-desc">"종류·비용·효과·부작용 완벽 정리" 블로그 + 유튜브. 상담 CTA.</div></div>
+<div class="card" style="background:var(--amber-l);border-color:#E8C577"><div class="card-label" style="color:var(--amber)">#4 · 월 7,560 · 경쟁 중간</div><div class="card-title">아이키커</div><div class="card-desc">"영양제 vs 성장클리닉 차이" 비교 콘텐츠. 통합 관리 차별화 연결.</div></div>
+</div>
+</div>
+<div class="tip-box"><strong>제작 우선순위</strong>예상키계산법 → 예상키계산기 → 아이키커 → 성장주사 순. ContentFlow로 1주제 → 4채널 동시 발행.</div>
+</div>
+</details>
+</div>
+</section>
+
+<!-- 6. 채널 전략 -->
+<section id="channels">
+<div class="container">
+<details>
+<summary>
+<div><div class="section-tag">Channel Strategy</div>
+<div class="section-title">채널별 전략 & 키워드</div>
+</div>
+</summary>
+<div class="section-content">
+<div class="card-grid">
+<div class="card" style="border-left:4px solid #03C75A"><div class="card-label" style="color:#03C75A">📝 네이버 블로그 · 주 3회</div><div class="card-title">SEO + 황금키워드 집중</div><div class="card-desc"><strong>즉시 포스팅:</strong> 예상키계산법·예상키계산기·성장주사·아이키커<br><strong>파워링크:</strong> Tier1 전환(CPC 1~4만) + Tier2 정보(CPC 2~5천) + Tier3 시즌<br><strong>블로그 기자단:</strong> 월 10~20건 배포<br><strong>플레이스:</strong> 정보 100% 채우기, 후기 답변<br>💰 광고 월 300~500만원</div></div>
+<div class="card" style="border-left:4px solid #E1306C"><div class="card-label" style="color:#C13584">📱 인스타그램 · 주 5~6회</div><div class="card-title">릴스 + 카드뉴스 혼합</div><div class="card-desc"><strong>릴스 3회:</strong> 유튜브 쇼츠 크로스포스팅<br><strong>카드뉴스 2회:</strong> "저장하세요" 유도<br><strong>스토리 매일:</strong> Q&A, 투표, 진료실 일상<br><strong>릴스 광고:</strong> 반응 좋은 릴스 부스팅, 30~45세 여성 수도권<br>💰 광고 월 100~200만원</div></div>
+<div class="card" style="border-left:4px solid #FF0000"><div class="card-label" style="color:#CC0000">🎬 유튜브 본영상 · 주 2회</div><div class="card-title">미게시 54개 우선 소화</div><div class="card-desc"><strong>1차(1~6주):</strong> A-02 10시신화, D-02 스마트폰, D-03 식단, B-07 우유, A-17 성장통, B-10 대화법<br><strong>2차(7~12주):</strong> 치료사례 C카테고리<br><strong>SEO:</strong> 제목 키워드, 설명란 카카오/앱 링크, 챕터 타임스탬프<br>8~12분 영상</div></div>
+<div class="card" style="border-left:4px solid var(--amber)"><div class="card-label" style="color:var(--amber)">⚡ 유튜브 쇼츠 · 주 3회</div><div class="card-title">알고리즘 깔때기</div><div class="card-desc"><strong>활용 키워드:</strong> 키크는법(5,330), 초등학생평균키(4,980), 성장통(2,650), 사춘기테스트(2,530)<br>본영상 클립 추출 or 블로그 30초 변환. 끝에 "본영상에서" 구독 유도.</div></div>
+<div class="card" style="border-left:4px solid var(--gray)"><div class="card-label" style="color:var(--gray)">🧵 스레드 · 주 5회</div><div class="card-title">실시간 팁 & 공감</div><div class="card-desc">팁형 → 사례형 → Q&A형 → 팩트체크형 순환. ContentFlow 자동화 완성 → 부담 최소. 평일 매일 오전 8시.</div></div>
+<div class="card" style="border-left:4px solid var(--teal);background:var(--teal-l)"><div class="card-label" style="color:var(--teal)">📱 DFlo 앱</div><div class="card-title">가장 강력한 차별화 무기</div><div class="card-desc">예측키 결과 → 카카오 상담 CTA. 맞춤 식단/루틴 → 매일 접속. <strong>공유 기능 추가 시</strong> 바이럴 폭발.</div></div>
+</div>
+<div class="warn-box"><strong>경쟁 현실</strong>핵심 키워드 95% 경쟁 "높음". 전략: ① 황금키워드 집중 ② 유튜브 검색(경쟁↓) ③ 원장 브랜딩 ④ 앱 차별화</div>
+</div>
+</details>
+</div>
+</section>
+
+<!-- 7. 콘텐츠 -->
+<section id="content">
+<div class="container">
+<details>
+<summary>
+<div><div class="section-tag">Content Strategy</div>
+<div class="section-title">콘텐츠 카테고리 & 운영</div>
+<div class="section-sub">5가지 카테고리 순환 (5주 1사이클 = 연 10회 반복) · ContentFlow 자동화</div></div>
+</summary>
+<div class="section-content">
+<div class="cycle-row">
+<div class="cycle-item"><div class="cycle-letter" style="color:var(--teal)">A</div><div class="cycle-name">성장과학</div><div class="cycle-desc">책 기반 과학 팩트 · 20개</div></div>
+<div class="cycle-item"><div class="cycle-letter" style="color:var(--amber)">B</div><div class="cycle-name">부모공감</div><div class="cycle-desc">진료실 단골 걱정 · 15개</div></div>
+<div class="cycle-item"><div class="cycle-letter" style="color:var(--coral)">C</div><div class="cycle-name">치료사례</div><div class="cycle-desc">Before/After · 15개+</div></div>
+<div class="cycle-item"><div class="cycle-letter" style="color:var(--purple)">D</div><div class="cycle-name">생활습관</div><div class="cycle-desc">집에서 실천 · 18개</div></div>
+<div class="cycle-item"><div class="cycle-letter" style="color:var(--gray)">E</div><div class="cycle-name">기타/트렌드</div><div class="cycle-desc">알고리즘 타기 · 10개</div></div>
+</div>
+<div style="overflow-x:auto;">
+<table class="schedule-table">
+<thead><tr><th>채널</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th>주 횟수</th><th>시간</th></tr></thead>
+<tbody>
+<tr><td>📝 블로그</td><td><span class="sch-cell sch-teal">발행①</span></td><td><span class="sch-empty">—</span></td><td><span class="sch-cell sch-teal">발행②</span></td><td><span class="sch-empty">—</span></td><td><span class="sch-cell sch-teal">발행③</span></td><td><span class="sch-empty">—</span></td><td><span class="sch-count" style="color:var(--teal)">3회</span></td><td style="font-size:11px;color:var(--muted)">오전 10시</td></tr>
+<tr><td>📱 인스타</td><td><span class="sch-cell sch-pink">릴스</span></td><td><span class="sch-cell sch-pink">카드</span></td><td><span class="sch-cell sch-pink">릴스</span></td><td><span class="sch-cell sch-pink">카드</span></td><td><span class="sch-cell sch-pink">릴스</span></td><td><span class="sch-cell sch-pink">스토리</span></td><td><span class="sch-count" style="color:#993356">5~6</span></td><td style="font-size:11px;color:var(--muted)">오후 7~9시</td></tr>
+<tr><td>🧵 스레드</td><td><span class="sch-cell sch-gray">팁</span></td><td><span class="sch-cell sch-gray">사례</span></td><td><span class="sch-cell sch-gray">팁</span></td><td><span class="sch-cell sch-gray">Q&A</span></td><td><span class="sch-cell sch-gray">팁</span></td><td><span class="sch-empty">—</span></td><td><span class="sch-count" style="color:var(--gray)">5회</span></td><td style="font-size:11px;color:var(--muted)">오전 8시</td></tr>
+<tr><td>🎬 유튜브</td><td><span class="sch-empty">—</span></td><td><span class="sch-empty">—</span></td><td><span class="sch-cell sch-red">본영상</span></td><td><span class="sch-empty">—</span></td><td><span class="sch-empty">—</span></td><td><span class="sch-cell sch-red">본영상</span></td><td><span class="sch-count" style="color:#993333">2회</span></td><td style="font-size:11px;color:var(--muted)">오후 6~8시</td></tr>
+<tr><td>⚡ 쇼츠</td><td><span class="sch-cell sch-amber">쇼츠</span></td><td><span class="sch-empty">—</span></td><td><span class="sch-cell sch-amber">쇼츠</span></td><td><span class="sch-empty">—</span></td><td><span class="sch-cell sch-amber">쇼츠</span></td><td><span class="sch-empty">—</span></td><td><span class="sch-count" style="color:var(--amber)">3회</span></td><td style="font-size:11px;color:var(--muted)">오후 6~8시</td></tr>
+</tbody>
+</table>
+</div>
+<div class="tip-box"><strong>ContentFlow 핵심</strong>BaseArticle 1개 → 블로그 1편 + 카드뉴스 5~6장 + 스레드 5개 + 유튜브 대본 1편. 2주 1주제 = 미게시 54개 ≈ 2년치 파이프라인.</div>
+</div>
+</details>
+</div>
+</section>
+
+<!-- 8. DFlo + ContentFlow -->
+<section id="tools">
+<div class="container">
+<details>
+<summary>
+<div><div class="section-tag">DFlo App + ContentFlow</div>
+<div class="section-title">핵심 무기: DFlo 앱 & ContentFlow</div>
+<div class="section-sub">경쟁사에 없는 두 가지 차별화 도구</div></div>
+</summary>
+<div class="section-content">
+<div class="two-col">
+<div class="card" style="border-top:3px solid var(--teal);background:var(--teal-l)">
+<div class="card-label" style="color:var(--teal)">📱 DFlo 앱 (app.lpcare.kr)</div>
+<div class="card-title">예측키 바이럴 + 환자 리텐션 = 마케팅 엔진</div>
+<div class="card-desc">
+<strong>핵심 기능:</strong><br>
+• 예측키 계산기 (Khamis-Roche 방법) — 킬러 CTA<br>
+• 성장 추이 그래프 — 백분위 비교<br>
+• 맞춤형 식단 레시피 — 실용 가치<br>
+• 건강 관리 정보 (원장님 도서 내용 요약)<br>
+• 성장 치료 사례 — 신뢰 구축<br><br>
+<strong>마케팅 활용:</strong><br>
+• <span style="color:var(--coral);font-weight:700">예측키 → 결과 카드 SNS 공유 = 바이럴 루프</span><br>
+• 앱 기능을 홈페이지에 임베드 → 전환 퍼널 핵심<br>
+• "예상키계산기" 키워드 CPC 347원 → 앱/홈페이지로 직결<br>
+• 기자단 앱 리뷰 → 의료광고 아닌 "앱 리뷰"로 우회
+</div>
+</div>
+<div class="card" style="border-top:3px solid var(--purple);background:var(--purple-l)">
+<div class="card-label" style="color:var(--purple)">🤖 ContentFlow (콘텐츠 자동 생성기)</div>
+<div class="card-title">1주제 → 전 채널 자동 배포 시스템</div>
+<div class="card-desc">
+<strong>워크플로우:</strong><br>
+• BaseArticle 1개 작성 (주제+핵심 내용)<br>
+• → 블로그 포스트 (1,500자+, SEO 최적화)<br>
+• → 카드뉴스 5~6장 (인스타+홈페이지)<br>
+• → 스레드 5개 (텍스트 변환)<br>
+• → 유튜브 대본 1편 (8~12분 분량)<br>
+• → 쇼츠 스크립트 2~3개<br><br>
+<strong>효율:</strong><br>
+• 78개 주제 × 전 채널 = <span style="color:var(--coral);font-weight:700">2주 1주제로 2년치 파이프라인</span><br>
+• 3명 직원이 수동으로 주 16~17개 포스팅 처리 가능<br>
+• 도서 내용 → ContentFlow → 카드뉴스 자동 변환
+</div>
+</div>
+</div>
+<div class="tip-box"><strong>DFlo ↔ ContentFlow 시너지</strong>ContentFlow가 만든 콘텐츠의 모든 CTA → DFlo 앱 or 홈페이지 예측키. 앱에서 만든 식단/레시피 → ContentFlow가 카드뉴스로 변환. 순환 구조.</div>
+</div>
+</details>
+</div>
+</section>
+
+<!-- ================================================================ -->
+<!-- PHASE 3: 실행 계획                                                -->
+<!-- ================================================================ -->
+<div class="phase-divider phase-3"><div class="phase-bar"><span class="phase-label"><span class="phase-num">03</span> 실행 계획 — 무엇을 언제 얼마로 할 것인가</span></div></div>
+
+<!-- 9. 홈페이지 수정 전략 -->
+<section id="homepage">
+<div class="container">
+<details open>
+<summary>
+<div><div class="section-tag">Homepage Optimization</div>
+<div class="section-title">홈페이지 수정 전략</div>
+<div class="section-sub">메인 페이지 집중 개선 · 서브 페이지는 유지 · 전환율 극대화</div></div>
+</summary>
+<div class="section-content">
+
+<div class="tip-box" style="margin-bottom:20px;">
+<strong>핵심 전략: 메인 페이지 = 원스톱 전환 허브</strong>
+LP Care 앱의 핵심 콘텐츠(예측키 측정, 치료사례, 성장 가이드, 레시피)를 홈페이지 메인에 직접 넣어서, 방문자가 스크롤만으로 가치를 느끼고 카톡 상담으로 연결되게 한다. 서브 페이지는 건드리지 않는다.
+</div>
+
+<div class="card" style="border-top:3px solid var(--coral);margin-bottom:20px;">
+<div class="card-label" style="color:var(--coral)">현재 전환 퍼널 vs 개선안</div>
+<div class="card-desc">
+<div class="hp-before-after">
+<div>
+<div style="font-size:12px;font-weight:700;color:var(--coral);margin-bottom:8px;">현재 (전환율 낮음)</div>
+<div class="hp-flow">
+<div class="hp-step"><div class="hp-icon">📱</div><div class="hp-title">광고 클릭</div><div class="hp-arrow">→</div></div>
+<div class="hp-step"><div class="hp-icon">📜</div><div class="hp-title">메인 스크롤</div><div class="hp-desc">8개 슬라이드, CTA 없음</div><div class="hp-arrow">→</div></div>
+<div class="hp-step"><div class="hp-icon">🔍</div><div class="hp-title">문의하기</div><div class="hp-arrow">→</div></div>
+<div class="hp-step"><div class="hp-icon">💬</div><div class="hp-title">카톡 검색 안내</div><div class="hp-desc">2단계 필요</div></div>
+</div>
+</div>
+<div class="hp-arrow-mid">→</div>
+<div>
+<div style="font-size:12px;font-weight:700;color:var(--teal);margin-bottom:8px;">개선 후 (전환율 극대화)</div>
+<div class="hp-flow">
+<div class="hp-step" style="border-color:var(--teal);"><div class="hp-icon">📱</div><div class="hp-title">광고 클릭</div><div class="hp-arrow">→</div></div>
+<div class="hp-step" style="border-color:var(--teal);background:var(--teal-l);"><div class="hp-icon">📏</div><div class="hp-title">예측키 측정</div><div class="hp-desc">바로 입력, 결과 즉시</div><div class="hp-arrow">→</div></div>
+<div class="hp-step" style="border-color:var(--teal);background:var(--teal-l);"><div class="hp-icon">💬</div><div class="hp-title">카톡 상담</div><div class="hp-desc">1클릭 연결</div></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div style="font-size:15px;font-weight:700;margin-bottom:12px;">메인 페이지 새 스크롤 순서</div>
+<table class="action-table" style="margin-bottom:20px;">
+<thead><tr><th style="width:40px;">순서</th><th>섹션</th><th>콘텐츠</th><th>전환 요소</th><th>출처</th></tr></thead>
+<tbody>
+<tr><td style="font-weight:900;color:var(--teal);">1</td><td><strong>히어로</strong></td><td>"우리 아이, 얼마나 클까?" + 예측키 측정 CTA 버튼</td><td>바로 아래로 스크롤 유도</td><td>신규</td></tr>
+<tr style="background:var(--teal-l);"><td style="font-weight:900;color:var(--teal);">2</td><td><strong>⭐ 예측키 측정 위젯</strong></td><td>성별/나이/키/몸무게/부모키 → 예상키 결과 + 성장곡선</td><td>결과 아래 "전문 상담 받아보세요" <strong>카톡 버튼</strong></td><td>LP Care 앱</td></tr>
+<tr style="background:var(--teal-l);"><td style="font-weight:900;color:var(--teal);">3</td><td><strong>⭐ 치료 사례 카드</strong></td><td>155.7→177.9cm (+22.2cm) 등 수치 카드 9건</td><td>"우리 아이도 가능할까?" 카톡 버튼</td><td>LP Care 앱</td></tr>
+<tr style="background:var(--teal-l);"><td style="font-weight:900;color:var(--teal);">4</td><td><strong>⭐ 성장 가이드 슬라이더</strong></td><td>골든타임, 수면, 영양, 운동 등 14개 카드뉴스</td><td>"더보기 → 앱 다운로드" 유도</td><td>LP Care 앱</td></tr>
+<tr style="background:var(--teal-l);"><td style="font-weight:900;color:var(--teal);">5</td><td><strong>⭐ 성장 레시피 슬라이더</strong></td><td>키 쑥쑥 주먹밥, 연어 스틱 등 10개 레시피 카드</td><td>"전체 레시피 → 앱 다운로드" 유도</td><td>LP Care 앱</td></tr>
+<tr><td>6</td><td>원장님 소개 + 책</td><td>채용현 원장, 쌍둥이 아빠 의사, 저서 소개</td><td>신뢰 요소</td><td>기존 유지</td></tr>
+<tr><td>7</td><td>유튜브 영상</td><td>인기 영상 임베딩</td><td>체류시간 증가</td><td>기존 유지</td></tr>
+<tr><td>8</td><td>187 성장케어 앱 배너</td><td>"앱에서 매일 성장 관리하세요" + 다운로드 링크</td><td>앱 전환</td><td>신규</td></tr>
+<tr><td>9</td><td>병원 정보</td><td>진료시간, 오시는길, 전화번호</td><td>방문 전환</td><td>기존 유지</td></tr>
+</tbody>
+</table>
+
+<div class="two-col" style="margin-bottom:20px;">
+<div class="card" style="border-top:3px solid #DC2626;">
+<div class="card-label" style="color:#DC2626;">즉시 수정 (전환율 직결)</div>
+<div class="card-desc">
+<table style="width:100%;font-size:12px;border-collapse:collapse;">
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 0;font-weight:700;">1. 히어로 CTA 추가</td><td style="color:var(--muted);">"우리 아이 예측키 무료 측정" 버튼</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 0;font-weight:700;">2. 예측키 위젯 삽입</td><td style="color:var(--muted);">LP Care 앱 UI를 메인에 구현</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 0;font-weight:700;">3. 카톡 버튼 1클릭화</td><td style="color:var(--muted);">카카오 채널 바로가기 링크로 변경</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 0;font-weight:700;">4. 플로팅 버튼 변경</td><td style="color:var(--muted);">"문의하기" → "카톡 상담" + 카카오 아이콘</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 0;font-weight:700;">5. 팝업 정리</td><td style="color:var(--muted);">3개→1개 (예측키 측정 유도만)</td></tr>
+<tr><td style="padding:6px 0;font-weight:700;">6. 치료사례 수치 카드</td><td style="color:var(--muted);">LP Care 데이터 → "+22.2cm" 임팩트 카드</td></tr>
+</table>
+</div>
+</div>
+<div class="card" style="border-top:3px solid var(--amber);">
+<div class="card-label" style="color:var(--amber);">개선 권장</div>
+<div class="card-desc">
+<table style="width:100%;font-size:12px;border-collapse:collapse;">
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 0;font-weight:700;">7. 히어로 슬라이드 축소</td><td style="color:var(--muted);">8개→3~4개</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 0;font-weight:700;">8. 성장가이드 카드뉴스</td><td style="color:var(--muted);">앱 콘텐츠 14개를 카드 슬라이더로</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 0;font-weight:700;">9. 레시피 카드 삽입</td><td style="color:var(--muted);">앱 레시피 10개를 비주얼 카드로</td></tr>
+<tr><td style="padding:6px 0;font-weight:700;">10. 앱 다운로드 배너</td><td style="color:var(--muted);">"187 성장케어 앱에서 매일 관리"</td></tr>
+</table>
+</div>
+</div>
+</div>
+
+<div class="card" style="border-top:3px solid var(--teal);margin-bottom:20px;">
+<div class="card-label" style="color:var(--teal);">서브 페이지 판단</div>
+<div class="card-desc">
+<table style="width:100%;font-size:12px;border-collapse:collapse;">
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px 0;">원장님소개 / 병원소개 / 진료시간 / 오시는길</td><td><span class="p-now">✅ 유지</span></td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px 0;">치료후기 / 성장 이야기</td><td><span class="p-now">✅ 유지</span></td></tr>
+<tr><td style="padding:4px 0;font-weight:700;">카톡 상담 페이지</td><td><span class="comp-high">🔴 유일 수정</span> 카카오 채널 바로가기 1클릭</td></tr>
+</table>
+</div>
+</div>
+
+<div class="warn-box">
+<strong>일정: 홈페이지 개선 15일</strong>
+1~5일: 예측키 위젯 개발/삽입, 카톡 버튼 1클릭화, 팝업 정리<br>
+6~10일: 치료사례 카드, 성장가이드 카드뉴스, 레시피 카드 삽입<br>
+11~15일: 앱 다운로드 배너, 히어로 CTA 최종 조정, 모바일 테스트<br>
+→ <strong>15일 완료 후 유료 광고 시작</strong>
+</div>
+
+</div>
+</details>
+</div>
+</section>
+
+<!-- 10. 액션 플랜 -->
+<section id="action">
+<div class="container">
+<details>
+<summary>
+<div><div class="section-tag">Action Plan</div>
+<div class="section-title">우선순위 액션 플랜</div>
+</div>
+</summary>
+<div class="section-content">
+<div style="overflow-x:auto;">
+<table class="action-table">
+<thead><tr><th>순위</th><th>액션</th><th>타임라인</th><th>비용/월</th><th>담당</th></tr></thead>
+<tbody>
+<tr><td><span class="p-now">1순위</span></td><td><strong>유입경로 수집 프로세스</strong><br><span style="font-size:12px;color:var(--muted)">"어떻게 알고 오셨어요?" 필수 질문</span></td><td>즉시</td><td>무료</td><td>전 직원</td></tr>
+<tr><td><span class="p-now">2순위</span></td><td><strong>네이버 플레이스 최적화 + 지식인 답변</strong></td><td>즉시</td><td>무료</td><td>C</td></tr>
+<tr><td><span class="p-now">3순위</span></td><td><strong>황금키워드 블로그 4편 + 미게시 6개 ContentFlow 가동</strong><br><span style="font-size:12px;color:var(--muted)">예상키계산법·예상키계산기·성장주사·아이키커 + A-02,D-02,D-03,B-07,A-17,B-10</span></td><td>즉시</td><td>내부</td><td>A+B</td></tr>
+<tr><td><span class="p-now">4순위</span></td><td><strong>블로그 기자단 월 15건 배포</strong></td><td>즉시</td><td>50~100만</td><td>B</td></tr>
+<tr><td><span class="p-soon">5순위</span></td><td><strong>홈페이지 리뉴얼 (랜딩 최적화)</strong><br><span style="font-size:12px;color:var(--muted)">광고 전 필수 — 안 하면 광고비 낭비</span></td><td>3~4주</td><td>일회성 500~1000만</td><td>외주+C</td></tr>
+<tr><td><span class="p-soon">6순위</span></td><td><strong>네이버 파워링크 롱테일 50개 세팅</strong></td><td>홈페이지 후</td><td>300~500만</td><td>C</td></tr>
+<tr><td><span class="p-soon">7순위</span></td><td><strong>인스타 릴스 부스팅</strong></td><td>1개월</td><td>100~200만</td><td>C</td></tr>
+<tr><td><span class="p-mid">8순위</span></td><td><strong>파워블로거 체험단 2~3명</strong></td><td>1개월</td><td>치료비</td><td>B</td></tr>
+<tr><td><span class="p-mid">9순위</span></td><td><strong>앱 공유 기능 추가 (바이럴 루프 핵심)</strong></td><td>개발 일정</td><td>개발비</td><td>개발팀</td></tr>
+</tbody>
+</table>
+</div>
+<div class="tip-box"><strong>가장 중요한 한 가지</strong>1순위(유입경로 수집)가 제일 먼저. 이게 없으면 나머지 다 해도 "뭐가 효과 있었는지" 영원히 모름. 접수 시 질문 하나만 추가.</div>
+</div>
+</details>
+</div>
+</section>
+
+<!-- 11. 예산 -->
+<section id="budget">
+<div class="container">
+<details>
+<summary>
+<div><div class="section-tag">Budget Plan</div>
+<div class="section-title">예산 — 소심 vs 적극 (월 기준)</div>
+<div class="section-sub">홈페이지 15일 개선 (자체, 비용 0) → 유료 광고 시작</div></div>
+</summary>
+<div class="section-content">
+<div class="two-col">
+<div class="card" style="border-top:3px solid var(--teal)">
+<div class="card-label" style="color:var(--teal)">소심 버전 — 월 300만원</div>
+<div class="card-desc" style="font-size:12px;">
+<table style="width:100%;font-size:12px;border-collapse:collapse;">
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px 0"><strong>파워링크 (예측키 3개)</strong></td><td style="text-align:right">10만</td><td style="text-align:right;color:var(--teal)">~130 클릭</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px 0"><strong>파워링크 (의료 3개)</strong></td><td style="text-align:right">20만</td><td style="text-align:right;color:var(--teal)">~15 클릭</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px 0"><strong>체험단 (찐 체험)</strong></td><td style="text-align:right;color:var(--teal)">0원</td><td style="text-align:right;color:var(--teal)">~300 유입</td></tr>
+<tr style="border-bottom:1px solid var(--border);font-size:10px;color:var(--muted)"><td colspan="3" style="padding:2px 0 4px 12px">→ 실제 치료 제공 = 체험단 비용. 월 2~3건</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px 0"><strong>기자단 (도서/앱)</strong></td><td style="text-align:right">20만</td><td style="text-align:right;color:var(--teal)">~150 유입</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px 0"><strong>인스타 인플루언서</strong></td><td style="text-align:right">25만</td><td style="text-align:right;color:var(--teal)">~200 유입</td></tr>
+<tr style="border-bottom:1px solid var(--border);font-size:10px;color:var(--muted)"><td colspan="3" style="padding:2px 0 4px 12px">→ 팔로워 10K 인플루언서 5명 × 5만원 (도서/앱 리뷰)</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:var(--teal-l)"><td style="padding:4px 0"><strong>인스타/Meta 광고 ⭐</strong></td><td style="text-align:right">130만</td><td style="text-align:right;color:var(--teal)">~2,600 클릭</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:var(--teal-l)"><td style="padding:4px 0"><strong>유튜브 광고 ⭐</strong></td><td style="text-align:right">80만</td><td style="text-align:right;color:var(--teal)">~1,600 클릭</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px 0"><strong>맘카페/커뮤니티</strong></td><td style="text-align:right">15만</td><td style="text-align:right;color:var(--teal)">~80 유입</td></tr>
+<tr style="font-weight:700;background:var(--teal-l)"><td style="padding:6px 0">합계</td><td style="text-align:right">300만</td><td style="text-align:right;color:var(--teal)">~5,075 유입/월</td></tr>
+</table>
+<div style="margin-top:8px;font-size:11px;color:var(--muted)">+ 자체 콘텐츠 무료 유입 1,500~4,500 → <strong>총 6,575~9,575/월</strong></div>
+<div style="margin-top:4px;font-size:12px;color:var(--teal);font-weight:700">예상 카톡 상담: 132~287건/월 (전환율 2~3%)</div>
+<div style="margin-top:4px;font-size:11px;color:var(--muted)">⭐ 인스타(130만)+유튜브(80만) = 70% 집중. 체험단 0원+인플루언서 25만 = 바이럴</div>
+</div>
+</div>
+<div class="card" style="border-top:3px solid var(--amber)">
+<div class="card-label" style="color:var(--amber)">적극 버전 — 월 1,000만원</div>
+<div class="card-desc" style="font-size:12px;">
+<table style="width:100%;font-size:12px;border-collapse:collapse;">
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px 0"><strong>파워링크 (예측키 5개)</strong></td><td style="text-align:right">40만</td><td style="text-align:right;color:var(--amber)">~500 클릭</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px 0"><strong>파워링크 (의료 10개)</strong></td><td style="text-align:right">120만</td><td style="text-align:right;color:var(--amber)">~80 클릭</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px 0"><strong>체험단 (찐 체험)</strong></td><td style="text-align:right;color:var(--amber)">0원</td><td style="text-align:right;color:var(--amber)">~1,000 유입</td></tr>
+<tr style="border-bottom:1px solid var(--border);font-size:10px;color:var(--muted)"><td colspan="3" style="padding:2px 0 4px 12px">→ 실제 치료 제공 = 체험단 비용. 월 5건+ 모집 가능</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px 0"><strong>기자단 (도서/앱)</strong></td><td style="text-align:right">45만</td><td style="text-align:right;color:var(--amber)">~400 유입</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px 0"><strong>인스타 인플루언서</strong></td><td style="text-align:right">75만</td><td style="text-align:right;color:var(--amber)">~600 유입</td></tr>
+<tr style="border-bottom:1px solid var(--border);font-size:10px;color:var(--muted)"><td colspan="3" style="padding:2px 0 4px 12px">→ 팔로워 10K×10명 + 20K×5명 = 15명 (도서/앱 리뷰)</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:var(--amber-l)"><td style="padding:4px 0"><strong>인스타/Meta 광고 ⭐</strong></td><td style="text-align:right">400만</td><td style="text-align:right;color:var(--amber)">~8,000 클릭</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:var(--amber-l)"><td style="padding:4px 0"><strong>유튜브 광고 ⭐</strong></td><td style="text-align:right">250만</td><td style="text-align:right;color:var(--amber)">~5,000 클릭</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px 0"><strong>맘카페/커뮤니티</strong></td><td style="text-align:right">30만</td><td style="text-align:right;color:var(--amber)">~200 유입</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px 0"><strong>GFA (네이버 배너)</strong></td><td style="text-align:right">40만</td><td style="text-align:right;color:var(--amber)">~800 클릭</td></tr>
+<tr style="font-weight:700;background:var(--amber-l)"><td style="padding:6px 0">합계</td><td style="text-align:right">1,000만</td><td style="text-align:right;color:var(--amber)">~16,580 유입/월</td></tr>
+</table>
+<div style="margin-top:8px;font-size:11px;color:var(--muted)">+ 자체 콘텐츠 무료 유입 1,500~4,500 → <strong>총 18,080~21,080/월</strong></div>
+<div style="margin-top:4px;font-size:12px;color:var(--amber);font-weight:700">예상 카톡 상담: 362~632건/월 (전환율 2~3%)</div>
+<div style="margin-top:4px;font-size:11px;color:var(--muted)">⭐ 인스타(400만)+유튜브(250만) = 65% 집중 + 인플루언서 15명 바이럴</div>
+</div>
+</div>
+</div>
+<div class="tip-box"><strong>블로그/콘텐츠/홈페이지 = 비용 0원</strong>직원 자체 제작. ContentFlow 자동화로 주 16~17개 포스팅 처리. 6개월 후 자체 유입이 유료를 초과할 수 있음.</div>
+</div>
+</details>
+</div>
+</section>
+
+<!-- 12. 체험단/기자단 -->
+<section id="blogger">
+<div class="container">
+<details>
+<summary>
+<div><div class="section-tag">Blogger Campaign</div>
+<div class="section-title">파워블로거 체험단 & 기자단 전략</div>
+</div>
+</summary>
+<div class="section-content">
+<div class="two-col">
+<div class="card" style="border-left:4px solid var(--coral)">
+<div class="card-label" style="color:var(--coral)">찐 체험단 (아이 실제 치료)</div>
+<div class="card-desc">
+<strong>대상:</strong> 키 성장 관심 맘블로거 (일 방문 1,000+, 육아 카테고리)<br>
+<strong>체험:</strong> 실제 아이 성장판 검사+상담+프로그램<br>
+<strong>비용: 0원</strong> — 실제 치료 제공이 곧 체험 대가. 별도 원고료 없음<br>
+<strong>목표:</strong> 월 3~5건 (소심) / 월 5~8건 (적극)<br>
+<strong>포인트:</strong> 수십만원 상당 검진+치료 무료 = 블로거 경쟁률 높음<br>
+<strong>모집 플랫폼:</strong> 파블로, 블로그차트, 모두의체험단, 체험단닷컴<br>
+<strong>주의:</strong> 공정위 — "체험 제공받아 작성" 필수 표기
+</div>
+</div>
+<div class="card" style="border-left:4px solid var(--teal)">
+<div class="card-label" style="color:var(--teal)">기자단 (도서/앱 리뷰) — 의료광고 아님!</div>
+<div class="card-desc">
+<strong>기자단 A — 도서 리뷰:</strong><br>
+"우리 아이 키성장 바이블" 리뷰 블로거 10~20명. 도서 제공+원고료 10~20만/건<br><br>
+<strong>기자단 B — 앱 리뷰:</strong><br>
+"DFlo 187 성장케어" 앱 체험 리뷰. 예측키·식단·성장 추적 소개. 10~15만/건<br><br>
+<strong>핵심:</strong> 도서/앱 리뷰는 의료광고 심의 대상 아님 → 제약 없이 자유롭게 배포
+</div>
+</div>
+</div>
+<div class="card" style="border-left:4px solid var(--purple);margin-top:16px;">
+<div class="card-label" style="color:var(--purple)">인스타 육아 인플루언서 기자단 — 가성비 최고</div>
+<div class="card-desc">
+<strong>대상:</strong> 육아/맘 인스타 인플루언서 (팔로워 10,000~50,000)<br>
+<strong>미션:</strong> 도서 리뷰 or 앱(DFlo 187) 체험 리뷰 포스팅<br>
+<strong>비용:</strong> 팔로워 10,000명 기준 약 5만원/건 (도서 제공 별도)<br>
+<strong>산출:</strong><br>
+<table style="width:100%;font-size:11px;border-collapse:collapse;margin:8px 0;">
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:3px">팔로워 10K 인플루언서 × 10명</td><td style="text-align:right">50만원</td><td style="text-align:right">도달 ~30,000</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:3px">팔로워 20K 인플루언서 × 5명</td><td style="text-align:right">50만원</td><td style="text-align:right">도달 ~30,000</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:3px">팔로워 50K 인플루언서 × 2명</td><td style="text-align:right">50만원</td><td style="text-align:right">도달 ~30,000</td></tr>
+<tr style="font-weight:700;background:var(--purple-l,#f3e8ff)"><td style="padding:3px">예시 합계 (17명)</td><td style="text-align:right">150만원</td><td style="text-align:right">도달 ~90,000</td></tr>
+</table>
+<strong>장점:</strong> 병원 직접 광고 아님 → 의료광고법 무관. 자연스러운 육아맘 추천 형태.<br>
+<strong>컨택 방법:</strong> DM 직접 컨택 / 인플루언서 매칭 플랫폼 (리뷰어스, 유커넥트, 크리마)<br>
+<strong>주의:</strong> "도서/앱 제공받아 작성" 공정위 표시 필수
+</div>
+</div>
+</div>
+</details>
+</div>
+</section>
+
+<!-- 13. 입찰 분석 -->
+<section id="bid">
+<div class="container">
+<details>
+<summary>
+<div><div class="section-tag">Bid Analysis</div>
+<div class="section-title">파워링크 입찰 분석 (API 실데이터)</div>
+<div class="section-sub">9~10위(첫 페이지 하단) 전략 — 병원은 소비자가 신중히 비교하므로 하단이어도 클릭함</div></div>
+</summary>
+<div class="section-content">
+<div style="overflow-x:auto;">
+<table class="action-table">
+<thead><tr><th>키워드</th><th>월 검색량</th><th>가성비 입찰가</th><th>예상 노출/월</th><th>예상 클릭/월</th><th>예상 비용/월</th><th>평가</th></tr></thead>
+<tbody>
+<tr style="background:var(--amber-l)"><td><strong>예상키계산기 ⭐</strong></td><td>3,780</td><td>500원</td><td>2,061</td><td>42</td><td>14,587원</td><td><span class="p-now">킬러!</span></td></tr>
+<tr style="background:var(--amber-l)"><td><strong>예상키 ⭐</strong></td><td>3,100</td><td>1,500원</td><td>1,679</td><td>8</td><td>11,366원</td><td><span class="p-now">킬러!</span></td></tr>
+<tr style="background:var(--amber-l)"><td><strong>6학년평균키 ⭐</strong></td><td>2,880</td><td>1,000원</td><td>488</td><td>2</td><td>140원</td><td><span class="p-now">CPC 70원!</span></td></tr>
+<tr><td><strong>키크는법</strong></td><td>5,210</td><td>1,000원</td><td>85</td><td>1</td><td>1,000원</td><td><span class="p-soon">가성비 좋음</span></td></tr>
+<tr><td><strong>성장호르몬주사</strong></td><td>6,180</td><td>1,000~2,000원</td><td>3,830~5,486</td><td>1~6</td><td>922~10,156원</td><td><span class="p-soon">가성비 좋음</span></td></tr>
+<tr><td><strong>성조숙증</strong></td><td>13,520</td><td>500~2,000원</td><td>83~1,624</td><td>1~5</td><td>500~8,419원</td><td><span class="p-soon">가성비 좋음</span></td></tr>
+<tr><td><strong>성장호르몬</strong></td><td>1,860</td><td>3,000원</td><td>603</td><td>4</td><td>12,000원</td><td><span class="p-mid">보통</span></td></tr>
+<tr><td><strong>성장클리닉</strong></td><td>4,770</td><td>3,000~5,000원</td><td>230~1,162</td><td>0 (노출)</td><td>0원</td><td><span class="p-mid">인지도용</span></td></tr>
+<tr><td><strong>키성장</strong></td><td>2,460</td><td>10,000~15,000원</td><td>526~831</td><td>0~1</td><td>0~12,272원</td><td><span style="background:var(--coral-l);color:var(--coral);padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">비쌈</span></td></tr>
+</tbody>
+</table>
+</div>
+<div class="warn-box"><strong>왜 "예상키계산기"가 킬러인가?</strong>① 검색자 = "우리 아이 키 궁금한 부모" → 전환 의도 최상위 ② 클릭 → 홈페이지 예측키 도구 → 카톡 상담 (완벽한 퍼널) ③ 경쟁 광고 8개뿐 ④ CPC 347원은 의료 업종 평균의 1/10</div>
+</div>
+</details>
+</div>
+</section>
+
+<!-- 14. 채널 A등급 목표 -->
+<section id="grade">
+<div class="container">
+<details>
+<summary>
+<div><div class="section-tag">Channel Targets</div>
+<div class="section-title">자체 채널 A등급 목표 (6개월 내)</div>
+<div class="section-sub">유료 광고와 병행하면서 자체 콘텐츠로 각 채널 A등급 달성</div></div>
+</summary>
+<div class="section-content">
+<div style="overflow-x:auto;">
+<table class="action-table">
+<thead><tr><th>채널</th><th>현재</th><th>A등급 기준</th><th>달성 방법 (자체)</th><th>목표</th></tr></thead>
+<tbody>
+<tr><td><strong>네이버 블로그</strong></td><td><span class="comp-badge comp-mid">B</span></td><td>주 3회+, D.I.A 최적화, 키워드 20개+ 상위</td><td>도서 시리즈+키워드 포스트. ContentFlow 자동화</td><td>3개월</td></tr>
+<tr><td><strong>유튜브</strong></td><td><span class="comp-badge comp-mid">B</span></td><td>주 2회, 구독자 5,000+, 평균 조회 1,000+</td><td>롱폼 1+쇼츠 1/주. 미게시 54개 우선 소화</td><td>4개월</td></tr>
+<tr><td><strong>인스타그램</strong></td><td><span class="comp-badge comp-mid">B</span></td><td>주 4회, 팔로워 5,000+, 참여율 3%+</td><td>릴스 2+캐러셀 1+피드 1/주. 쇼츠 재활용</td><td>4개월</td></tr>
+<tr><td><strong>스레드</strong></td><td><span class="comp-badge comp-mid">B+</span></td><td>주 4회, 팔로워 2,000+, 답글 10+</td><td>블로그/영상 핵심 요약. 육아 토픽 적극 답글</td><td>3개월</td></tr>
+<tr><td><strong>홈페이지</strong></td><td><span class="comp-badge comp-high">C</span></td><td>예측키 도구, 카톡 동선, SEO, 월 방문 5,000+</td><td>15일 내 자체 개선. 예측키→카톡 전환 플로우</td><td><strong>15일</strong></td></tr>
+</tbody>
+</table>
+</div>
+<div class="tip-box"><strong>주간 콘텐츠 실질 제작량</strong>유튜브 2개 + 블로그 2개 + 카드뉴스 1세트 = 원본. 나머지는 ContentFlow가 자동 변환·배포. 주 16~17개 포스팅 처리.</div>
+</div>
+</details>
+</div>
+</section>
+
+<!-- 15. KPI -->
+<section id="kpi">
+<div class="container">
+<details>
+<summary>
+<div><div class="section-tag">KPI Framework</div>
+<div class="section-title">채널별 KPI 체계</div>
+</div>
+</summary>
+<div class="section-content">
+<div class="card-grid">
+<div class="card" style="border-top:3px solid #03C75A"><div class="card-label" style="color:#03C75A">📝 네이버 블로그</div><div class="card-desc"><div class="metric-row"><span class="metric-pill">주간 조회수</span><span class="metric-pill">검색 유입 TOP10</span><span class="metric-pill">블로그→카카오 전환률</span></div><div style="margin-top:6px;font-size:12px;color:var(--teal);font-weight:700;">🎯 월 카카오 전환율 3~5%</div></div></div>
+<div class="card" style="border-top:3px solid #FF0000"><div class="card-label" style="color:#CC0000">🎬 유튜브</div><div class="card-desc"><div class="metric-row"><span class="metric-pill">영상별 조회수·시청시간</span><span class="metric-pill">쇼츠→본채널 유입률</span><span class="metric-pill">댓글·저장</span></div><div style="margin-top:6px;font-size:12px;color:var(--teal);font-weight:700;">🎯 쇼츠 월 10만 노출 / 본영상 4분+</div></div></div>
+<div class="card" style="border-top:3px solid #E1306C"><div class="card-label" style="color:#C13584">📱 인스타그램</div><div class="card-desc"><div class="metric-row"><span class="metric-pill">릴스 도달</span><span class="metric-pill">카드뉴스 저장률</span><span class="metric-pill">프로필→링크 클릭</span></div><div style="margin-top:6px;font-size:12px;color:var(--teal);font-weight:700;">🎯 릴스 도달 = 팔로워 3배+</div></div></div>
+<div class="card" style="border-top:3px solid var(--amber)"><div class="card-label" style="color:var(--amber)">📊 통합 KPI (최종)</div><div class="card-desc"><div class="metric-row"><span class="metric-pill" style="background:var(--teal-l);color:var(--teal)">전 채널→카카오 인입 수</span><span class="metric-pill" style="background:var(--teal-l);color:var(--teal)">카카오→예약 전환율</span><span class="metric-pill" style="background:var(--coral-l);color:var(--coral)">신규 환자 유입 경로</span></div><div style="margin-top:6px;font-size:12px;color:var(--coral);font-weight:700;">⚠️ 유입 경로 수집 없으면 KPI 측정 무의미</div></div></div>
+</div>
+</div>
+</details>
+</div>
+</section>
+
+<!-- ================================================================ -->
+<!-- PHASE 4: 확장 & 데이터                                            -->
+<!-- ================================================================ -->
+<div class="phase-divider phase-4"><div class="phase-bar"><span class="phase-label"><span class="phase-num">04</span> 확장 & 데이터 — 해외 시장 + 레퍼런스 자료</span></div></div>
+
+<!-- 16. 해외 -->
+<section id="global">
+<div class="container">
+<details>
+<summary>
+<div><div class="section-tag">Global Strategy</div>
+<div class="section-title">해외 확장 전략</div>
+</div>
+</summary>
+<div class="section-content">
+<div class="card-grid">
+<div class="card" style="border-top:3px solid var(--coral)"><div class="card-label" style="color:var(--coral)">🇹🇭 태국 (1순위)</div><div class="card-title">현지 오피스 + Line 채널</div><div class="card-desc">현지 에이전시·전화 운영 중. Line 채널, 태국어 쇼츠, 앱 현지화, 방콕 맘카페.</div></div>
+<div class="card" style="border-top:3px solid var(--coral)"><div class="card-label" style="color:var(--coral)">🇨🇳 중국/화교권</div><div class="card-title">샤오홍수 + 위챗</div><div class="card-desc">중문 사이트 운영 중. 샤오홍수 진입, 위챗 공식계정, 왕홍 협업.</div></div>
+<div class="card" style="border-top:3px solid var(--amber)"><div class="card-label" style="color:var(--amber)">🌏 동남아 확장</div><div class="card-title">영어 콘텐츠 허브</div><div class="card-desc">영어 자막, 앱 다국어, 의료관광 에이전시 제휴.</div></div>
+<div class="card" style="border-top:3px solid var(--teal);background:var(--teal-l)"><div class="card-label" style="color:var(--teal)">포지셔닝</div><div class="card-title">K-Medical 프리미엄</div><div class="card-desc">"Korean Precision Growth Management". 앱 원격 상담 → 내원 → 귀국 후 추적 관리.</div></div>
+</div>
+</div>
+</details>
+</div>
+</section>
+
+<!-- 17. 전체 키워드 DB -->
+<section id="kw-db">
+<div class="container">
+<details>
+<summary>
+<div><div class="section-tag">Keyword Database</div>
+<div class="section-title">전체 키워드 검색량 테이블</div>
+<div class="section-sub">네이버 검색광고 API 실데이터 — 월간 검색량 기준 정렬</div></div>
+</summary>
+<div class="section-content">
+<div class="filter-bar">
+<button class="fbtn on" onclick="fKw('all',this)">전체</button>
+<button class="fbtn" onclick="fKw('gold',this)">🥇 황금키워드</button>
+<button class="fbtn" onclick="fKw('high',this)">🔴 고볼륨 2000+</button>
+<button class="fbtn" onclick="fKw('mid',this)">🟡 중볼륨 500~2000</button>
+<button class="fbtn" onclick="fKw('core',this)">🏥 성장·성조숙증</button>
+<button class="fbtn" onclick="fKw('habit',this)">💪 생활습관</button>
+<button class="fbtn" onclick="fKw('product',this)">💊 영양제</button>
+<span class="fcnt" id="kw-cnt"></span>
+</div>
+<div style="overflow-x:auto;">
+<table class="kw-table"><thead><tr><th>키워드</th><th class="r">월 총검색</th><th class="r">PC</th><th class="r">모바일</th><th class="r">모바일%</th><th>경쟁</th><th>분류</th></tr></thead><tbody id="kw-tbody"></tbody></table>
+</div>
+</div>
+</details>
+</div>
+</section>
+
+<!-- 18. 주제 목록 -->
+<section id="topics">
+<div class="container">
+<details>
+<summary>
+<div><div class="section-tag">Content Topics</div>
+<div class="section-title">전체 콘텐츠 주제 목록 (78개)</div>
+</div>
+</summary>
+<div class="section-content">
+<div class="filter-bar">
+<button class="fbtn on" onclick="filterTopics('all',this)">전체 78</button>
+<button class="fbtn" onclick="filterTopics('A',this)">A. 성장과학</button>
+<button class="fbtn" onclick="filterTopics('B',this)">B. 부모공감</button>
+<button class="fbtn" onclick="filterTopics('C',this)">C. 치료사례</button>
+<button class="fbtn" onclick="filterTopics('D',this)">D. 생활습관</button>
+<button class="fbtn" onclick="filterTopics('E',this)">E. 기타</button>
+<span class="fcnt" id="topic-cnt"></span>
+</div>
+<div style="overflow-x:auto;">
+<table class="topic-table"><thead><tr><th>No.</th><th>카테고리</th><th>주제</th><th>콘텐츠 각도</th><th>키워드</th><th>출처</th></tr></thead><tbody id="topic-tbody"></tbody></table>
+</div>
+</div>
+</details>
+</div>
+</section>
+
+<!-- 19. 유튜브 대조 -->
+<section id="yt-check">
+<div class="container">
+<details>
+<summary>
+<div><div class="section-tag">YouTube Gap Analysis</div>
+<div class="section-title">유튜브 기게시 vs 미게시 대조표</div>
+</div>
+</summary>
+<div class="section-content">
+<div class="sum-grid">
+<div class="sum-card"><div class="sum-num" style="color:var(--teal)">24</div><div class="sum-lbl">✅ 기게시</div></div>
+<div class="sum-card"><div class="sum-num" style="color:var(--purple)">54</div><div class="sum-lbl">⬜ 미게시</div></div>
+<div class="sum-card"><div class="sum-num" style="color:var(--amber)">8</div><div class="sum-lbl">🔶 유사</div></div>
+</div>
+<div class="filter-bar">
+<button class="fbtn on" onclick="filterYT('all',this)">전체</button>
+<button class="fbtn" onclick="filterYT('new',this)">⬜ 미게시만</button>
+<button class="fbtn" onclick="filterYT('done',this)">✅ 기게시만</button>
+<button class="fbtn" onclick="filterYT('similar',this)">🔶 유사만</button>
+<span class="fcnt" id="yt-cnt"></span>
+</div>
+<div style="overflow-x:auto;">
+<table class="topic-table"><thead><tr><th>No.</th><th>상태</th><th>제안 주제</th><th>기게시 영상 (매칭 시)</th></tr></thead><tbody id="yt-tbody"></tbody></table>
+</div>
+<div class="tip-box"><strong>공백 주제 우선순위</strong>A-02 성장호르몬 10시 신화 / A-08 코르티솔 / A-17 성장통 / D-02 스마트폰 / D-03 식단 피라미드 / B-07 우유 신화 / B-10 주눅 드는 아이 대화법</div>
+</div>
+</details>
+</div>
+</section>
+
+<footer>
+<strong>연세새봄의원 187 성장클리닉</strong> 통합 마케팅 전략 대시보드<br>
+서울시 강남구 도산대로 328 휘선빌딩 2층 · 02-3395-0999 · Thai: +66 02-1300265
+</footer>
+
+<script>
+/* === KEYWORD DATA === */
+const kwData=[["키크는영양제",2260,15000,17260,"높음","product"],["성조숙증",1640,11900,13540,"높음","core"],["아이키커",790,6770,7560,"중간","gold"],["성조숙증검사",940,7040,7980,"높음","core"],["키성장기영양제",1400,6170,7570,"높음","product"],["성장호르몬주사",860,5060,5920,"높음","core"],["성장판검사",670,5000,5670,"높음","core"],["키크는법",650,4680,5330,"높음","habit"],["초등학생평균키",650,4330,4980,"높음","habit"],["평균키",540,4360,4900,"높음","habit"],["성장클리닉",640,4040,4680,"높음","core"],["안짱다리",620,3930,4550,"높음","habit"],["성장주사",1010,3120,4130,"중간","gold,core"],["예상키계산기",390,3450,3840,"중간","gold,habit"],["예상키",200,2990,3190,"높음","habit"],["예상키계산법",300,2760,3060,"낮음","gold,habit"],["성조숙증증상",270,2790,3060,"높음","core"],["키크는음식",420,2610,3030,"높음","habit"],["키성장영양제",1130,2600,3730,"높음","product"],["소아비만",440,2530,2970,"높음","core"],["초경전증상",330,2640,2970,"높음","habit"],["6학년평균키",250,2570,2820,"높음","habit"],["청소년키크는영양제",910,2220,3130,"높음","product"],["성장주사부작용",880,1800,2680,"높음","core"],["키크는약",350,2310,2660,"높음","product"],["성장통",320,2330,2650,"높음","habit"],["키크는운동",650,2450,3100,"높음","habit"],["사춘기테스트",110,2420,2530,"높음","habit"],["사춘기증상",170,2220,2390,"높음","habit"],["키성장",650,1610,2260,"높음","core"],["성조숙증치료",650,1340,1990,"높음","core"],["성장호르몬",420,1370,1790,"높음","core"],["키크는주사",280,1510,1790,"높음","core"],["성장판마사지",550,1190,1740,"높음","habit"],["성장판검사비용",260,1230,1490,"높음","core"],["성조숙증원인",90,1290,1380,"높음","core"],["성장판자가진단",120,1240,1360,"높음","core"],["키크는스트레칭",320,950,1270,"높음","habit"],["성장호르몬주사가격",670,600,1270,"높음","core"],["성장기영양제",460,790,1250,"높음","product"],["키크는방법",280,970,1250,"높음","habit"],["중학생키크는영양제",710,520,1230,"높음","product"],["성장판검사시기",490,520,1010,"높음","core"],["성장판검사병원",150,850,1000,"높음","core"],["성장호르몬검사",390,610,1000,"높음","core"],["남자아이성조숙증",90,910,1000,"높음","core"],["성장검사",120,750,870,"높음","core"],["성인키성장",320,560,880,"높음","habit"],["성장마사지",330,600,930,"높음","habit"],["중학생키영양제",360,490,850,"높음","product"],["성장판닫히면",360,390,750,"높음","core"],["여자성조숙증",110,600,710,"높음","core"],["성장판",250,1060,1310,"높음","core"],["성조숙증병원",20,320,340,"높음","core"],["성장판자극운동",220,200,420,"높음","habit"],["성장치료",30,90,120,"높음","core"],["저신장",40,160,200,"높음","core"],["강남성장클리닉",90,120,210,"높음","core"],["분당성장클리닉",90,260,350,"높음","core"],["우리아이예상키",60,570,630,"높음","habit"],["초경후키",280,270,550,"높음","habit"],["키성장클리닉",80,460,540,"높음","core"],["나이별평균키",100,710,810,"높음","habit"],["초등학생키",90,720,810,"높음","habit"],["고등학생키",20,250,270,"높음","habit"],["중학생키성장",170,110,280,"높음","habit"],["키예상",40,780,820,"높음","habit"],["키성장표",150,730,880,"높음","habit"],["성장발육",40,180,220,"높음","habit"],["키크는식단",200,300,500,"높음","habit"],["어린이키",220,430,650,"높음","habit"],["어린이키성장",100,230,330,"높음","habit"]];
+/* === TOPIC DATA === */
+const topics=[["A-01","A","키 유전 80% vs 환경 20% — 진짜 비중의 의미","오해 교정형","키 유전 비율, 환경 키 성장","바이블+백과"],["A-02","A","성장호르몬은 밤 몇 시에 나올까? — 10시 신화 해부","충격 팩트형","성장호르몬 분비 시간, 깊은 잠 성장","바이블"],["A-03","A","뼈나이 vs 실제나이 — X-ray로 뭘 알 수 있나?","개념 정리형","뼈나이 검사, 성장판 열림 닫힘","바이블+백과"],["A-04","A","예상키 계산법의 오차 — 부모 키 공식은 왜 틀릴까?","팩트체크형","예상키 계산법, 최종키 예측","바이블+백과"],["A-05","A","성장 타이밍 4번의 기회 — 영아기·아동기·사춘기·골든타임","시기별 정리형","성장 골든타임, 사춘기 성장속도","바이블"],["A-06","A","성장판이 닫히는 나이 — 남녀별·부위별 차이","수치 비교형","성장판 닫히는 나이, 성장판 폐쇄","백과"],["A-07","A","성조숙증이 키를 망치는 메커니즘","원리 설명형","성조숙증 키 영향, 성장판 조기폐쇄","바이블+백과"],["A-08","A","코르티솔이 키를 막는다 — 스트레스와 성장호르몬 역관계","과학 연결형","스트레스 성장 영향, 코르티솔","바이블+백과"],["A-09","A","갑상선호르몬 이상이 성장을 멈춘다","증상 연결형","갑상선 성장 관계","백과"],["A-10","A","비만 아이가 일찍 크고 일찍 멈추는 이유","역설 팩트형","소아비만 성장판, 비만 성조숙증","바이블+백과"],["A-11","A","알레르기·만성염증이 키 성장 에너지를 훔친다","원인 파헤치기형","알레르기 성장 방해, 만성염증 키","바이블+백과"],["A-12","A","중금속(납·수은·카드뮴)이 키에 미치는 영향","환경 위험형","중금속 성장 영향","바이블+백과"],["A-13","A","환경호르몬이 성장판을 교란하는 경로","생활 밀착 경고형","환경호르몬 성조숙증","바이블"],["A-14","A","여자아이 사춘기 순서 완벽 정리","타임라인형","여자아이 사춘기 순서, 초경 성장","바이블+백과"],["A-15","A","남자아이 사춘기 — 고환 크기가 첫 신호인 이유","의외의 팩트형","남자아이 사춘기 신호","바이블+백과"],["A-16","A","조부모 키가 중요한 과학적 이유 — 격세유전","가족력 팩트형","키 유전 조부모, 가족성 저신장","바이블"],["A-17","A","성장통은 키가 크는 신호일까? — 진짜 원인과 대처법","궁금증 해소형","성장통 원인, 성장통 키 크는 신호","바이블+백과"],["A-18","A","ADHD 약물이 키 성장에 미치는 실제 영향","오해 교정형","ADHD 성장 영향, 식욕억제 성장","백과"],["A-19","A","스테로이드 약이 키를 멈추나? — 흡입·연고·경구 차이","불안 해소형","스테로이드 성장 영향","백과"],["A-20","A","저체중 출생아, 따라잡기 성장이 가능할까?","희망 제시형","저체중 출생아 성장","백과"],["B-01","B","\"나중에 크겠지\" — 언제까지 기다려도 될까?","공감→팩트 전환형","나중에 크겠지 아이 키","바이블+백과"],["B-02","B","\"우리 아이 반에서 제일 작아요\" — 백분위수 읽는 법","실용 가이드형","성장 백분위수, 아이 키 평균 비교","바이블+백과"],["B-03","B","예상키 작게 나왔는데 — 얼마나 믿어야 할까?","불안 해소형","예상키 작게 나왔을 때","바이블+백과"],["B-04","B","잘 먹는데 왜 안 크지? — 영양 흡수 문제 점검","원인 탐색형","잘 먹어도 키 안 크는 이유","바이블"],["B-05","B","성장호르몬 치료 부작용, 진짜 얼마나 무서울까?","공포 해소형","성장호르몬 부작용, 성장주사 안전성","바이블+백과"],["B-06","B","키 크는 영양제, 먹이면 효과 있을까?","팩트체크형","키 크는 영양제 효과","바이블+백과"],["B-07","B","우유 매일 먹이면 키 크나요? — 칼슘 신화의 진실","오해 교정형","우유 키 성장, 칼슘 성장 효과","바이블+백과"],["B-08","B","중학교 2학년인데 아직 키가 클 수 있나요?","희망 제시형","중학생 키 성장, 사춘기 이후 성장","바이블+백과"],["B-09","B","초등 4학년 딸 가슴이 나왔어요 — 성조숙증인가요?","불안 해소+행동 지침형","초등 가슴 발달, 성조숙증 자가체크","바이블+백과"],["B-10","B","키 때문에 주눅 드는 아이 — 어떻게 말해줘야 할까?","감정 공감형","키 작은 아이 자존감","바이블"],["B-11","B","성장클리닉은 몇 살 때 가면 좋을까요?","결정 도움형","성장클리닉 방문 시기","바이블+백과"],["B-12","B","아이 키 재면 날마다 달라요 — 측정 방법이 문제일까?","생활 팁형","키 정확하게 재는 법","백과"],["B-13","B","부모 키가 작아도 아이는 크게 키울 수 있을까요?","희망 제시형","부모 작아도 아이 키 크게","백과"],["B-14","B","학원 3개 다니는 아이 — 스트레스가 키를 막고 있을까?","생활 연결형","학원 스트레스 키 성장","바이블+백과"],["B-15","B","모유 먹인 아이, 분유 아이보다 작게 자라나요?","오해 교정형","모유 분유 성장 차이","백과"],["C-01","C","아토피·비염 아이 — 3개월에 4cm 성장","스토리형","알레르기 아이 성장","바이블"],["C-02","C","성조숙증+비만 아이 4년간 38cm — 성재의 기록","데이터 중심형","성조숙증 치료 성장","바이블"],["C-03","C","중학생 축구 선수 — 1년 만에 14.4cm","드라마형","중학생 성장치료 효과","바이블"],["C-04","C","천식+아토피 — 약 없이 생활관리만으로 정상화","생활습관 성공형","아토피 성장 치료","바이블"],["C-05","C","우울증이 키를 막았던 12살 — 마음 치료 후 회복","감동형","스트레스 키 성장, 우울증 성장","바이블"],["C-06","C","늦자라는 체질 — 치료 없이 관찰로 정상 도달","안심형","늦자라는 아이, 체질성 성장지연","바이블"],["C-07","C","식품 민감성 발견 후 관리 — 성장 멈춘 아이","탐정형","식이 민감성 성장","바이블"],["C-08","C","무용 꿈꾸는 12살 — 아빠 키 작아도 167cm 목표","목표 설정형","목표키 달성 사례","바이블"],["C-09","C","해외 거주 중에도 원격으로 매달 체크 — 성공 사례","글로벌 적용형","해외 성장클리닉, 원격 관리","바이블"],["C-10","C","3개월마다 꾸준히 자라는 장기 관리 후기","장기 관리형","성장 장기치료 후기","바이블"],["C-11","C","면역력 먼저 잡았더니 키가 따라왔다","순서 중요성형","잔병치레 아이 성장, 면역력 키","병원사례"],["C-12","C","1년 2cm → 7cm — 수면 루틴 하나 바꿨을 뿐인데","생활변화 극적형","수면 개선 키 성장","병원사례"],["C-13","C","고등학생 성장 마지막 스퍼트 — 성장판 닫히기 직전","마감 긴박형","고등학생 키 성장","병원사례"],["C-14","C","비만 아이 — 살 빼면서 키도 키운 6개월 식단","이중 성과형","비만 아이 키 크기, 소아비만 성장","병원사례"],["C-15","C","성조숙증 억제 치료 후 목표키 달성","성조숙증 역전형","성조숙증 억제 치료 효과","병원사례"],["D-01","D","밤 10시가 아니라 '깊은 잠'이 핵심 — 수면 루틴 5단계","오해 교정+실천형","깊은 잠 성장호르몬, 수면 성장","바이블"],["D-02","D","잠들기 전 스마트폰이 키를 막는 이유","생활 경고형","스마트폰 수면 성장, 블루라이트","바이블+백과"],["D-03","D","키 성장 식단 피라미드 — 먹어야 할 것 vs 피해야 할 것","가이드라인형","키 성장 식단, 성장 영양소","바이블+백과"],["D-04","D","편식하는 아이 채소 먹이는 숨기기 기술 7가지","실전 육아형","편식 아이 채소 먹이기","바이블"],["D-05","D","줄넘기만이 답이 아니다 — 운동별 성장판 자극 비교","비교 정리형","키 크는 운동, 성장판 자극 운동","바이블"],["D-06","D","나이별 최적 성장 운동 — 유아부터 청소년까지","연령별 가이드형","나이별 키 크는 운동","바이블"],["D-07","D","자세 하나가 키 1~5cm 차이 — 거북목·굽은 등 교정","즉시 효과형","자세 교정 키 성장","바이블+백과"],["D-08","D","아침에 커튼 열기부터 — 생체시계 맞추는 수면 루틴","아침 습관형","수면 루틴 성장","바이블"],["D-09","D","칼슘만 먹으면 안 되는 이유 — 비타민D와 함께","영양 시너지형","칼슘 비타민D 함께","바이블+백과"],["D-10","D","잠자리 마사지로 키 크는 효과 — 과학적 근거","실전 케어형","성장판 마사지, 키 크는 마사지","바이블+백과"],["D-11","D","달고 기름진 음식이 성장판을 일찍 닫는 이유","경고형","단 음식 성장판, 패스트푸드 키","바이블"],["D-12","D","키 크는 아이 만드는 아침 식사 루틴","실천 루틴형","아침 식사 키 성장","바이블"],["D-13","D","우리 아이 성장 일지 만드는 법","실용 도구형","아이 성장 기록, 성장 도표","바이블+백과"],["D-14","D","성장 체크리스트 — 성장 방해 요인 셀프 점검","진단 도구형","아이 성장 체크리스트","바이블"],["D-15","D","척추측만증이 있으면 키가 안 크나요?","걱정 해소형","척추측만증 키 성장","백과"],["D-16","D","O자 다리 교정하면 키 커질까?","오해 교정형","O자 다리 교정 키","백과"],["D-17","D","중금속 예방하는 식탁 습관","생활 안전형","중금속 예방 음식","바이블+백과"],["D-18","D","성장클리닉 첫 방문 완벽 준비 — 가져갈 것 리스트","실용 가이드형","성장클리닉 첫 방문 준비","바이블+백과"],["E-01","E","요즘 초등생 평균키 실화? — 우리 아이 위치는?","트렌드 반응형","초등생 평균키","상시"],["E-02","E","여름방학 키 성장 챌린지","시즌 기획형","방학 키 성장","7~8월"],["E-03","E","신체검사 결과 보고 당황한 부모님께","시즌 긴박형","신체검사 키 작음","3~4월"],["E-04","E","아이 키 걱정 부모들이 가장 많이 검색하는 질문 TOP 10","큐레이션형","아이 키 성장 질문","상시"],["E-05","E","K-성장클리닉 — 왜 해외 부모들이 한국으로 오나?","K-Medical 브랜딩형","한국 성장클리닉","상시"],["E-06","E","쌍둥이 아빠 의사가 직접 실험한 수면 루틴 — 30일 후기","원장 퍼스널형","쌍둥이 아빠 의사 수면","상시"],["E-07","E","우리 아이 예상키 측정해봤어요 — 앱 사용 후기","앱 연계형","예상키 측정 앱","상시"],["E-08","E","겨울방학 키 성장 마지막 기회","시즌 기획형","겨울방학 키 성장","12~1월"],["E-09","E","키 작은 아이들이 공통적으로 하는 습관 5가지","리스트 쇼츠형","키 안 크는 아이 습관","상시"],["E-10","E","중국·태국 부모들이 한국 성장클리닉 찾는 이유","해외 확장형","해외 성장클리닉","해외용"]];
+/* === YOUTUBE DATA === */
+const ytRows=[["A-01","done","키 유전 80% vs 환경 20%","264만 조회 논쟁 영상"],["A-02","new","성장호르몬 10시 신화 해부",""],["A-03","new","뼈나이 vs 실제나이",""],["A-04","similar","예상키 계산법의 오차","병원 안가고 성인키 예측 (유사)"],["A-05","done","성장 타이밍 4번의 기회","성조숙증 골든타임 영상"],["A-06","new","성장판 닫히는 나이",""],["A-07","similar","성조숙증이 키를 망치는 메커니즘","성조숙증 억제주사 영상 (유사)"],["A-08","new","코르티솔과 스트레스",""],["A-09","new","갑상선호르몬 이상",""],["A-10","done","비만 아이 일찍 크고 일찍 멈추는 이유","체중↑ 키↓ 네이처지 연구"],["A-11","new","알레르기·만성염증",""],["A-12","new","중금속 키 영향",""],["A-13","new","환경호르몬 성장판 교란",""],["A-14","done","여자아이 사춘기 순서","사춘기 딸 부모 필수 5가지"],["A-15","done","남자아이 사춘기","사춘기 아들 부모 필수 5가지"],["A-16","new","조부모 키 격세유전",""],["A-17","new","성장통 진짜 원인",""],["A-18","new","ADHD 약물 키 영향",""],["A-19","new","스테로이드 약 차이",""],["A-20","new","저체중 출생아 따라잡기",""],["B-01","new","나중에 크겠지 — 언제까지?",""],["B-02","similar","반에서 제일 작아요 — 백분위수","1년 몇cm 정상? (유사)"],["B-03","similar","예상키 작게 나왔는데","성인키 예측 방법 (유사)"],["B-04","done","잘 먹는데 왜 안 크지?","성장 Q&A 베스트 영상"],["B-05","new","성장호르몬 부작용 진짜?",""],["B-06","done","키 크는 영양제 효과?","성장밸런스게임 영상 (포함)"],["B-07","new","우유 칼슘 신화",""],["B-08","done","중2인데 키 클 수 있나요?","중학생 키 성장 영상"],["B-09","similar","초등 4학년 가슴 — 성조숙증?","성조숙증 억제주사 영상 (유사)"],["B-10","new","키 때문에 주눅 드는 아이 대화법",""],["B-11","done","성장클리닉 몇 살 때?","진료과정 소개 영상"],["B-12","new","키 재면 날마다 달라요",""],["B-13","done","부모 작아도 크게 키울 수?","유전 포기? 실제 후기"],["B-14","new","학원 스트레스가 키를 막을까?",""],["B-15","new","모유 vs 분유 성장 차이",""],["C-01","new","아토피 아이 3개월 4cm",""],["C-02","done","성조숙증+비만 4년 38cm","165→185 가능 영상"],["C-03","done","축구선수 1년 14.4cm","손흥민 꿈꾸는 특기생"],["C-04","new","천식+아토피 생활관리",""],["C-05","new","우울증 12살 성장 회복",""],["C-06","new","늦자라는 체질 관찰",""],["C-07","new","식품 민감성 성장 회복",""],["C-08","done","무용 꿈 아빠 키 작아도","연예인 연습생 성장 치료"],["C-09","done","해외 거주 원격 체크","미국 의사 부모 한국 방문"],["C-10","new","장기 관리 후기",""],["C-11","done","면역력→키 따라옴","서재걸과 건강 성장법"],["C-12","new","수면 루틴 2→7cm",""],["C-13","done","고등학생 마지막 스퍼트","성장치료 vs 일리자로프"],["C-14","new","비만 아이 살+키 6개월",""],["C-15","done","성조숙증 억제→목표키","억제주사 영상"],["D-01","done","깊은 잠이 핵심 — 수면 루틴","90% 부모 잘못 알고 있는 수면"],["D-02","new","스마트폰이 키를 막는 이유",""],["D-03","new","키 성장 식단 피라미드",""],["D-04","new","편식 아이 채소 숨기기",""],["D-05","similar","운동별 성장판 자극 비교","필라테스 교수 운동법 (유사)"],["D-06","new","나이별 최적 운동",""],["D-07","done","자세 1~5cm 차이 — 교정 운동","거북목·굽은등 시리즈"],["D-08","new","아침 커튼 열기 — 생체시계",""],["D-09","new","칼슘+비타민D 함께",""],["D-10","new","잠자리 마사지 과학 근거",""],["D-11","new","달고 기름진 음식→성장판",""],["D-12","new","아침 식사 루틴",""],["D-13","new","성장 일지 만드는 법",""],["D-14","new","성장 체크리스트",""],["D-15","done","척추측만증 키 안 크나?","골반 경사 개선 운동"],["D-16","new","O자 다리 교정→키?",""],["D-17","new","중금속 예방 식탁 습관",""],["D-18","similar","성장클리닉 첫 방문 준비","진료과정 소개 (유사)"],["E-01","new","초등생 평균키 실화?",""],["E-02","done","여름방학 키 성장 챌린지","방학 3배 차이 영상"],["E-03","new","신체검사 후 당황한 부모님께",""],["E-04","done","부모 가장 많이 검색 TOP 10","Q&A 베스트 영상"],["E-05","new","K-성장클리닉 해외 부모",""],["E-06","done","쌍둥이 아빠 수면 루틴 30일","쌍둥이 아들 치료 영상"],["E-07","new","예상키 앱 사용 후기",""],["E-08","done","겨울방학 마지막 기회","겨울방학 성장 비법"],["E-09","new","키 작은 아이 공통 습관 5",""],["E-10","done","중국·태국 부모 한국 방문","미국 의사+일본 레전드 영상"]];
+
+const seen=new Set();const kwUniq=kwData.filter(r=>{if(seen.has(r[0]))return false;seen.add(r[0]);return true;});kwUniq.sort((a,b)=>b[3]-a[3]);const maxVol=kwUniq.length?kwUniq[0][3]:1;
+const tagLabel={"gold":"🥇 황금","core":"🏥 성장·성조숙","habit":"💪 생활습관","product":"💊 영양제"};const tagCls={"gold":"s-gold","core":"s-core","habit":"s-habit","product":"s-prod"};
+function fKw(f,el){document.querySelectorAll('#kw-db .fbtn').forEach(b=>b.classList.remove('on'));el.classList.add('on');const tbody=document.getElementById('kw-tbody');tbody.innerHTML='';let n=0;kwUniq.forEach(r=>{const[kw,pc,mob,total,comp,tags]=r;const ta=tags.split(',');if(f==='gold'&&!ta.includes('gold'))return;if(f==='high'&&total<2000)return;if(f==='mid'&&(total<500||total>=2000))return;if(f==='core'&&!ta.includes('core'))return;if(f==='habit'&&!ta.includes('habit'))return;if(f==='product'&&!ta.includes('product'))return;n++;const bw=Math.max(4,Math.round(total/maxVol*70));const mp=Math.round(mob/total*100);const cc=comp==='낮음'?'comp-low':comp==='중간'?'comp-mid':'comp-high';const th=ta.map(t=>`<span class="sbadge ${tagCls[t]||'s-core'}">${tagLabel[t]||t}</span>`).join('');tbody.innerHTML+=`<tr><td style="font-weight:600">${kw}${ta.includes('gold')?'&nbsp;🥇':''}</td><td class="r"><span class="vol-bar" style="width:${bw}px"></span>${total.toLocaleString()}</td><td class="r" style="color:var(--muted)">${pc.toLocaleString()}</td><td class="r" style="color:var(--muted)">${mob.toLocaleString()}</td><td class="r" style="color:var(--muted)">${mp}%</td><td><span class="comp-badge ${cc}">${comp}</span></td><td>${th}</td></tr>`;});document.getElementById('kw-cnt').textContent=n+'개 표시';}
+const catName={A:"A. 성장과학",B:"B. 부모공감",C:"C. 치료사례",D:"D. 생활습관",E:"E. 기타/트렌드"};const catCls={A:"cA",B:"cB",C:"cC",D:"cD",E:"cE"};
+function filterTopics(cat,el){document.querySelectorAll('#topics .fbtn').forEach(b=>b.classList.remove('on'));el.classList.add('on');const tbody=document.getElementById('topic-tbody');tbody.innerHTML='';let n=0;topics.forEach(r=>{if(cat!=='all'&&r[1]!==cat)return;n++;tbody.innerHTML+=`<tr><td class="no-cell">${r[0]}</td><td><span class="cat-pill ${catCls[r[1]]}">${catName[r[1]]}</span></td><td style="font-weight:500">${r[2]}</td><td style="color:var(--muted);font-size:12px">${r[3]}</td><td style="font-size:12px;color:var(--teal)">${r[4]}</td><td style="font-size:12px;color:var(--muted)">${r[5]}</td></tr>`;});document.getElementById('topic-cnt').textContent=n+'개';}
+function filterYT(type,el){document.querySelectorAll('#yt-check .fbtn').forEach(b=>b.classList.remove('on'));el.classList.add('on');const tbody=document.getElementById('yt-tbody');tbody.innerHTML='';let n=0;ytRows.forEach(r=>{const[no,status,topic,ytTitle]=r;if(type==='new'&&status!=='new')return;if(type==='done'&&status!=='done')return;if(type==='similar'&&status!=='similar')return;n++;const badge=status==='done'?'<span class="status-badge s-done">✅ 기게시</span>':status==='similar'?'<span class="status-badge s-similar">🔶 유사</span>':'<span class="status-badge s-new">⬜ 미게시</span>';const cat=no.slice(0,1);const ytHtml=ytTitle?`<span style="font-size:12px;color:var(--muted)">${ytTitle}</span>`:'<span style="font-size:12px;color:var(--light)">—</span>';tbody.innerHTML+=`<tr><td class="no-cell">${no}</td><td>${badge}</td><td><span class="cat-pill ${catCls[cat]}">${catName[cat]}</span><span style="font-weight:500">${topic}</span></td><td>${ytHtml}</td></tr>`;});document.getElementById('yt-cnt').textContent=n+'개';}
+if(kwData.length)fKw('all',document.querySelector('#kw-db .fbtn.on'));
+if(topics.length)filterTopics('all',document.querySelector('#topics .fbtn.on'));
+if(ytRows.length)filterYT('all',document.querySelector('#yt-check .fbtn.on'));
+/* === VERSION TOGGLE === */
+function switchVer(v){
+const diagram=document.getElementById('exec-diagram');
+const cBtn=document.getElementById('ver-conservative');
+const aBtn=document.getElementById('ver-aggressive');
+if(v==='aggressive'){
+diagram.querySelectorAll('.ver-c').forEach(el=>el.style.display='none');
+diagram.querySelectorAll('.ver-a').forEach(el=>el.style.display='');
+diagram.querySelectorAll('[data-ver="a"]').forEach(el=>el.style.display='');
+cBtn.classList.remove('on');aBtn.classList.add('on');
+}else{
+diagram.querySelectorAll('.ver-a').forEach(el=>el.style.display='none');
+diagram.querySelectorAll('.ver-c').forEach(el=>el.style.display='');
+diagram.querySelectorAll('[data-ver="a"]').forEach(el=>el.style.display='none');
+aBtn.classList.remove('on');cBtn.classList.add('on');
+}
+}
+const secs=document.querySelectorAll('section');const navAs=document.querySelectorAll('.nav-links a');window.addEventListener('scroll',()=>{let cur='';secs.forEach(s=>{if(window.scrollY>=s.offsetTop-80)cur=s.id;});navAs.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+cur));});
+</script>
+</body>
+</html>

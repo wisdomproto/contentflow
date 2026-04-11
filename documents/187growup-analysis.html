@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>187 성장클리닉 유튜브 채널 분석</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #ffffff;
+    --card: #f9fafb;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #6b7280;
+    --accent: #4f46e5;
+    --accent2: #7c3aed;
+    --green: #16a34a;
+    --red: #dc2626;
+    --yellow: #ca8a04;
+    --blue: #2563eb;
+    --pink: #db2777;
+    --orange: #ea580c;
+    --cyan: #0891b2;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 0;
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #4338ca 0%, #4f46e5 50%, #6366f1 100%);
+    padding: 48px 40px;
+    border-bottom: 1px solid var(--border);
+  }
+  .header-inner { max-width: 1200px; margin: 0 auto; }
+  .header h1 { font-size: 32px; font-weight: 700; margin-bottom: 8px; }
+  .header .subtitle { color: #e0e7ff; font-size: 16px; }
+  .header .meta { margin-top: 16px; display: flex; gap: 24px; flex-wrap: wrap; }
+  .header .meta-item {
+    background: rgba(255,255,255,0.1);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  .header .meta-item strong { color: #fff; font-size: 18px; display: block; }
+
+  /* Container */
+  .container { max-width: 1200px; margin: 0 auto; padding: 32px 40px; }
+
+  /* Section */
+  .section { margin-bottom: 40px; }
+  .section-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* KPI Cards */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .kpi-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+  .kpi-card .label { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  .kpi-card .value { font-size: 28px; font-weight: 700; }
+  .kpi-card .sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  /* Chart containers */
+  .chart-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+  .chart-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+  .chart-box h3 { font-size: 16px; margin-bottom: 16px; color: var(--muted); }
+  .chart-box canvas { max-height: 300px; }
+
+  /* Table */
+  .table-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    background: #f3f4f6;
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    text-align: left;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+  }
+  thead th:hover { color: var(--accent); }
+  thead th.sorted-asc::after { content: ' ▲'; color: var(--accent); }
+  thead th.sorted-desc::after { content: ' ▼'; color: var(--accent); }
+  tbody td {
+    padding: 12px 16px;
+    font-size: 14px;
+    border-top: 1px solid var(--border);
+  }
+  tbody tr:hover { background: rgba(79,70,229,0.04); }
+  .rank { color: var(--muted); font-weight: 600; width: 40px; }
+  .video-title {
+    max-width: 450px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .video-title a { color: var(--text); text-decoration: none; }
+  .video-title a:hover { color: var(--accent); text-decoration: underline; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .bar-cell { width: 120px; }
+  .bar-bg { background: var(--border); border-radius: 4px; height: 8px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; }
+
+  /* Badge */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .badge-review { background: #dcfce7; color: #15803d; }
+  .badge-celeb { background: #fce7f3; color: #be185d; }
+  .badge-nutrition { background: #ffedd5; color: #c2410c; }
+  .badge-exercise { background: #cffafe; color: #0e7490; }
+  .badge-puberty { background: #ede9fe; color: #6d28d9; }
+  .badge-hormone { background: #fee2e2; color: #b91c1c; }
+  .badge-predict { background: #dbeafe; color: #1d4ed8; }
+  .badge-info { background: #fef9c3; color: #a16207; }
+  .badge-other { background: #f3f4f6; color: #4b5563; }
+
+  /* Insight Cards */
+  .insight-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 16px;
+  }
+  .insight-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+  .insight-card h4 { font-size: 16px; margin-bottom: 8px; }
+  .insight-card p { font-size: 14px; color: var(--muted); }
+  .insight-card .highlight { color: var(--green); font-weight: 700; }
+
+  /* Tab */
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+  .tab-btn {
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+  }
+  .tab-btn:hover { border-color: var(--accent); color: var(--text); }
+  .tab-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .header { padding: 32px 20px; }
+    .container { padding: 20px; }
+    .chart-row { grid-template-columns: 1fr; }
+    .header .meta { flex-direction: column; gap: 8px; }
+    .video-title { max-width: 200px; }
+  }
+
+  .footer {
+    text-align: center;
+    padding: 32px;
+    color: var(--muted);
+    font-size: 13px;
+    border-top: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <h1>187 성장클리닉 유튜브 채널 분석</h1>
+    <div class="subtitle">@187growup · 연세새봄의원 · 채용현 의사</div>
+    <div class="meta">
+      <div class="meta-item"><strong>2,530</strong>구독자</div>
+      <div class="meta-item"><strong>526,723</strong>총 조회수</div>
+      <div class="meta-item"><strong>130</strong>영상 수</div>
+      <div class="meta-item"><strong>4,052</strong>평균 조회수</div>
+      <div class="meta-item"><strong>2024.02</strong>채널 개설</div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- KPI Summary -->
+  <div class="section">
+    <div class="section-title">핵심 결론</div>
+    <div class="insight-grid">
+      <div class="insight-card" style="border-left: 4px solid var(--green);">
+        <h4>🏆 1위: 치료 후기/케이스 콘텐츠</h4>
+        <p>평균 조회수 <span class="highlight">10,538</span> · 좋아요율 <span class="highlight">3.1%</span> · 댓글율 <span class="highlight">0.50%</span><br>
+        종합 Engagement Score <span class="highlight">328점</span>으로 2위(177점)의 약 2배</p>
+      </div>
+      <div class="insight-card" style="border-left: 4px solid var(--pink);">
+        <h4>🎬 연예인 콘텐츠 = 검색 유입용</h4>
+        <p>평균 조회수 7,883으로 높지만, 좋아요율 <strong style="color:var(--red)">0.7%</strong>로 최하위.<br>구경만 하고 간다 → 전환과 거리가 멀다.</p>
+      </div>
+      <div class="insight-card" style="border-left: 4px solid var(--red);">
+        <h4>⚠️ 운동/마사지 = 가장 비효율</h4>
+        <p>전체 130개 중 <strong>26개(20%)</strong>로 가장 많이 제작했으나<br>평균 조회수 <strong style="color:var(--red)">898</strong>으로 최하위권.</p>
+      </div>
+      <div class="insight-card" style="border-left: 4px solid var(--accent);">
+        <h4>💡 최적 전략</h4>
+        <p><strong>셀럽 영상</strong>으로 사람 모으고 → <strong>후기 영상</strong>으로 전환시키는 구조.<br>후기 콘텐츠 비중을 현재 8%에서 높이는 것이 핵심.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="section">
+    <div class="section-title">카테고리별 분석</div>
+    <div class="chart-row">
+      <div class="chart-box">
+        <h3>카테고리별 평균 조회수</h3>
+        <canvas id="chartAvgViews"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>카테고리별 Engagement Score</h3>
+        <canvas id="chartEngagement"></canvas>
+      </div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-box">
+        <h3>카테고리별 영상 비중 vs 조회수 비중</h3>
+        <canvas id="chartEfficiency"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>월별 업로드 & 조회수 추이</h3>
+        <canvas id="chartTimeline"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category Table -->
+  <div class="section">
+    <div class="section-title">카테고리별 상세 비교</div>
+    <div class="table-wrap">
+      <table id="catTable">
+        <thead>
+          <tr>
+            <th>카테고리</th>
+            <th>영상 수</th>
+            <th>평균 조회수</th>
+            <th>평균 좋아요</th>
+            <th>평균 댓글</th>
+            <th>좋아요율</th>
+            <th>댓글율</th>
+            <th>종합 점수</th>
+          </tr>
+        </thead>
+        <tbody id="catTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Video Tables with Tabs -->
+  <div class="section">
+    <div class="section-title">영상 목록</div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('all')">전체 TOP 30</button>
+      <button class="tab-btn" onclick="switchTab('review')">치료 후기</button>
+      <button class="tab-btn" onclick="switchTab('celeb')">연예인/셀럽</button>
+      <button class="tab-btn" onclick="switchTab('nutrition')">영양/음식</button>
+      <button class="tab-btn" onclick="switchTab('puberty')">사춘기/성조숙증</button>
+      <button class="tab-btn" onclick="switchTab('exercise')">운동/마사지</button>
+    </div>
+    <div id="tab-all" class="tab-content active"></div>
+    <div id="tab-review" class="tab-content"></div>
+    <div id="tab-celeb" class="tab-content"></div>
+    <div id="tab-nutrition" class="tab-content"></div>
+    <div id="tab-puberty" class="tab-content"></div>
+    <div id="tab-exercise" class="tab-content"></div>
+  </div>
+
+  <!-- Treatment Review Deep Dive -->
+  <div class="section">
+    <div class="section-title">치료 후기 콘텐츠 심층 분석</div>
+    <div class="chart-row">
+      <div class="chart-box">
+        <h3>후기 영상별 조회수 vs 좋아요</h3>
+        <canvas id="chartReviewScatter"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>후기 영상 제목 키워드 빈도</h3>
+        <canvas id="chartReviewKeywords"></canvas>
+      </div>
+    </div>
+    <div class="insight-grid">
+      <div class="insight-card">
+        <h4>📌 높은 조회수 후기의 공통점</h4>
+        <p>• 제목에 <strong>구체적 숫자</strong>가 포함 (165→185cm, 2.1kg, 160대 부모)<br>
+        • <strong>Before→After</strong> 구조로 궁금증 유발<br>
+        • [대괄호]로 케이스 요약 → 클릭 유도</p>
+      </div>
+      <div class="insight-card">
+        <h4>📌 높은 Engagement 후기의 공통점</h4>
+        <p>• <strong>의사 본인 스토리</strong> (쌍둥이 아들) = 신뢰도 + 조회수 동시 확보<br>
+        • <strong>논쟁 유발</strong> 제목 ("효과 없다고 말하는 사람들") = 댓글 폭발<br>
+        • <strong>감정적 공감</strong> ("유전이라 포기?") = 좋아요 비율 최고</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  분석일: 2026-04-07 · 데이터: YouTube Data API v3 · 분석 도구: Claude Code
+</div>
+
+<script>
+// === DATA ===
+const videos = [{"id": "sWhRMSfN9Fk", "title": "▶️[#187성장클리닉] ⚽ 맨시티 괴물 공격수, 195cm 홀란드가 집착한 것 #수면", "date": "2026-03-27", "views": 1225, "likes": 4, "comments": 0}, {"id": "6SDMzPUOIdo", "title": "🗣️“성장주사 맞으면 당뇨까지 옵니다?” 부모들이 가장 많이 속는 오해🩸｜성장주사 부작용 ① 당뇨 편", "date": "2026-03-25", "views": 72, "likes": 7, "comments": 3}, {"id": "vbFWARxrupc", "title": "▶️[#187성장클리닉] 💪어깨 깡패 신유 비결, 초딩 때 '이거' 했어요 #어깨운동", "date": "2026-03-14", "views": 991, "likes": 8, "comments": 0}, {"id": "N9z6jdNSsA8", "title": "▶️[#187성장클리닉] 성장 밸런스게임: 6살 키 검사 vs 사춘기 급성장기 올인🎮", "date": "2026-03-06", "views": 1778, "likes": 4, "comments": 0}, {"id": "7jWkKSOSL8E", "title": "🎮성장밸런스게임: 부모가 헷갈리는 8가지 선택✅(수면·영양·사춘기) #키성장 #밸런스게임", "date": "2026-03-04", "views": 113, "likes": 6, "comments": 0}, {"id": "hV95l_XqHMM", "title": "▶️[#187성장클리닉] 성장판 손상? 바로 병원 가야하는 3가지 신호!⚠️#성장판", "date": "2026-02-20", "views": 1803, "likes": 10, "comments": 0}, {"id": "B9y6RmYQtj8", "title": "▶️[#187성장클리닉] 히틀러가 장기간 맞은💪🏻 #테스토스테론", "date": "2026-02-06", "views": 32, "likes": 5, "comments": 0}, {"id": "0Yrd0j4dYvo", "title": "▶️[#187성장클리닉] 고등학교 때 콩나물 먹고 +20cm 큰 🏐배구여제 김연경🏐 #운동선수 #콩나물", "date": "2026-01-30", "views": 1437, "likes": 8, "comments": 0}, {"id": "s3vyERm9q00", "title": "💥264만의 논쟁🥊[키는 무조건 유전이다 vs 무조건 아니다] 진실은?🧬#유전 #성인키", "date": "2026-01-20", "views": 62, "likes": 4, "comments": 3}, {"id": "bvyCCUc5miQ", "title": "▶️[#187성장클리닉] O다리 고경표, 키 크고 각선미 자랑🦵 #체형교정 #숨은키", "date": "2026-01-09", "views": 35343, "likes": 38, "comments": 0}, {"id": "ZZKKDWNRvyA", "title": "네이버, 부모가 가장 많이 묻는 성장 Q&A 베스트💬 의사가 바로 답합니다!👨🏻‍⚕️#지식인", "date": "2025-12-30", "views": 93, "likes": 6, "comments": 3}, {"id": "rh6GDHr3ydo", "title": "▶️[#187성장클리닉]🌍세계 최초 에겐남, 성정환 수술의 시작?", "date": "2025-12-19", "views": 3025, "likes": 12, "comments": 0}, {"id": "LXGI2XrPfOI", "title": "▶️[#187성장클리닉] 🎤170cm아래, 카리스마 넘치는 남자 가수들 10🎵", "date": "2025-12-12", "views": 16027, "likes": 54, "comments": 0}, {"id": "MSxSk8NePVc", "title": "🇺🇸미국 의사 부모가 왜 한국까지?🇰🇷남매 성장 역전 스토리 #187성장클리닉 #연세새봄의원", "date": "2025-12-02", "views": 10944, "likes": 137, "comments": 5}, {"id": "VqH1H74YK9c", "title": "▶️[#187성장클리닉] 지금은 같아도, 최종 키가 다른 이유📊 #성장피크", "date": "2025-11-28", "views": 2575, "likes": 8, "comments": 0}, {"id": "t7Cbn25xAQ8", "title": "👿악마 히틀러를 만든 호르몬?💉테스토스테론의 진실 #히틀러 #테스토스테론", "date": "2025-11-19", "views": 64, "likes": 2, "comments": 1}, {"id": "9C7PIn1Bub0", "title": "▶️[#187성장클리닉] 📏160cm 이하 ✨비율 레전드급 여배우들✨ Top 10", "date": "2025-11-14", "views": 6590, "likes": 22, "comments": 8}, {"id": "cdseujz5pfI", "title": "▶️[#187성장클리닉] 🔞자극적 콘텐츠📱, 성인 키에 영향줄까?🫣 #성조숙증", "date": "2025-11-08", "views": 720, "likes": 6, "comments": 0}, {"id": "YoDN1CB8cDw", "title": "▶️[#187성장클리닉] ✏️시험기간, 우리 집은 이거 먹입니다!🧠기억력 상승 필승법 #아이집중력", "date": "2025-11-01", "views": 848, "likes": 7, "comments": 0}, {"id": "mr2GBp1vypU", "title": "📊실패 확률 줄이는 아이 키 성장, 187 성장클리닉🚩  #연세새봄의원", "date": "2025-10-28", "views": 5266, "likes": 234, "comments": 65}, {"id": "CkZRzI10P5I", "title": "▶️[#187성장클리닉] 혹시 우리 아이 가짜 성조숙증? 3가지 체크하기✅ #사춘기", "date": "2025-10-24", "views": 2838, "likes": 12, "comments": 0}, {"id": "ONrlbgzFr60", "title": "▶️[#187성장클리닉]😴잠만 자도 키 크는 김태리 비법 #서파수면", "date": "2025-10-17", "views": 2446, "likes": 26, "comments": 0}, {"id": "PKz1IHNcNaA", "title": "▶️[#187성장클리닉]🦴우리 아이 성장판 닫혔다고요? '이곳'도 확인했나요?", "date": "2025-10-10", "views": 871, "likes": 4, "comments": 0}, {"id": "9stIufkcGpw", "title": "👨🏻‍⚕️성장클리닉 의사 아빠가 쌍둥이 아들 치료하기, 결과는? #187성장클리닉 #연세새봄의원", "date": "2025-10-07", "views": 10773, "likes": 300, "comments": 42}, {"id": "oLaBCrOJCRw", "title": "▶️[#187성장클리닉] 의외로 안 좋은 아이들 간식 4개😵‍💫", "date": "2025-09-26", "views": 1622, "likes": 13, "comments": 1}, {"id": "TPQYGeSmNUE", "title": "▶️[#187성장클리닉] 한국 사회에서 키 1cm=💰얼마일까?", "date": "2025-09-20", "views": 1428, "likes": 3, "comments": 2}, {"id": "vPiAzexi33g", "title": "2025 연세새봄의원 일본 워크샵🇯🇵✈️#대성", "date": "2025-09-12", "views": 1340, "likes": 15, "comments": 4}, {"id": "8qzpf5kaRHw", "title": "🇰🇷한국 사회에서 ✨키 1cm가 가지는 프리미엄 가치✨", "date": "2025-09-09", "views": 100, "likes": 1, "comments": 1}, {"id": "X_3SGOd3DzM", "title": "▶️[#187성장클리닉]⚠️키 멈춘 아이들, 모두 같은 걸 먹고 있었다🍽️ #음식민감성", "date": "2025-08-29", "views": 848, "likes": 6, "comments": 0}, {"id": "WCOSerhskAo", "title": "세계 최초 성전환 수술🏳️‍🌈에스트로겐으로 몸이 바뀐 남자, 하지만 아이에겐 병이된다? 🎞️영화 대니쉬걸 #에스트로겐", "date": "2025-08-26", "views": 171, "likes": 9, "comments": 1}, {"id": "Pl-668v5LNU", "title": "▶️[#187성장클리닉]🕺만능 배우 이병헌, 진짜 177cm 맞을까⁉️#키논란", "date": "2025-08-22", "views": 11711, "likes": 22, "comments": 10}, {"id": "0iDQcDBTKeg", "title": "▶️[#187성장클리닉]🫟장난감 슬라임이 아이 성장판을 망친다고?😱#환경호르몬 #슬라임", "date": "2025-08-08", "views": 1580, "likes": 13, "comments": 2}, {"id": "MQ3EGDWBfjA", "title": "🏖️여름방학에 키 크는 아이 vs 안 크는 아이☀️, 3️⃣배 차이 나는 결정적 한 끗 #여름방학성장", "date": "2025-08-06", "views": 14162, "likes": 351, "comments": 50}, {"id": "lU0doLYLms0", "title": "▶️[#187성장클리닉] 칼슘+비타민D만으론 뼈가 안 큰다, 마지막 하나는? #영양제추천", "date": "2025-07-25", "views": 634, "likes": 8, "comments": 3}, {"id": "innud4LRnA4", "title": "키 성장 골든타임 뺏는 성조숙증⏰, 요즘 애들이 빨라진 이유!🚨#사춘기 #성조숙증", "date": "2025-07-22", "views": 178, "likes": 7, "comments": 0}, {"id": "ZHY8Q9FpuMM", "title": "▶️[#187성장클리닉] 알아두면 유용한 성장클리닉🏥 방문 전 체크 5개!✅", "date": "2025-07-11", "views": 390, "likes": 7, "comments": 0}, {"id": "c-ymBHAO-E0", "title": "✨강동원, 박서준처럼 185cm이상✨ 크고 싶다면 언제 치료 받아야 할까? #187성장클리닉 #연세새봄의원", "date": "2025-07-08", "views": 189, "likes": 6, "comments": 2}, {"id": "-upHROr_K50", "title": "▶️[#187성장클리닉]🏀운동하는 중3 아들, 183cm 만든 정시아의 성장식단?!🐛  #단백질", "date": "2025-07-04", "views": 1373, "likes": 14, "comments": 0}, {"id": "Pe98BaA-sJg", "title": "▶️[#187성장클리닉] 👨🏻‍⚕️1년에 몇 cm 커야 할까?💡#평균키", "date": "2025-06-27", "views": 1644, "likes": 10, "comments": 0}, {"id": "cMfTgXdkS8k", "title": "[34주만에 태어난 미숙아🤰🏻] 2.1kg 아이, 🧬유전적 키를 훌쩍 넘어 184cm 키운 실제 후기🍼#성장치료  #187성장클리닉 #연세새봄의원", "date": "2025-06-24", "views": 6407, "likes": 358, "comments": 52}, {"id": "KHDXNSCLW4E", "title": "▶️[#187성장클리닉]🩻뼈나이 검사와 성장치료💉시기는 다르다‼️왜 뼈나이 검사는 초등학생 때?", "date": "2025-06-20", "views": 589, "likes": 10, "comments": 0}, {"id": "cAMd9WzLiYQ", "title": "👧🏻사춘기 온 딸, 키 클 수 있는 시간⏳ 얼마 안 남았다! 부모가 꼭 알아야 할 5️⃣가지 (여아) #사춘기 #성조숙증 #생리", "date": "2025-06-10", "views": 133, "likes": 8, "comments": 2}, {"id": "LXm3mTuWp90", "title": "▶️[#187성장클리닉] 평균 더 커진 💎180cm 넘는 완벽 그 잡채💎 육각형 남돌.zip📂", "date": "2025-06-06", "views": 1736, "likes": 14, "comments": 0}, {"id": "Ifl_AkdDIbg", "title": "▶️[#187성장클리닉]💃모델이 되고 싶다면 꼭 해야 할 습관👠 (feat. 177cm 한혜진)", "date": "2025-05-30", "views": 4932, "likes": 54, "comments": 1}, {"id": "55QkmI1fDx8", "title": "👦🏻사춘기 온 아들, 키 클 수 있는 시간⏳ 얼마 안 남았다! 부모가 꼭 알아야 할 5️⃣가지 (남아) #사춘기 #성조숙증", "date": "2025-05-27", "views": 339, "likes": 13, "comments": 4}, {"id": "p3D9l27CCSE", "title": "▶️[#187성장클리닉] 185cm 주원은 20cm 크고, 송지아는 10kg 살쪘다? 🍼분유 루머의 진실🍼", "date": "2025-05-23", "views": 1363, "likes": 14, "comments": 2}, {"id": "LDELkwun3S0", "title": "▶️[#187성장클리닉]🍚많이 먹이고, 잘 재웠는데도 키가 안 큰다면?💤", "date": "2025-05-16", "views": 2156, "likes": 8, "comments": 0}, {"id": "j2EPNBVw47Q", "title": "📣 집중📣 5️⃣분으로 끝내는 초간단✅ 골반 후방 경사 개선 운동 🤸🏃‍♂️", "date": "2025-05-13", "views": 67, "likes": 6, "comments": 0}, {"id": "gCni4ZRZM0k", "title": "▶️[#187성장클리닉] ✨비주얼 천재인데 의외로 키가 작은✨ 남자 배우들 TOP10", "date": "2025-05-02", "views": 43885, "likes": 276, "comments": 60}, {"id": "4qaAQy0nUvg", "title": "[키 큰 걸그룹] 💘장원영& 안유진& 카리나💘가 말한 키 크는 비결! 우리 딸도 클 수 있을까?👧🏻 #장원영 #안유진 #카리나", "date": "2025-04-29", "views": 278, "likes": 5, "comments": 1}, {"id": "Jw1IG37_ugs", "title": "▶️[#187성장클리닉] IVE🩷장원영, 안유진의 170cm 키 크는 비법😮, 정말 효과가 있을까?", "date": "2025-04-25", "views": 1862, "likes": 22, "comments": 1}, {"id": "5f8sQ3x6Lgk", "title": "▶️[#187성장클리닉]🕒60초🕒 키 크는 수술 A to Z #일리자로프 #사지연장술", "date": "2025-04-18", "views": 3309, "likes": 24, "comments": 0}, {"id": "d52zhQ1Dx4E", "title": "키 크는 타이밍🕒, 지금 놓치면 수술뿐⁉️[성장치료 vs 일리자로프] A to Z  #사지연장술 #187성장클리닉 #연세새봄의원", "date": "2025-04-16", "views": 467, "likes": 8, "comments": 25}, {"id": "NUSYolfwBAA", "title": "▶️[#187성장클리닉] 왜 키가 잴 때마다 다를까요?‍☀️컨디션따라 다른 키?🌙", "date": "2025-04-04", "views": 11007, "likes": 15, "comments": 0}, {"id": "cMZ2G_e-CQI", "title": "[⚽️손흥민 꿈꾸는 운동 특기생, 중학생🎒] 성장 치료하면 얼마나 클까? (실제 성장치료 후기)  #187성장클리닉 #연세새봄의원", "date": "2025-04-01", "views": 5267, "likes": 514, "comments": 60}, {"id": "4c6vMA30QTc", "title": "▶️[#187성장클리닉]💉주사를 맞지 않고🙅‍♀️패치를 붙인다고? (성장 경피전달 시스템 패치)", "date": "2025-03-28", "views": 619, "likes": 9, "comments": 24}, {"id": "rf3Ue2JBFwM", "title": "📣집중‼️5️⃣5분으로 끝내는 초간단 🐢거북목 & 굽은 등🐢 개선 운동 🏃‍♂️! #성장운동 #187성장클리닉 #연세새봄의원", "date": "2025-03-11", "views": 228, "likes": 5, "comments": 1}, {"id": "XPbK8J1_U8Y", "title": "▶️[#187성장클리닉]🩻일자목, 역C자형🐢 목 운동으로 ⚡️34초 해결⚡️ (목 운동 마사지)  #성장마사지 #후두하근마사지 #연세새봄의원", "date": "2025-03-07", "views": 145, "likes": 7, "comments": 0}, {"id": "ZmDUQzSFrpU", "title": "🖥️1년에 몇 cm 커야 정상인가요?, 우리 아이는 제대로 크고 있는걸까?👦 [필수 확인!] #평균키 #187성장클리닉 #연세새봄의원", "date": "2025-03-05", "views": 988, "likes": 7, "comments": 1}, {"id": "4XUdi7P5HCc", "title": "[🧬유전적으로 작은 아이⬇️] 👨🏻아빠 160대 & 엄마150대🧑🏻유전이라 포기?💦부모님 키 작아도 성장 치료로 키운 실제 후기! #성장치료  #187성장클리닉 #연세새봄의원", "date": "2025-02-18", "views": 13799, "likes": 470, "comments": 28}, {"id": "17A7XVzZLEk", "title": "▶️[#187성장클리닉] 🤔턱을 계속 들고 머리가 아프다고?🤦‍♀️ (후두하근 마사지) #성장마사지 #후두하근마사지 #연세새봄의원", "date": "2025-02-14", "views": 92, "likes": 7, "comments": 0}, {"id": "lX3qoBiUS3I", "title": "의사가 말하는🕺미남의 기준🕺, 00년대 vs 현재! 🎬연예인📺 미적 기준이 이렇게 바뀐 이유는?🤔 #187성장클리닉 #연세새봄의원", "date": "2025-02-05", "views": 1145, "likes": 11, "comments": 1}, {"id": "zGQuPvDQdNk", "title": "▶️[#187성장클리닉] 🩻X-ray만 찍으면 우리 아이 ✅얼마나 더 클 수 있을지 알 수 있다?👀 #예상키 #키성장검사 #연세새봄의원", "date": "2025-01-24", "views": 834, "likes": 5, "comments": 0}, {"id": "ycR1mNhk06k", "title": "📣 꺾인 허리 & 오리 궁둥이 집중📣‼️ 5️⃣만에 끝내는 초간단 [골반 전방 경사 개선 운동]🦆 /ENG #성장운동  #187성장클리닉 #연세새봄의원", "date": "2025-01-21", "views": 533, "likes": 8, "comments": 1}, {"id": "snjzdWW3qGo", "title": "▶️[#187성장클리닉]🚀로켓처럼 솟은 승모근이👤 고민? 💥44초💥해결! (견갑거근 마사지) #성장마사지 #견갑거근마사지 #연세새봄의원", "date": "2025-01-17", "views": 500, "likes": 9, "comments": 0}, {"id": "sG245froqs0", "title": "▶️[#187성장클리닉] 🐢거북목과 지끈지끈 🧠편두통 🔅38초🔅 해결! (흉쇄유돌근 마사지) #성장마사지 #흉쇄유돌근 마사지 #연세새봄의원", "date": "2025-01-10", "views": 149, "likes": 12, "comments": 0}, {"id": "WkBRUFXOGPo", "title": "👨‍⚕️성장클리닉에서는 어떤 검사를 할까요?🩻 연세새봄의원 ✨진료과정을 소개합니다!✨#성장치료 #187성장클리닉 #연세새봄의원", "date": "2025-01-07", "views": 7335, "likes": 581, "comments": 54}, {"id": "ozWWISgw-EU", "title": "▶️[#187성장클리닉] 🪖군대가서도 키 컸다는 소문들💭과연 진실은?🤔 #예상키 #키성장검사 #연세새봄의원", "date": "2024-12-27", "views": 2202, "likes": 14, "comments": 7}, {"id": "z0wymhenBwQ", "title": "[이미 성조숙증]이었던 아이 키 성장🪄 165cm▶️185cm 가능❓ 가능👌(실제 성장 치료 후기) #성조숙증 #187성장클리닉 #연세새봄의원", "date": "2024-12-17", "views": 13541, "likes": 567, "comments": 56}, {"id": "YQiuVuxKlJc", "title": "▶️[#187성장클리닉] ✨너무 쉬운✨ 굽은 등 & 말린 어깨🧎‍♀️펴는 법! (소흉근 마사지) #성장마사지 #연세새봄의원", "date": "2024-12-13", "views": 171, "likes": 9, "comments": 0}, {"id": "Rz3PIeDrqBk", "title": "📣집중📣딱 5️⃣분‼️만에 끝내는 초간단 일자목 개선 운동🧘🏻 누구나 쉽게 따라할 수 있습니다✅ /ENG #성장운동  #187성장클리닉 #연세새봄의원", "date": "2024-12-10", "views": 435, "likes": 8, "comments": 2}, {"id": "IkfYEosjOMk", "title": "▶️[#187성장클리닉] 허리가 아픈⚡️ 오리 궁둥이🦆 아이! (장요근 마사지) #성장마사지 #장요근마사지 #연세새봄의원", "date": "2024-12-06", "views": 226, "likes": 12, "comments": 0}, {"id": "gCtdcYfKaS8", "title": "[🔥한 달🔥성장 비법] 올 겨울방학☃️ 이렇게 하면 쑥쑥 큰다!✨#187성장클리닉 #연세새봄의원 / ENG SUB", "date": "2024-12-03", "views": 11855, "likes": 537, "comments": 57}, {"id": "9bVcLkFYp2g", "title": "🗣️치과 선생님! 🦷이갈이가 빠르면 성장도 빨라지나요❓치과 전문의 전진 원장이 알려드립니다!👨‍⚕️#성장주사 #187성장클리닉  / ENG SUB", "date": "2024-11-26", "views": 249, "likes": 9, "comments": 8}, {"id": "pWGbq_AhEuE", "title": "▶️[#187성장클리닉]🪿팔자걸음& 뒤뚱뒤뚱 오리궁둥이🪿 심한 아이들 주목!📢 골반전방경사 (중둔근 마사지) #성장마사지 #연세새봄의원", "date": "2024-11-22", "views": 513, "likes": 10, "comments": 6}, {"id": "ucGbdMzvA0A", "title": "9️⃣0️⃣% 부모님이 잘못 알고 있는 아이의 수면!😴 수면 때문에 성조숙증을 유발한다💤 #성조숙증 #187성장클리닉 #연세새봄의원 / ENG SUB", "date": "2024-11-13", "views": 531, "likes": 14, "comments": 6}, {"id": "GEVZOvsOdbs", "title": "▶️[#187성장클리닉] 📖공부하면서 오래 앉아있는 아이👩‍🏫, 성장마사지로 해결! (햄스트링 마사지) #성장마사지 #연세새봄의원", "date": "2024-11-08", "views": 187, "likes": 12, "comments": 2}, {"id": "kbYmq1h2q1I", "title": "▶️[#187성장클리닉] 💊키 성장의 핵심💥성장 호르몬을 높이는 영양제 2️⃣가지! #성장호르몬 #키성장검사 #연세새봄의원", "date": "2024-11-01", "views": 783, "likes": 25, "comments": 7}, {"id": "FbRIjuoDCsU", "title": "[이정후 피지컬, 야구하는 아이] 성장 치료 받았는데 ❎효과 없다고❎ 말하는 사람들 케이스 성장주사는 상술⁉️ (이걸 확인 안 해서 그렇습니다) #187성장클리닉 /ENG SUB", "date": "2024-10-29", "views": 8412, "likes": 297, "comments": 60}, {"id": "N6YKeHcjRkc", "title": "▶️[#187성장클리닉] ⚽️56초🏀무릎 앞쪽이 아파요❗️운동 좋아하는 아이(대퇴사두 마사지)⛳️ #성장마사지 #연세새봄의원", "date": "2024-10-25", "views": 817, "likes": 15, "comments": 0}, {"id": "vpyl9jX0pOw", "title": "🏡병원에 가지 않고 우리 아이 성인 키💫 예측하는 방법 #키예측 #187성장클리닉 #연세새봄의원 / ENG SUB", "date": "2024-10-22", "views": 458, "likes": 13, "comments": 5}, {"id": "IuI40slu7U0", "title": "🎒중학생 키 성장, 정말 늦어 버린 걸까? 📱아이들이 직접 검색해 성장클리닉에 오는 이유💻 #청소년평균키 #187성장클리닉 #연세새봄의원 / ENG SUB", "date": "2024-10-15", "views": 7334, "likes": 606, "comments": 35}, {"id": "YfTgwd88zdc", "title": "▶️[#187성장클리닉] 🔥56초🔥 아픈 발목 한방 해결!🦵(종아리 마사지) #성장마사지 #연세새봄의원", "date": "2024-10-11", "views": 860, "likes": 20, "comments": 0}, {"id": "13URm-Jw7iA", "title": "충격☠️ 체중이 증가하면 키가 작아진다⁉️ 네이처지 연구 결과요?📝 #소아비만 #187성장클리닉 #연세새봄의원 / ENG SUB", "date": "2024-10-08", "views": 356, "likes": 11, "comments": 3}, {"id": "XDGCNvjrizA", "title": "▶️[#187성장클리닉] 💊아이 약대신 영양제로 대체하기!🪄 #영양제 #연세새봄의원", "date": "2024-10-04", "views": 841, "likes": 15, "comments": 1}, {"id": "BOyIPX39KUc", "title": "⚽운동 선수🥎가 성장호르몬이 높아야하는 이외의 이유!🥇 (키성장이 다가 아니에요❗️) #키크는법 #187성장클리닉 #연세새봄의원 / ENG SUB", "date": "2024-09-24", "views": 9418, "likes": 493, "comments": 32}, {"id": "8RmaPxZuA_k", "title": "🙆‍♂️당신도 O다리? 한방 정리 끝🚩[유재욱 원장의 영업 비밀🤫] #o다리 #187성장클리닉 #연세새봄의원 / ENG SUB", "date": "2024-09-17", "views": 306, "likes": 13, "comments": 3}, {"id": "_KZsxBBAhaU", "title": "▶️[#187성장클리닉] 💬키 성장 치료 후💉부모님의 흔한 반응 3️⃣가지!  #성조숙증 #키성장검사 #연세새봄의원", "date": "2024-09-06", "views": 1344, "likes": 13, "comments": 7}, {"id": "K-IVd1k-7sg", "title": "[연예인 연습생 & 최근 성장 속도가 더딘 경우] 👧🏻성장 치료를 받은 아이들🧒🏻 결국 이렇게 되었습니다👀 ✔️실제 후기✔️ #성장판검사 #187성장클리닉 #연세새봄의원", "date": "2024-08-28", "views": 13825, "likes": 307, "comments": 67}, {"id": "VEqnAah9i9s", "title": "▶️[#187성장클리닉]🆘아이의 키가 작은 부모님의💧 가장 흔한 후회😮‍💨  #나이별평균키 #키크는주사 #연세새봄의원", "date": "2024-08-23", "views": 412, "likes": 9, "comments": 3}, {"id": "gqYBzcYxflM", "title": "▶️[#187성장클리닉] 일본 대가가 알려준🇯🇵 요즘 일본에서 HOT한❤️‍🔥 성장 치료  #성장호르몬결핍저신장증 #연세새봄의원", "date": "2024-08-16", "views": 167, "likes": 13, "comments": 6}, {"id": "07C8Vi34SS0", "title": "😎청담 엄마가 선택한🗝️ 키 작은 자녀를 위한 3️⃣가지 전략 #187성장클리닉 #연세새봄의원 /ENG", "date": "2024-08-14", "views": 604, "likes": 11, "comments": 6}, {"id": "5IilhQbhAjk", "title": "▶️[#187성장클리닉] 🤢성조숙증을 유발하는🐄 의외의 음식🥛  #성조숙증 #키성장검사 #연세새봄의원", "date": "2024-08-09", "views": 2006, "likes": 25, "comments": 0}, {"id": "C50vsX3iXwg", "title": "🇯🇵키성장 치료의 레전드에게 듣다!🤩✈️  #187성장클리닉 #연세새봄의원 / ENG", "date": "2024-08-06", "views": 277, "likes": 11, "comments": 2}, {"id": "U4IaU7oUUfo", "title": "▶️[#187성장클리닉] ✨18초✨만에 O자형 다리 교정하는 법💪 / #성장운동 #O다리 #연세새봄의원", "date": "2024-08-02", "views": 135, "likes": 7, "comments": 0}, {"id": "4tHNvTyfrKg", "title": "▶️[#187성장클리닉] 🔍우리 아이가 정말🥺 작은 것일까요❓ [초등학생 편] #키예상 #작은아이 #연세새봄의원", "date": "2024-07-26", "views": 118, "likes": 9, "comments": 2}, {"id": "tLqsgY1RQ-A", "title": "🦠면역의 대가🧬 서재걸과 함께하는 우리 아이 건강 성장법!💪 / #서재걸 #187성장클리닉 #연세새봄의원 / ENG SUB", "date": "2024-07-24", "views": 10208, "likes": 392, "comments": 86}, {"id": "FJGgq7kTBkc", "title": "▶️[#187성장클리닉] 💕18초💕만에 X자형 다리 교정하는 법💪 / #성장운동 #x다리 #연세새봄의원", "date": "2024-07-19", "views": 568, "likes": 14, "comments": 0}, {"id": "kcgO4-ifJqE", "title": "📢집중‼️ 🌟5분🌟으로 끝내는 초간단 O자형 다리 개선 운동 🤸🏃‍♂️[ENG]", "date": "2024-07-16", "views": 1393, "likes": 27, "comments": 3}, {"id": "SZkl-sBQHCM", "title": "▶️[#187성장클리닉]💧우리 아이가 몽정을 했다면 🧒최종키는⁉️  #예상키 #몽정 #연세새봄의원", "date": "2024-07-12", "views": 4358, "likes": 31, "comments": 8}, {"id": "bqjB7pRbIfw", "title": "📢모두 집중‼️ 🖐️5분🖐️으로 끝내는 초간단 X다리 개선 운동 🤸🏃‍♂️[ENG]", "date": "2024-07-09", "views": 318, "likes": 10, "comments": 3}, {"id": "elQZYZ1NOLc", "title": "▶️[#187성장클리닉]🦶키와 발 사이즈는 비례하나요❔예상키 알 수 있을까❔💭  #예상키 #평균키 #연세새봄의원", "date": "2024-07-05", "views": 2970, "likes": 34, "comments": 17}, {"id": "bqagk7Y5Ep8", "title": "🤸‍♀️다리가 더 길어지는 ✨비율 좋은 성장 치료 방법✨ 효과 좋은 시기는❓/ #키예상 #187성장클리닉 #연세새봄의원 / ENG SUB", "date": "2024-07-02", "views": 498, "likes": 8, "comments": 4}, {"id": "u8A6QkCzHmY", "title": "▶️[#187성장클리닉] 💕15초💕만에 일자목 교정하는 법💪 / #성장운동 #일자목 #연세새봄의원", "date": "2024-06-28", "views": 435, "likes": 10, "comments": 0}, {"id": "1Z4I_YsKc94", "title": "🙋‍♂️아이 성장의 진심인 전문가들이 만났다🙋‍♀️ 성장클리닉하면 다 아는 [연세새봄의원 X 톨앤핏] 키 성장❓전부 물어보세요🗣️ / #187성장클리닉 #연세새봄의원 #톨앤핏", "date": "2024-06-25", "views": 7932, "likes": 350, "comments": 46}, {"id": "8yLdsMnO4cE", "title": "▶️[#187성장클리닉] 단✨ 18초✨만에 거북목과 굽은등 교정하는 법💪 / #성장운동 #거북목 #연세새봄의원", "date": "2024-06-21", "views": 1688, "likes": 13, "comments": 4}, {"id": "RzuXWJJf7bY", "title": "📢 집중‼️ ✨5분✨으로 끝내는 초간단✅ 골반 후방 경사 개선 운동 🤸🏃‍♂️[ENG]", "date": "2024-06-18", "views": 1649, "likes": 21, "comments": 3}, {"id": "cwfEaeBkhXQ", "title": "▶️[#187성장클리닉] 🗣️예상키 확인 후🫢 부모님들의 흔한 반응❗️#예상키 #키성장검사 #연세새봄의원", "date": "2024-06-14", "views": 4100, "likes": 12, "comments": 20}, {"id": "U62yLjlBSE8", "title": "📢 집중‼️ 💡5분💡으로 끝내는 초간단 🐢거북목 & 굽은 등🐢 개선 운동 🤸🏃‍♂️ [ENG]", "date": "2024-06-11", "views": 1880, "likes": 19, "comments": 5}, {"id": "zRd6JaJmwvk", "title": "▶️[#187성장클리닉] 🚨골반 후방 경사💕20초💕만에 교정하는 법🙌 / #연세새봄의원 #키성장 #키성장운동", "date": "2024-06-07", "views": 118, "likes": 9, "comments": 0}, {"id": "i2haVLYcEGE", "title": "😱이 영상을 안보고 성조숙증 억제 주사💉 맞으면 안됩니다🙅‍♀️ /#성조숙증 #예상키 #키크는법 #연세새봄의원 /ENG SUB", "date": "2024-06-04", "views": 7980, "likes": 218, "comments": 32}, {"id": "hEoSxV2YJI4", "title": "▶️[#187성장클리닉] 아이 성장 검사가🩻 걱정인 부모님을 위한 영상! -비용-💸 / #성장판검사 #뼈나이검사 #연세새봄의원", "date": "2024-05-31", "views": 1335, "likes": 19, "comments": 3}, {"id": "cBYdbmVwB0E", "title": "📢 꺾인 허리 & 오리 궁둥이 모두 집중‼️ 👉5분👈만에 끝내는 초간단 골반 전방 경사 개선 운동🤸🏃‍♂️ [ENG]", "date": "2024-05-28", "views": 459, "likes": 13, "comments": 2}, {"id": "-DULXNYk3Sg", "title": "📢집중‼️딱👉5분👈만에 끝내는 초간단 일자목 개선 운동🤸🏃‍♂️ 누구나 쉽게 따라할 수 있습니다🙆‍♀️ [ENG]", "date": "2024-05-21", "views": 370, "likes": 11, "comments": 2}, {"id": "YvSU31DEom8", "title": "▶️[#187성장클리닉] ✨17초✨만에 골반 전방 경사 교정✔️하는 법🔥 /  #연세새봄의원 #키성장 #키성장주사", "date": "2024-05-17", "views": 853, "likes": 15, "comments": 2}, {"id": "L39PDLxPsqc", "title": "🧘‍♀️필라테스 교과서만 무려 20권📚집필한 교수님이 알려주는 우리 아이 키 크는 운동법🌟 /#키크는운동 #키운동 #필라테스 #자세교정  /ENG SUB", "date": "2024-05-14", "views": 10337, "likes": 19, "comments": 60}, {"id": "7sTj_jcPerk", "title": "▶️[#187성장클리닉] 키 크는 계절이🌱🍂 따로 있다❓ 이때  잘 크는 아이가 1년 내내 잘 큰다./ #계절 #키크는법  #연세새봄의원", "date": "2024-05-10", "views": 594, "likes": 13, "comments": 5}, {"id": "--wXGHiQfuM", "title": "👧딸을 위한 영상!👧 강남 성장 클리닉 닥터가 가르쳐주는 최종 예상 키! 너무 쉽지‼️/#가슴멍울 #초경나이 #연세새봄의원 /ENG SUB", "date": "2024-04-30", "views": 857, "likes": 9, "comments": 29}, {"id": "n_YY7yFJAc0", "title": "▶️[#187성장클리닉] 우리 딸,  초경을 했다면🩸 키가 안 크나요?!👧 / #가슴멍울 #초경나이 #연세새봄의원", "date": "2024-04-26", "views": 31081, "likes": 154, "comments": 29}, {"id": "I81SlULRFrs", "title": "🤦‍♀️아이가 작아서 걱정인 엄마를 위한 영상📺 걱정마세요! 이 아이는 큰 아이가 될 운명입니다🎉 [뼈ㄴㅇ] /#키예상 #예상키 #키크는법 #연세새봄의원 /ENG SUB", "date": "2024-04-19", "views": 11486, "likes": 18, "comments": 83}, {"id": "GwE4QRYpYG0", "title": "▶️[#187성장클리닉] 우리 아이 키 크는 ✨최고의 칼슘 영양제 Best 3️⃣ / #칼슘제 #어골칼슘 #키크는법 #연세새봄의원", "date": "2024-04-09", "views": 1551, "likes": 30, "comments": 8}, {"id": "F9C6dKdIwc4", "title": "이런 아이는 치료하면 분명 효과를 본다🙆‍♀️ [성장 치료 효과 좋은 아이들 VS좋지 않은 아이들] /#성조숙증 #성장클리닉 #키크는주사 #키크는법 #연세새봄의원 /ENG SUB", "date": "2024-04-05", "views": 11122, "likes": 608, "comments": 71}, {"id": "OxNsaZ1Z_g4", "title": "▶️[#187성장클리닉] 아이가 있는 부모라면 꼭 봐야 하는👀 예상키 계산기‼️ (어려움 주의🔥) / #키예상 #예상키계산기 #예상키계산법 #연세새봄의원", "date": "2024-04-02", "views": 659, "likes": 15, "comments": 3}, {"id": "SUJvfR_cSYc", "title": "[솔찍SSUL] 학교에서 몰래 쭉 크는 아이들의 3️⃣가지 비밀!🤫🏫 /#성조숙증 #사춘기테스트 #가슴몽우리 #갑상선기능저하증 #건선 #키크는법 #연세새봄의원 / ENG SUB", "date": "2024-03-29", "views": 10885, "likes": 585, "comments": 74}, {"id": "JPgaLFToQbs", "title": "▶️[#187성장클리닉] 키 크는 주사(성장 호르몬) 부작용!😱 앗! 우리 아이가 주사를 맞고 몽정을⁉️/ #성조숙증 #몽정 #성장호르몬주사부작용 #키크는법 #연세새봄의원", "date": "2024-03-26", "views": 842, "likes": 17, "comments": 6}, {"id": "zkS_XCd1y9Y", "title": "▶️[#187성장클리닉] 키크는 주사(성장 호르몬) 부작용!😱 성장클리닉의ㅂㅁ 앗~! 우리 아이 허리가 / #성장클리닉 #성장호르몬주사부작용 #키크는법 #키크는주사 #연세새봄의원", "date": "2024-03-20", "views": 4753, "likes": 45, "comments": 17}, {"id": "i6vUGrDqh4M", "title": "☑️병원이 숨기고 싶은 비밀😱 키 크는 주사, 성장 호르몬 주사의 부작용❗#성장클리닉 #키크는법 #키크는주사 #성장호르몬주사부작용  #187성장클리닉 / ENG SUB", "date": "2024-03-15", "views": 2033, "likes": 22, "comments": 9}, {"id": "fxWqu0qdPK4", "title": "💉10년간 키성장을 담당한 의사가 가르쳐주는 성장판이 닫혀도 키 크는 법🩺 /#성장클리닉 #키성장 #성장판검사 #187성장클리닉 #연세새봄의원 / ENG SUB", "date": "2024-03-06", "views": 3043, "likes": 57, "comments": 10}, {"id": "c2RJ1bg_QP8", "title": "➡️남들이 성장판만 볼 때 우리 아이 성적(性的) 변화를 봐야하는 이유‼️ /#성장클리닉 #키성장 #키성장검사 #187성장클리닉 / ENG SUB", "date": "2024-02-26", "views": 455, "likes": 18, "comments": 20}, {"id": "sA_tZ9r_XYI", "title": "▶️[#187성장클리닉] 칼슘 말고 키 크는 영양제 3가지⁉️ #성장클리닉 #성장영양제 #영양제추천 #키성장 #연세새봄의원", "date": "2024-02-20", "views": 56060, "likes": 734, "comments": 42}];
+
+// Categorize
+function categorize(title) {
+  const rules = [
+    ['review', ['후기','결과는','역전 스토리','이렇게 되었','키운','키웠','효과를 본다','효과 없다','운명입니다']],
+    ['celeb', ['장원영','안유진','카리나','김연경','이병헌','손흥민','홀란드','고경표','김태리','강동원','박서준','한혜진','주원','송지아','서재걸','유재욱','정시아','이정후','신유','배우들 TOP','가수들 10','여배우들','남돌']],
+    ['exercise', ['운동','마사지','교정하는 법','스트레칭','필라테스']],
+    ['puberty', ['성조숙증','사춘기','초경','몽정','가슴멍울','성적(性的)']],
+    ['nutrition', ['영양제','칼슘','음식','간식','식단','단백질','분유','먹고','먹입니다','먹이고']],
+    ['hormone', ['성장호르몬','성장주사','키크는주사','성장 호르몬','부작용','테스토스테론','에스트로겐','호르몬 주사']],
+    ['predict', ['예상키','키예측','예상 키','평균키','몇 cm 커야']],
+    ['info', ['비법','비밀','방학','겨울방학','여름방학','검사','진료과정','성장판','뼈나이','환경호르몬']],
+  ];
+  for (const [cat, kws] of rules) {
+    for (const kw of kws) {
+      if (title.includes(kw)) return cat;
+    }
+  }
+  return 'other';
+}
+
+const catLabels = {
+  review: '치료 후기/케이스', celeb: '연예인/셀럽', exercise: '운동/마사지',
+  puberty: '사춘기/성조숙증', nutrition: '영양/음식', hormone: '성장호르몬/주사',
+  predict: '예상키/키예측', info: '성장 정보/검사', other: '기타'
+};
+const catColors = {
+  review: '#22c55e', celeb: '#ec4899', exercise: '#06b6d4',
+  puberty: '#8b5cf6', nutrition: '#f97316', hormone: '#ef4444',
+  predict: '#3b82f6', info: '#eab308', other: '#6b7280'
+};
+
+// Enrich videos
+videos.forEach(v => { v.category = categorize(v.title); });
+
+// Aggregate categories
+const catStats = {};
+for (const v of videos) {
+  if (!catStats[v.category]) catStats[v.category] = { count: 0, views: 0, likes: 0, comments: 0 };
+  const c = catStats[v.category];
+  c.count++;
+  c.views += v.views;
+  c.likes += v.likes;
+  c.comments += v.comments;
+}
+const catArr = Object.entries(catStats).map(([k, c]) => ({
+  key: k,
+  label: catLabels[k],
+  color: catColors[k],
+  count: c.count,
+  avgViews: Math.round(c.views / c.count),
+  avgLikes: (c.likes / c.count).toFixed(1),
+  avgComments: (c.comments / c.count).toFixed(1),
+  likeRate: (c.views > 0 ? (c.likes / c.views * 100) : 0).toFixed(1),
+  commentRate: (c.views > 0 ? (c.comments / c.views * 100) : 0).toFixed(2),
+  totalViews: c.views,
+  score: Math.round(
+    (c.views / c.count) * (c.likes / c.views) * (1 + c.comments / c.views)
+  )
+})).sort((a, b) => b.avgViews - a.avgViews);
+
+// === CHARTS ===
+Chart.defaults.color = '#6b7280';
+Chart.defaults.borderColor = '#e5e7eb';
+Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, sans-serif';
+
+// 1. Avg Views Bar
+new Chart(document.getElementById('chartAvgViews'), {
+  type: 'bar',
+  data: {
+    labels: catArr.map(c => c.label),
+    datasets: [{
+      data: catArr.map(c => c.avgViews),
+      backgroundColor: catArr.map(c => c.color + '99'),
+      borderColor: catArr.map(c => c.color),
+      borderWidth: 1,
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: '#e5e7eb' } },
+      y: { grid: { display: false } }
+    }
+  }
+});
+
+// 2. Engagement Score
+const catByScore = [...catArr].sort((a, b) => b.score - a.score);
+new Chart(document.getElementById('chartEngagement'), {
+  type: 'bar',
+  data: {
+    labels: catByScore.map(c => c.label),
+    datasets: [{
+      data: catByScore.map(c => c.score),
+      backgroundColor: catByScore.map(c => c.color + '99'),
+      borderColor: catByScore.map(c => c.color),
+      borderWidth: 1,
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: '#e5e7eb' } },
+      y: { grid: { display: false } }
+    }
+  }
+});
+
+// 3. Efficiency (video count % vs view %)
+const totalVideos = videos.length;
+const totalViews = videos.reduce((s, v) => s + v.views, 0);
+new Chart(document.getElementById('chartEfficiency'), {
+  type: 'bar',
+  data: {
+    labels: catArr.map(c => c.label),
+    datasets: [
+      {
+        label: '영상 비중 (%)',
+        data: catArr.map(c => (c.count / totalVideos * 100).toFixed(1)),
+        backgroundColor: '#818cf866',
+        borderColor: '#6366f1',
+        borderWidth: 1,
+        borderRadius: 4,
+      },
+      {
+        label: '조회수 비중 (%)',
+        data: catArr.map(c => (c.totalViews / totalViews * 100).toFixed(1)),
+        backgroundColor: '#22c55e66',
+        borderColor: '#22c55e',
+        borderWidth: 1,
+        borderRadius: 4,
+      }
+    ]
+  },
+  options: {
+    indexAxis: 'y',
+    plugins: { legend: { position: 'bottom' } },
+    scales: {
+      x: { grid: { color: '#e5e7eb' }, max: 30 },
+      y: { grid: { display: false } }
+    }
+  }
+});
+
+// 4. Timeline
+const monthly = {};
+videos.forEach(v => {
+  const m = v.date.slice(0, 7);
+  if (!monthly[m]) monthly[m] = { count: 0, views: 0 };
+  monthly[m].count++;
+  monthly[m].views += v.views;
+});
+const months = Object.keys(monthly).sort();
+new Chart(document.getElementById('chartTimeline'), {
+  type: 'bar',
+  data: {
+    labels: months.map(m => m.slice(2)),
+    datasets: [
+      {
+        label: '업로드 수',
+        data: months.map(m => monthly[m].count),
+        backgroundColor: '#818cf888',
+        borderRadius: 4,
+        yAxisID: 'y',
+      },
+      {
+        label: '조회수',
+        data: months.map(m => monthly[m].views),
+        type: 'line',
+        borderColor: '#22c55e',
+        backgroundColor: '#22c55e22',
+        fill: true,
+        tension: 0.3,
+        yAxisID: 'y1',
+        pointRadius: 3,
+      }
+    ]
+  },
+  options: {
+    plugins: { legend: { position: 'bottom' } },
+    scales: {
+      y: { position: 'left', grid: { color: '#e5e7eb' }, title: { display: true, text: '영상 수' } },
+      y1: { position: 'right', grid: { display: false }, title: { display: true, text: '조회수' } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+
+// === CATEGORY TABLE ===
+const catTBody = document.getElementById('catTableBody');
+const catBySorted = [...catArr].sort((a, b) => b.score - a.score);
+catBySorted.forEach(c => {
+  catTBody.innerHTML += `<tr>
+    <td><span class="badge badge-${c.key}">${c.label}</span></td>
+    <td class="num">${c.count}</td>
+    <td class="num">${c.avgViews.toLocaleString()}</td>
+    <td class="num">${c.avgLikes}</td>
+    <td class="num">${c.avgComments}</td>
+    <td class="num">${c.likeRate}%</td>
+    <td class="num">${c.commentRate}%</td>
+    <td class="num"><strong>${c.score}</strong></td>
+  </tr>`;
+});
+
+// === VIDEO TABLES ===
+const maxViews = Math.max(...videos.map(v => v.views));
+
+function renderVideoTable(containerId, vids) {
+  const container = document.getElementById(containerId);
+  let html = `<div class="table-wrap"><table>
+    <thead><tr>
+      <th>#</th><th>제목</th><th>카테고리</th><th>날짜</th>
+      <th>조회수</th><th>좋아요</th><th>댓글</th><th>조회수</th>
+    </tr></thead><tbody>`;
+  vids.forEach((v, i) => {
+    const pct = (v.views / maxViews * 100).toFixed(1);
+    html += `<tr>
+      <td class="rank">${i + 1}</td>
+      <td class="video-title"><a href="https://youtube.com/watch?v=${v.id}" target="_blank">${v.title}</a></td>
+      <td><span class="badge badge-${v.category}">${catLabels[v.category]}</span></td>
+      <td>${v.date}</td>
+      <td class="num">${v.views.toLocaleString()}</td>
+      <td class="num">${v.likes.toLocaleString()}</td>
+      <td class="num">${v.comments}</td>
+      <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${catColors[v.category]}"></div></div></td>
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
+  container.innerHTML = html;
+}
+
+// Sorted by views
+const allSorted = [...videos].sort((a, b) => b.views - a.views);
+renderVideoTable('tab-all', allSorted.slice(0, 30));
+renderVideoTable('tab-review', allSorted.filter(v => v.category === 'review'));
+renderVideoTable('tab-celeb', allSorted.filter(v => v.category === 'celeb'));
+renderVideoTable('tab-nutrition', allSorted.filter(v => v.category === 'nutrition'));
+renderVideoTable('tab-puberty', allSorted.filter(v => v.category === 'puberty'));
+renderVideoTable('tab-exercise', allSorted.filter(v => v.category === 'exercise'));
+
+// Tab switching
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+// === REVIEW DEEP DIVE CHARTS ===
+const reviewVideos = allSorted.filter(v => v.category === 'review');
+
+// Scatter
+new Chart(document.getElementById('chartReviewScatter'), {
+  type: 'scatter',
+  data: {
+    datasets: [{
+      data: reviewVideos.map(v => ({ x: v.views, y: v.likes, label: v.title.slice(0, 30) })),
+      backgroundColor: '#22c55e88',
+      borderColor: '#22c55e',
+      pointRadius: 8,
+      pointHoverRadius: 12,
+    }]
+  },
+  options: {
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => {
+            const d = ctx.raw;
+            return `${d.label}... (${d.x.toLocaleString()}뷰, ${d.y}좋아요)`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: { title: { display: true, text: '조회수' }, grid: { color: '#e5e7eb' } },
+      y: { title: { display: true, text: '좋아요' }, grid: { color: '#e5e7eb' } }
+    }
+  }
+});
+
+// Keywords in review titles
+const kwCount = {};
+const reviewKws = ['실제','후기','치료','성장','효과','유전','성조숙증','미숙아','역전','쌍둥이','연습생','의사','부모','아이','결과','포기','가능'];
+reviewVideos.forEach(v => {
+  reviewKws.forEach(kw => {
+    if (v.title.includes(kw)) kwCount[kw] = (kwCount[kw] || 0) + 1;
+  });
+});
+const kwSorted = Object.entries(kwCount).sort((a, b) => b[1] - a[1]).slice(0, 12);
+
+new Chart(document.getElementById('chartReviewKeywords'), {
+  type: 'bar',
+  data: {
+    labels: kwSorted.map(k => k[0]),
+    datasets: [{
+      data: kwSorted.map(k => k[1]),
+      backgroundColor: '#22c55e66',
+      borderColor: '#22c55e',
+      borderWidth: 1,
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { grid: { color: '#e5e7eb' }, ticks: { stepSize: 1 } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+</script>
+
+</body>
+</html>
