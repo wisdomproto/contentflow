@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import { Send, Clock, Link2, LinkOff } from 'lucide-react'
+import { Send, Clock, Link2, Link2Off } from 'lucide-react'
 
 interface PublishBarProps {
   channel: string           // 'wordpress' | 'naver_blog' | 'instagram' | 'threads' | 'youtube'
@@ -16,6 +16,7 @@ interface PublishBarProps {
   scheduledAt?: string | null
   onPublish?: () => void
   onSchedule?: (scheduledAt: string) => void
+  compact?: boolean          // compact mode for top bar (buttons only)
 }
 
 const CHANNEL_LABELS: Record<string, string> = {
@@ -43,6 +44,7 @@ export function PublishBar({
   scheduledAt,
   onPublish,
   onSchedule,
+  compact = false,
 }: PublishBarProps) {
   const [showSchedule, setShowSchedule] = useState(false)
   const [scheduleDate, setScheduleDate] = useState('')
@@ -58,6 +60,61 @@ export function PublishBar({
     }
   }
 
+  // Compact mode: just buttons, no info bar
+  if (compact) {
+    return (
+      <div className="flex items-center gap-2">
+        {status && (
+          <Badge variant="outline" className={cn('text-[10px] h-5', status.color)}>
+            {status.label}
+          </Badge>
+        )}
+        {channel === 'naver_blog' ? (
+          <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5">
+            📋 복사
+          </Button>
+        ) : (
+          <>
+            {showSchedule ? (
+              <div className="flex items-center gap-1.5">
+                <Input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)}
+                  className="h-7 w-32 text-xs" />
+                <Input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)}
+                  className="h-7 w-20 text-xs" />
+                <Button size="sm" className="h-7 text-xs" onClick={handleSchedule} disabled={!scheduleDate}>확인</Button>
+                <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setShowSchedule(false)}>취소</Button>
+              </div>
+            ) : (
+              <>
+                <Button
+                  size="sm" variant="outline"
+                  className={cn('h-7 text-xs gap-1', !isConnected && 'opacity-40')}
+                  onClick={() => setShowSchedule(true)}
+                  disabled={!isConnected}
+                  title={!isConnected ? '채널 연결 필요' : ''}
+                >
+                  <Clock className="w-3 h-3" /> 예약
+                </Button>
+                <Button
+                  size="sm"
+                  className={cn('h-7 text-xs gap-1', !isConnected && 'opacity-40')}
+                  onClick={onPublish}
+                  disabled={!isConnected}
+                  title={!isConnected ? '채널 연결 필요' : ''}
+                >
+                  <Send className="w-3 h-3" /> 발행
+                </Button>
+              </>
+            )}
+            {!isConnected && !showSchedule && (
+              <Link2Off className="w-3 h-3 text-muted-foreground" />
+            )}
+          </>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="border-t border-border bg-card/80 backdrop-blur px-4 py-2.5 flex items-center gap-3">
       {/* Channel + Language info */}
@@ -65,7 +122,7 @@ export function PublishBar({
         {isConnected ? (
           <Link2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
         ) : (
-          <LinkOff className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          <Link2Off className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
         )}
         <span className="text-xs text-muted-foreground truncate">
           {channelLabel} · {language.toUpperCase()}

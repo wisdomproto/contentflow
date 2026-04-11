@@ -47,8 +47,8 @@ export function ContentTabs() {
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      {/* Tab Bar */}
-      <div className="border-b border-border bg-background">
+      {/* Tab Bar + Publish */}
+      <div className="border-b border-border bg-background flex items-center">
         <nav className="flex gap-1 px-4">
           {tabs.map((tab) => (
             <button
@@ -66,6 +66,18 @@ export function ContentTabs() {
             </button>
           ))}
         </nav>
+
+        {/* Publish buttons — right side of tab bar */}
+        {activeTab !== 'base-article' && (
+          <div className="ml-auto pr-4">
+            <PublishBar
+              channel={TAB_TO_CHANNEL[activeTab]}
+              language={selectedLanguage}
+              isConnected={false}
+              compact
+            />
+          </div>
+        )}
       </div>
 
       {/* Language Selector */}
@@ -81,14 +93,6 @@ export function ContentTabs() {
         {activeTab === 'youtube' && <YoutubePanel />}
       </div>
 
-      {/* Publish Bar — shown for all channel tabs except base-article */}
-      {activeTab !== 'base-article' && (
-        <PublishBar
-          channel={TAB_TO_CHANNEL[activeTab]}
-          language={selectedLanguage}
-          isConnected={false}
-        />
-      )}
     </div>
   );
 }
