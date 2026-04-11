@@ -68,6 +68,7 @@ function WordpressPanelInner({ blogContent, content, project, hasBaseArticle, ch
   const [metaTitle, setMetaTitle] = useState(blogContent.seo_title ?? '');
   const [metaDescription, setMetaDescription] = useState('');
   const [urlSlug, setUrlSlug] = useState('');
+  const [structureGenerating, setStructureGenerating] = useState(false);
 
   const handleMetaTitleChange = (value: string) => {
     setMetaTitle(value);
@@ -278,8 +279,65 @@ function WordpressPanelInner({ blogContent, content, project, hasBaseArticle, ch
       {/* Step 2: 구조 설계 */}
       {currentStep === 2 && (
         <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
-          <h3 className="text-sm font-semibold flex items-center gap-2">📐 콘텐츠 구조 설계</h3>
-          <p className="text-xs text-muted-foreground">Google SEO에 최적화된 heading 구조를 설계합니다. AI가 자동으로 구조를 제안하거나, 직접 작성할 수 있습니다.</p>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold flex items-center gap-2">📐 콘텐츠 구조 설계</h3>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs gap-1"
+              disabled={structureGenerating || !primaryKeyword.trim()}
+              onClick={async () => {
+                setStructureGenerating(true);
+                try {
+                  const secondaryArr = secondaryKeywords.split(',').map(k => k.trim()).filter(Boolean);
+                  const prompt = `You are a Google SEO expert. Generate an optimized content structure for a blog post.
+
+Primary keyword: "${primaryKeyword}"
+Secondary keywords: ${secondaryArr.join(', ') || 'none'}
+Search intent: ${searchIntent}
+${baseArticle?.body ? `Base article summary: ${baseArticle.body_plain_text?.substring(0, 500) || baseArticle.body.substring(0, 500)}` : ''}
+${project.industry ? `Industry: ${project.industry}` : ''}
+
+Return ONLY valid JSON (no explanation) with this exact structure:
+{
+  "metaTitle": "60자 이내 SEO 최적화 제목 (한국어)",
+  "metaDescription": "120~160자 메타 설명 (한국어)",
+  "urlSlug": "english-url-slug",
+  "headingStructure": "H2: 제목1\\n  H3: 소제목1\\n  H3: 소제목2\\nH2: 제목2\\n  H3: 소제목3\\nH2: FAQ\\nH2: 결론"
+}`;
+                  const res = await fetch('/api/ai/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt, model: channelModels.textModel }),
+                  });
+                  const reader = res.body?.getReader();
+                  if (!reader) throw new Error('No reader');
+                  const decoder = new TextDecoder();
+                  let fullText = '';
+                  while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    fullText += decoder.decode(value);
+                  }
+                  const jsonMatch = fullText.match(/\{[\s\S]*\}/);
+                  if (jsonMatch) {
+                    const parsed = JSON.parse(jsonMatch[0]);
+                    if (parsed.metaTitle) setMetaTitle(parsed.metaTitle);
+                    if (parsed.metaDescription) setMetaDescription(parsed.metaDescription);
+                    if (parsed.urlSlug) setUrlSlug(parsed.urlSlug);
+                    if (parsed.headingStructure) setHeadingStructure(parsed.headingStructure);
+                  }
+                } catch (err) {
+                  console.error('Structure generation error:', err);
+                } finally {
+                  setStructureGenerating(false);
+                }
+              }}
+            >
+              {structureGenerating ? '생성 중...' : '✨ AI 구조 자동 생성'}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">키워드 기반으로 AI가 Meta Title, Description, H2/H3 구조를 자동 생성합니다.</p>
 
           {/* SEO Meta Fields */}
           <div className="space-y-3">
