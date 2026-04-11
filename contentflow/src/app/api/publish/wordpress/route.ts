@@ -25,7 +25,8 @@ export async function POST(req: NextRequest) {
     const response = await fetch(wpApiUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json; charset=utf-8',
+        'Accept': 'application/json',
         'Authorization': `Basic ${Buffer.from(`${username}:${applicationPassword}`).toString('base64')}`,
       },
       body: JSON.stringify(postData),

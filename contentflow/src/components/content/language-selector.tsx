@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useUIStore } from '@/stores/ui-store'
 import { useProjectStore } from '@/stores/project-store'
 import { cn } from '@/lib/utils'
@@ -43,13 +43,29 @@ interface LanguageSelectorProps {
 
 export function LanguageSelector({ onTranslate, translationStatuses = {}, channel }: LanguageSelectorProps) {
   const { selectedLanguage, setSelectedLanguage } = useUIStore()
-  const { projects, selectedProjectId } = useProjectStore()
+  const { projects, selectedProjectId, selectedContentId, contents, getBaseArticle } = useProjectStore()
   const project = projects.find(p => p.id === selectedProjectId)
 
   const [showSchedule, setShowSchedule] = useState(false)
   const [scheduleDate, setScheduleDate] = useState('')
   const [scheduleTime, setScheduleTime] = useState('09:00')
   const [showConnectDialog, setShowConnectDialog] = useState(false)
+  const [publishing, setPublishing] = useState(false)
+
+  // WordPress 연결 상태를 localStorage에서 확인
+  const [isWpConnected, setIsWpConnected] = useState(false)
+
+  useEffect(() => {
+    if (channel === 'wordpress' && selectedProjectId) {
+      const saved = localStorage.getItem(`wp_credentials_${selectedProjectId}`)
+      setIsWpConnected(!!saved)
+    } else {
+      setIsWpConnected(false)
+    }
+  }, [channel, selectedProjectId])
+
+  const isConnected = channel === 'wordpress' ? isWpConnected : false
+  const channelLabel = channel ? (CHANNEL_LABELS[channel] || channel) : ''
 
   const rawLanguages = project?.target_languages ?? []
   const targetLanguages = rawLanguages.includes('ko')
@@ -58,16 +74,131 @@ export function LanguageSelector({ onTranslate, translationStatuses = {}, channe
 
   if (targetLanguages.length <= 1) return null
 
-  // TODO: check actual channel connections from DB
-  const isConnected = false
-  const channelLabel = channel ? (CHANNEL_LABELS[channel] || channel) : ''
-
-  function handlePublishClick() {
+  async function handlePublishClick() {
     if (!isConnected) {
       setShowConnectDialog(true)
       return
     }
-    // TODO: actual publish logic
+
+    if (channel === 'wordpress') {
+      if (!selectedProjectId || !selectedContentId) {
+        alert('발행할 콘텐츠를 선택해주세요')
+        return
+      }
+
+      const credsRaw = localStorage.getItem(`wp_credentials_${selectedProjectId}`)
+      if (!credsRaw) {
+        setShowConnectDialog(true)
+        return
+      }
+
+      let creds: { siteUrl: string; username: string; appPassword: string }
+      try {
+        creds = JSON.parse(credsRaw)
+      } catch {
+        alert('저장된 자격증명이 올바르지 않습니다')
+        return
+      }
+
+      // 콘텐츠 제목과 본문 가져오기
+      const contentMeta = contents.find(c => c.id === selectedContentId)
+      const title = contentMeta?.title || 'Untitled'
+      const baseArticle = getBaseArticle(selectedContentId)
+      const body = baseArticle?.body || ''
+
+      if (!body.trim()) {
+        alert('발행할 본문이 없습니다. 기본글 탭에서 내용을 작성해주세요.')
+        return
+      }
+
+      setPublishing(true)
+      try {
+        const res = await fetch('/api/publish/wordpress', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
+          body: JSON.stringify({
+            title,
+            content: body,
+            status: 'publish',
+            siteUrl: creds.siteUrl,
+            username: creds.username,
+            applicationPassword: creds.appPassword,
+          }),
+        })
+        const result = await res.json()
+        if (result.success) {
+          alert(`발행 성공!\n${result.url}`)
+        } else {
+          alert(`발행 실패: ${result.error}`)
+        }
+      } catch (err) {
+        alert(`발행 오류: ${err}`)
+      } finally {
+        setPublishing(false)
+      }
+    }
+  }
+
+  async function handleScheduleConfirm() {
+    if (!scheduleDate) return
+
+    if (channel === 'wordpress') {
+      if (!selectedProjectId || !selectedContentId) {
+        alert('발행할 콘텐츠를 선택해주세요')
+        return
+      }
+
+      const credsRaw = localStorage.getItem(`wp_credentials_${selectedProjectId}`)
+      if (!credsRaw) {
+        setShowConnectDialog(true)
+        return
+      }
+
+      let creds: { siteUrl: string; username: string; appPassword: string }
+      try {
+        creds = JSON.parse(credsRaw)
+      } catch {
+        alert('저장된 자격증명이 올바르지 않습니다')
+        return
+      }
+
+      const contentMeta = contents.find(c => c.id === selectedContentId)
+      const title = contentMeta?.title || 'Untitled'
+      const baseArticle = getBaseArticle(selectedContentId)
+      const body = baseArticle?.body || ''
+
+      const scheduledAt = `${scheduleDate}T${scheduleTime}:00`
+
+      setPublishing(true)
+      try {
+        const res = await fetch('/api/publish/wordpress', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
+          body: JSON.stringify({
+            title,
+            content: body,
+            status: 'future',
+            scheduledAt,
+            siteUrl: creds.siteUrl,
+            username: creds.username,
+            applicationPassword: creds.appPassword,
+          }),
+        })
+        const result = await res.json()
+        if (result.success) {
+          alert(`예약 발행 성공!\n예약 시간: ${scheduledAt}\n${result.url}`)
+        } else {
+          alert(`예약 실패: ${result.error}`)
+        }
+      } catch (err) {
+        alert(`예약 오류: ${err}`)
+      } finally {
+        setPublishing(false)
+        setShowSchedule(false)
+      }
+    } else {
+      setShowSchedule(false)
+    }
   }
 
   function handleScheduleClick() {
@@ -136,8 +267,10 @@ export function LanguageSelector({ onTranslate, translationStatuses = {}, channe
                       className="h-7 w-32 text-xs" />
                     <Input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)}
                       className="h-7 w-20 text-xs" />
-                    <Button size="sm" className="h-7 text-xs" onClick={() => setShowSchedule(false)}
-                      disabled={!scheduleDate}>확인</Button>
+                    <Button size="sm" className="h-7 text-xs" onClick={handleScheduleConfirm}
+                      disabled={!scheduleDate || publishing}>
+                      {publishing ? '처리 중...' : '확인'}
+                    </Button>
                     <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setShowSchedule(false)}>
                       취소
                     </Button>
@@ -148,6 +281,7 @@ export function LanguageSelector({ onTranslate, translationStatuses = {}, channe
                       size="sm" variant="outline"
                       className={cn('h-7 text-xs gap-1', !isConnected && 'opacity-60')}
                       onClick={handleScheduleClick}
+                      disabled={publishing}
                     >
                       <Clock className="w-3 h-3" /> 예약
                     </Button>
@@ -155,8 +289,10 @@ export function LanguageSelector({ onTranslate, translationStatuses = {}, channe
                       size="sm"
                       className={cn('h-7 text-xs gap-1', !isConnected && 'opacity-60')}
                       onClick={handlePublishClick}
+                      disabled={publishing}
                     >
-                      <Send className="w-3 h-3" /> 발행
+                      <Send className="w-3 h-3" />
+                      {publishing ? '발행 중...' : '발행'}
                     </Button>
                     {!isConnected && (
                       <Link2Off className="w-3.5 h-3.5 text-muted-foreground" />
