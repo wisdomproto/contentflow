@@ -65,7 +65,7 @@ export function MonitoringDashboard() {
       {/* Keywords */}
       <div className="flex gap-2 flex-wrap items-center">
         {keywords.map(kw => (
-          <span key={kw} className="bg-purple-900/30 text-purple-300 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-purple-900/50"
+          <span key={kw} className="bg-primary/10 text-primary border border-primary/20 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-primary/20"
             onClick={() => setKeywords(keywords.filter(k => k !== kw))}>
             {kw} ×
           </span>
