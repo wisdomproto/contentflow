@@ -81,6 +81,16 @@ export function PublishQueue() {
                 <div className="text-sm">{record.metadata?.title || 'Untitled'}</div>
                 <div className="text-xs text-muted-foreground">
                   {record.channel} · {record.language?.toUpperCase()}
+                  {record.published_at && (
+                    <span className="ml-2">
+                      · {new Date(record.published_at).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} 발행
+                    </span>
+                  )}
+                  {record.scheduled_at && record.status === 'scheduled' && (
+                    <span className="ml-2 text-yellow-500">
+                      · {new Date(record.scheduled_at).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} 예약
+                    </span>
+                  )}
                   {record.published_url && (
                     <a href={record.published_url} target="_blank" rel="noopener noreferrer" className="ml-2 text-primary hover:underline">
                       보기 →
