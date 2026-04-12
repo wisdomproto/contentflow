@@ -81,7 +81,7 @@ function SortableContentItem({
       >
         {/* Category badge */}
         {catLetter ? (
-          <span className={cn('text-[9px] font-bold w-4 h-4 rounded flex items-center justify-center shrink-0', CAT_COLORS[catLetter] || 'bg-muted text-muted-foreground')}>
+          <span title={content.category || ''} className={cn('text-[9px] font-bold w-4 h-4 rounded flex items-center justify-center shrink-0', CAT_COLORS[catLetter] || 'bg-muted text-muted-foreground')}>
             {catLetter}
           </span>
         ) : (
@@ -203,6 +203,7 @@ export function ContentListPanel() {
               {categories.sort().map(cat => (
                 <button
                   key={cat}
+                  title={cat}
                   onClick={() => setCatFilter(catFilter === cat.charAt(0) ? null : cat.charAt(0))}
                   className={cn('text-[10px] px-1.5 py-0.5 rounded transition-colors',
                     catFilter === cat.charAt(0) ? 'bg-primary text-primary-foreground' : CAT_COLORS[cat.charAt(0)] || 'bg-muted text-muted-foreground'
