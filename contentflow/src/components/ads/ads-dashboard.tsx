@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Plus, TrendingUp, Eye, MousePointer, DollarSign } from 'lucide-react'
+import { Plus, TrendingUp, Eye, MousePointer, DollarSign, Upload, Link2 } from 'lucide-react'
 import { AnalyticsLanguageTabs } from '@/components/analytics/language-tabs'
+import { createClient } from '@/lib/supabase/client'
+import { useProjectStore } from '@/stores/project-store'
 
 type AdPlatform = 'meta' | 'youtube'
 
@@ -52,6 +54,7 @@ function formatCurrency(n: number): string {
 }
 
 export function AdsDashboard() {
+  const { selectedProjectId } = useProjectStore()
   const [selectedLang, setSelectedLang] = useState('ko')
   const [selectedPlatform, setSelectedPlatform] = useState<AdPlatform>('meta')
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
@@ -63,6 +66,20 @@ export function AdsDashboard() {
   const [newBudget, setNewBudget] = useState('')
   const [newBudgetType, setNewBudgetType] = useState<'daily' | 'lifetime'>('daily')
   const [newContentType, setNewContentType] = useState('')
+  const [contentSource, setContentSource] = useState<'published' | 'upload'>('published')
+  const [selectedPublishRecord, setSelectedPublishRecord] = useState<any>(null)
+  const [publishRecords, setPublishRecords] = useState<any[]>([])
+  const [uploadedFile, setUploadedFile] = useState<string>('')
+
+  // Load published content
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.from('publish_records').select('*')
+      .eq('project_id', selectedProjectId || '')
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+      .then(({ data }) => setPublishRecords(data || []))
+  }, [selectedProjectId])
 
   function createCampaign() {
     if (!newName.trim()) return
@@ -211,6 +228,114 @@ export function AdsDashboard() {
               ))}
             </div>
           </div>
+          {/* Content Source */}
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">광고 콘텐츠</label>
+            <div className="flex gap-2 mb-2">
+              <button onClick={() => setContentSource('published')}
+                className={cn('flex-1 py-2 px-3 rounded-md text-xs border flex items-center gap-2 justify-center',
+                  contentSource === 'published' ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground')}>
+                <Link2 size={12} /> 발행된 콘텐츠에서 선택
+              </button>
+              <button onClick={() => setContentSource('upload')}
+                className={cn('flex-1 py-2 px-3 rounded-md text-xs border flex items-center gap-2 justify-center',
+                  contentSource === 'upload' ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground')}>
+                <Upload size={12} /> 새로 업로드
+              </button>
+            </div>
+
+            {contentSource === 'published' && (
+              <div className="max-h-[150px] overflow-y-auto border border-border rounded-md divide-y divide-border">
+                {publishRecords.length === 0 ? (
+                  <div className="p-3 text-xs text-muted-foreground text-center">발행된 콘텐츠가 없습니다</div>
+                ) : publishRecords.map(record => (
+                  <button key={record.id} onClick={() => setSelectedPublishRecord(record)}
+                    className={cn('w-full flex items-center gap-2 p-2 text-left hover:bg-accent text-xs',
+                      selectedPublishRecord?.id === record.id && 'bg-primary/5')}>
+                    <span className={cn('w-6 h-6 rounded flex items-center justify-center text-white text-[9px] font-bold shrink-0',
+                      record.channel === 'wordpress' ? 'bg-[#21759b]' :
+                      record.channel === 'instagram' ? 'bg-[#c13584]' :
+                      record.channel === 'facebook' ? 'bg-[#1877f2]' :
+                      record.channel === 'youtube' ? 'bg-[#ff0000]' : 'bg-muted-foreground'
+                    )}>{record.channel?.substring(0, 2).toUpperCase()}</span>
+                    <span className="flex-1 truncate">{record.metadata?.title || 'Untitled'}</span>
+                    <span className="text-muted-foreground">{record.language?.toUpperCase()}</span>
+                    {selectedPublishRecord?.id === record.id && <span className="text-primary">✓</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {contentSource === 'upload' && (
+              <div className="border border-dashed border-border rounded-md p-6 text-center">
+                <Upload size={20} className="mx-auto mb-2 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">이미지 또는 영상을 드래그하거나 클릭하여 업로드</p>
+                <p className="text-[10px] text-muted-foreground mt-1">JPG, PNG, MP4, MOV (최대 100MB)</p>
+              </div>
+            )}
+          </div>
+
+          {/* Targeting */}
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">타겟팅</label>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="text-[10px] text-muted-foreground mb-0.5 block">지역</label>
+                <select className="w-full bg-muted text-xs rounded-md px-2 py-1.5 border border-border">
+                  <option>대한민국</option>
+                  <option>미국</option>
+                  <option>태국</option>
+                  <option>베트남</option>
+                  <option>전 세계</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] text-muted-foreground mb-0.5 block">성별</label>
+                <select className="w-full bg-muted text-xs rounded-md px-2 py-1.5 border border-border">
+                  <option>전체</option>
+                  <option>남성</option>
+                  <option>여성</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] text-muted-foreground mb-0.5 block">연령</label>
+                <select className="w-full bg-muted text-xs rounded-md px-2 py-1.5 border border-border">
+                  <option>전체</option>
+                  <option>18-24</option>
+                  <option>25-34</option>
+                  <option>35-44</option>
+                  <option>45-54</option>
+                  <option>55-64</option>
+                  <option>65+</option>
+                </select>
+              </div>
+            </div>
+            {selectedPlatform === 'meta' && (
+              <div className="grid grid-cols-2 gap-3 mt-2">
+                <div>
+                  <label className="text-[10px] text-muted-foreground mb-0.5 block">관심사</label>
+                  <Input placeholder="예: 육아, 건강, 소아과" className="text-xs h-7" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground mb-0.5 block">행동</label>
+                  <Input placeholder="예: 온라인 쇼핑, 모바일 사용자" className="text-xs h-7" />
+                </div>
+              </div>
+            )}
+            {selectedPlatform === 'youtube' && (
+              <div className="grid grid-cols-2 gap-3 mt-2">
+                <div>
+                  <label className="text-[10px] text-muted-foreground mb-0.5 block">키워드 타겟</label>
+                  <Input placeholder="예: 성장클리닉, 키성장" className="text-xs h-7" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground mb-0.5 block">채널/동영상 타겟</label>
+                  <Input placeholder="경쟁 채널 URL" className="text-xs h-7" />
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="flex gap-2 justify-end">
             <Button size="sm" variant="outline" onClick={() => setShowCreate(false)}>취소</Button>
             <Button size="sm" onClick={createCampaign} disabled={!newName.trim()}>캠페인 생성</Button>
