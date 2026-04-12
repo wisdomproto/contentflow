@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FileText, BookOpen, Image, MessageCircle, Youtube, Globe } from 'lucide-react';
+import { FileText, BookOpen, Image, MessageCircle, Youtube, Globe, Smartphone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useProjectStore } from '@/stores/project-store';
 import { BaseArticlePanel } from './base-article-panel';
@@ -11,7 +11,7 @@ import { CardNewsPanel } from './cardnews-panel';
 import { ThreadsPanel } from './threads-panel';
 import { YoutubePanel } from './youtube-panel';
 
-type TabId = 'base-article' | 'wordpress' | 'blog' | 'cardnews' | 'threads' | 'youtube';
+type TabId = 'base-article' | 'wordpress' | 'blog' | 'cardnews' | 'threads' | 'youtube' | 'shorts';
 
 interface Tab {
   id: TabId;
@@ -25,7 +25,8 @@ const tabs: Tab[] = [
   { id: 'wordpress', label: 'WordPress', icon: <Globe size={16} /> },
   { id: 'cardnews', label: '카드뉴스', icon: <Image size={16} /> },
   { id: 'threads', label: '스레드', icon: <MessageCircle size={16} /> },
-  { id: 'youtube', label: '유튜브', icon: <Youtube size={16} /> },
+  { id: 'youtube', label: '롱폼', icon: <Youtube size={16} /> },
+  { id: 'shorts', label: '숏폼', icon: <Smartphone size={16} /> },
 ];
 
 export function ContentTabs() {
@@ -63,6 +64,16 @@ export function ContentTabs() {
         {activeTab === 'cardnews' && <CardNewsPanel />}
         {activeTab === 'threads' && <ThreadsPanel />}
         {activeTab === 'youtube' && <YoutubePanel />}
+        {activeTab === 'shorts' && (
+          <div className="flex-1 flex items-center justify-center text-muted-foreground h-full">
+            <div className="text-center">
+              <p className="text-4xl mb-4">📱</p>
+              <p className="text-lg font-medium">숏폼</p>
+              <p className="text-sm mt-2">YouTube Shorts · Instagram Reels · TikTok</p>
+              <p className="text-xs mt-1 text-muted-foreground">60초 이내 세로 영상 (9:16)</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
