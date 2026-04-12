@@ -129,23 +129,27 @@ export function MonitoringDashboard() {
 
   return (
     <div className="p-6 max-w-5xl space-y-6">
-      {/* Platform Filter */}
-      <div className="flex items-center gap-2">
-        {PLATFORMS.map(p => (
-          <button
-            key={p.id}
-            onClick={() => setPlatform(p.id)}
-            className={cn(
-              'px-3 py-1.5 rounded-md text-xs',
-              platform === p.id
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground'
-            )}
-          >
-            {p.icon && <span className="mr-1">{p.icon}</span>}
-            {p.label}
-          </button>
-        ))}
+      {/* Platform Tabs with counts */}
+      <div className="flex items-center gap-1 border-b border-border">
+        {PLATFORMS.map(p => {
+          const count = p.id === 'all' ? feedItems.length : feedItems.filter(f => f.platform === p.id).length
+          return (
+            <button
+              key={p.id}
+              onClick={() => setPlatform(p.id)}
+              className={cn(
+                'px-4 py-2.5 text-xs font-medium border-b-2 transition-colors',
+                platform === p.id
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {p.icon && <span className="mr-1">{p.icon}</span>}
+              {p.label}
+              {count > 0 && <span className="ml-1.5 bg-muted px-1.5 py-0.5 rounded-full text-[10px]">{count}</span>}
+            </button>
+          )
+        })}
       </div>
 
       {/* Keywords + Search */}
@@ -195,9 +199,9 @@ export function MonitoringDashboard() {
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {filteredFeed.map(item => (
-            <div key={item.id} className="bg-card border border-border rounded-lg p-4">
+        <div className="space-y-3 max-h-[65vh] overflow-y-auto pr-1">
+          {filteredFeed.map((item, idx) => (
+            <div key={`${item.platform}-${item.id}-${idx}`} className="bg-card border border-border rounded-lg p-4">
               {/* Header */}
               <div className="flex items-start gap-2 mb-2">
                 <span className="text-base leading-none mt-0.5">
@@ -226,11 +230,12 @@ export function MonitoringDashboard() {
                       </span>
                     )}
                     {item.views && (
-                      <span className="text-xs text-muted-foreground">조회 {item.views}</span>
+                      <span className="text-xs text-muted-foreground">👁️ {item.views}</span>
                     )}
                     {item.engagement && (
-                      <span className="text-xs text-muted-foreground">
-                        ♥ {item.engagement.likes} · 💬 {item.engagement.comments}
+                      <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                        <span>❤️ {item.engagement.likes.toLocaleString()}</span>
+                        <span>💬 {item.engagement.comments.toLocaleString()}</span>
                       </span>
                     )}
                   </div>
@@ -239,7 +244,10 @@ export function MonitoringDashboard() {
                   <img
                     src={item.thumbnail}
                     alt=""
-                    className="w-16 h-12 object-cover rounded flex-shrink-0"
+                    className={cn(
+                      'object-cover rounded flex-shrink-0',
+                      item.platform === 'youtube' ? 'w-28 h-16' : 'w-16 h-16'
+                    )}
                   />
                 )}
               </div>
