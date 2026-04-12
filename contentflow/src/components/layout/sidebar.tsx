@@ -21,11 +21,10 @@ const navGroups = [
   {
     label: '분석',
     items: [
-      { href: '/seo', icon: '🔍', label: 'SEO 분석' },
-      { href: '/analytics', icon: '📊', label: 'Google 애널리틱스' },
-      { href: '/meta-analytics', icon: '📱', label: '메타 채널 분석' },
-      { href: '/keywords', icon: '🔑', label: '키워드 분석' },
-      { href: '/competitors', icon: '🎯', label: '경쟁사 분석' },
+      { href: '/site-analysis', icon: '📊', label: '사이트 분석' },
+      { href: '/meta-analytics', icon: '📱', label: '채널 분석' },
+      { href: '/keywords', icon: '🔑', label: '키워드' },
+      { href: '/competitors', icon: '🎯', label: '경쟁사' },
     ],
   },
   {

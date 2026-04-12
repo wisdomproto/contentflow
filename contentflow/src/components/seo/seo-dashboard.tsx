@@ -3,22 +3,18 @@
 import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { ScoreGauge } from './score-gauge'
 import { AuditForm } from './audit-form'
 import { IssuesList } from './issues-list'
 import { useProjectStore } from '@/stores/project-store'
 import { calculateNaverSeoScore } from '@/lib/seo-scorer'
-import { keywordRankingQueries } from '@/lib/supabase/queries'
-import type { KeywordRanking } from '@/types/database'
 import { AnalyticsLanguageTabs } from '@/components/analytics/language-tabs'
 
-type TabId = 'audit' | 'content' | 'keywords' | 'schema'
+type TabId = 'audit' | 'content' | 'schema'
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'audit', label: '사이트 감사' },
   { id: 'content', label: '콘텐츠 SEO' },
-  { id: 'keywords', label: '키워드 트래킹' },
   { id: 'schema', label: 'Schema 마크업' },
 ]
 
@@ -47,12 +43,6 @@ export function SeoDashboard() {
   // --- Content SEO tab ---
   const [contentRows, setContentRows] = useState<ContentSeoRow[]>([])
   const [contentLoading, setContentLoading] = useState(false)
-
-  // --- Keyword tracking tab ---
-  const [keywords, setKeywords] = useState<KeywordRanking[]>([])
-  const [kwLoading, setKwLoading] = useState(false)
-  const [newKeyword, setNewKeyword] = useState('')
-  const [addingKw, setAddingKw] = useState(false)
 
   // --- Schema tab ---
   const [schemaContent, setSchemaContent] = useState('')
@@ -115,49 +105,6 @@ export function SeoDashboard() {
     }
     setContentRows(rows.sort((a, b) => a.score - b.score))
     setContentLoading(false)
-  }
-
-  // --- Keyword tracking: load from Supabase ---
-  useEffect(() => {
-    if (activeTab !== 'keywords' || !selectedProjectId) return
-    loadKeywords()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, selectedProjectId])
-
-  async function loadKeywords() {
-    if (!selectedProjectId) return
-    setKwLoading(true)
-    try {
-      const { data, error } = await keywordRankingQueries.listByProject(selectedProjectId)
-      if (!error && data) setKeywords(data)
-    } catch { } finally { setKwLoading(false) }
-  }
-
-  async function addKeyword() {
-    if (!newKeyword.trim() || !selectedProjectId) return
-    setAddingKw(true)
-    try {
-      const { data, error } = await keywordRankingQueries.create({
-        project_id: selectedProjectId,
-        keyword: newKeyword.trim(),
-        search_engine: 'google',
-        country: selectedLang,
-        position: null,
-        url: null,
-        date: new Date().toISOString().slice(0, 10),
-      })
-      if (!error && data) {
-        setKeywords(prev => [data, ...prev])
-        setNewKeyword('')
-      }
-    } catch { } finally { setAddingKw(false) }
-  }
-
-  async function deleteKeyword(id: string) {
-    try {
-      await keywordRankingQueries.delete(id)
-      setKeywords(prev => prev.filter(k => k.id !== id))
-    } catch { }
   }
 
   // --- Schema markup generation ---
@@ -316,85 +263,6 @@ export function SeoDashboard() {
                   ))}
                 </tbody>
               </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── 키워드 트래킹 ── */}
-      {activeTab === 'keywords' && (
-        <div className="space-y-4">
-          <div className="flex gap-2">
-            <Input
-              placeholder="트래킹할 키워드 입력 (예: 모공 치료)"
-              value={newKeyword}
-              onChange={e => setNewKeyword(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && addKeyword()}
-              className="flex-1"
-            />
-            <Button onClick={addKeyword} disabled={addingKw || !newKeyword.trim() || !selectedProjectId}>
-              {addingKw ? '추가 중...' : '추가'}
-            </Button>
-          </div>
-
-          {kwLoading ? (
-            <div className="text-center py-12 text-muted-foreground text-sm">
-              <span className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin inline-block mb-2" />
-              <p>키워드 목록을 불러오는 중...</p>
-            </div>
-          ) : keywords.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <p className="text-3xl mb-3">🔑</p>
-              <p className="text-sm">추적할 키워드를 추가하세요</p>
-              <p className="text-xs mt-1 opacity-70">순위 데이터는 DataForSEO 연동 후 자동으로 업데이트됩니다</p>
-            </div>
-          ) : (
-            <div className="bg-card border border-border rounded-lg overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-muted/50">
-                    <th className="text-left px-4 py-2 font-medium text-muted-foreground">키워드</th>
-                    <th className="text-center px-4 py-2 font-medium text-muted-foreground">검색엔진</th>
-                    <th className="text-center px-4 py-2 font-medium text-muted-foreground">현재 순위</th>
-                    <th className="text-left px-4 py-2 font-medium text-muted-foreground">추가일</th>
-                    <th className="px-4 py-2" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {keywords.map(kw => (
-                    <tr key={kw.id} className="border-b border-border hover:bg-muted/30">
-                      <td className="px-4 py-3 font-medium">{kw.keyword}</td>
-                      <td className="text-center px-4 py-3 text-xs text-muted-foreground capitalize">{kw.search_engine}</td>
-                      <td className="text-center px-4 py-3">
-                        {kw.position !== null ? (
-                          <span className={cn(
-                            'text-sm font-medium',
-                            kw.position <= 3 ? 'text-green-500' :
-                            kw.position <= 10 ? 'text-blue-500' :
-                            kw.position <= 30 ? 'text-yellow-500' : 'text-muted-foreground'
-                          )}>
-                            {kw.position}위
-                          </span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">수집 중</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">{kw.date}</td>
-                      <td className="px-4 py-3 text-right">
-                        <button
-                          onClick={() => deleteKeyword(kw.id)}
-                          className="text-xs text-muted-foreground hover:text-destructive"
-                        >
-                          삭제
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div className="px-4 py-2 text-xs text-muted-foreground border-t border-border">
-                {keywords.length}개 키워드 트래킹 중 · DataForSEO 연동 시 순위 자동 업데이트
-              </div>
             </div>
           )}
         </div>
