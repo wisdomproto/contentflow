@@ -56,6 +56,7 @@ export function LanguageSelector({ onTranslate, translationStatuses = {}, channe
 
   // WordPress 연결 상태를 localStorage에서 확인
   const [isWpConnected, setIsWpConnected] = useState(false)
+  const [isMetaConnected, setIsMetaConnected] = useState(false)
 
   useEffect(() => {
     if (channel === 'wordpress' && selectedProjectId) {
@@ -64,9 +65,17 @@ export function LanguageSelector({ onTranslate, translationStatuses = {}, channe
     } else {
       setIsWpConnected(false)
     }
+    if ((channel === 'instagram' || channel === 'facebook' || channel === 'threads') && selectedProjectId) {
+      const saved = localStorage.getItem(`meta_credentials_${selectedProjectId}`)
+      setIsMetaConnected(!!saved)
+    } else {
+      setIsMetaConnected(false)
+    }
   }, [channel, selectedProjectId])
 
-  const isConnected = channel === 'wordpress' ? isWpConnected : false
+  const isConnected = channel === 'wordpress' ? isWpConnected
+    : (channel === 'instagram' || channel === 'facebook' || channel === 'threads') ? isMetaConnected
+    : false
   const channelLabel = channel ? (CHANNEL_LABELS[channel] || channel) : ''
 
   const rawLanguages = project?.target_languages ?? []
@@ -79,6 +88,75 @@ export function LanguageSelector({ onTranslate, translationStatuses = {}, channe
   async function handlePublishClick() {
     if (!isConnected) {
       setShowConnectDialog(true)
+      return
+    }
+
+    if (channel === 'instagram' || channel === 'facebook' || channel === 'threads') {
+      if (!selectedProjectId || !selectedContentId) {
+        alert('발행할 콘텐츠를 선택해주세요')
+        return
+      }
+
+      const metaCredsRaw = localStorage.getItem(`meta_credentials_${selectedProjectId}`)
+      if (!metaCredsRaw) {
+        setShowConnectDialog(true)
+        return
+      }
+
+      let metaCreds: { accessToken: string; userId: string; userName: string; pages: Array<{ id: string; name: string; pageAccessToken: string; instagram: { id: string; username: string } | null }> }
+      try {
+        metaCreds = JSON.parse(metaCredsRaw)
+      } catch {
+        alert('저장된 Meta 자격증명이 올바르지 않습니다')
+        return
+      }
+
+      const page = metaCreds.pages?.[0]
+      if (!page) {
+        alert('연결된 Facebook 페이지가 없습니다.')
+        return
+      }
+
+      const contentMeta = contents.find(c => c.id === selectedContentId)
+
+      setPublishing(true)
+      try {
+        const pageId = channel === 'instagram' ? page.instagram?.id
+          : channel === 'threads' ? metaCreds.userId
+          : page.id
+
+        const res = await fetch('/api/publish/meta', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            platform: channel,
+            accessToken: page.pageAccessToken,
+            pageId,
+            caption: contentMeta?.title || '',
+          }),
+        })
+        const result = await res.json()
+        if (result.success) {
+          const supabase = createClient()
+          await supabase.from('publish_records').insert({
+            content_id: selectedContentId,
+            project_id: selectedProjectId,
+            channel,
+            language: selectedLanguage,
+            status: 'published',
+            published_at: new Date().toISOString(),
+            platform_post_id: String(result.postId || ''),
+            metadata: { title: contentMeta?.title },
+          })
+          alert(`${channel} 발행 성공!`)
+        } else {
+          alert(`발행 실패: ${result.error}`)
+        }
+      } catch (err) {
+        alert(`발행 오류: ${err}`)
+      } finally {
+        setPublishing(false)
+      }
       return
     }
 

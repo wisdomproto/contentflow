@@ -9,6 +9,21 @@ import { Label } from '@/components/ui/label';
 import { Link2, ExternalLink, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useProjectStore } from '@/stores/project-store';
 
+interface MetaPage {
+  id: string;
+  name: string;
+  pageAccessToken: string;
+  instagram: { id: string; username: string } | null;
+}
+
+interface MetaConnectionInfo {
+  accessToken: string;
+  userId: string;
+  userName: string;
+  pages: MetaPage[];
+  connectedAt: string;
+}
+
 interface ChannelConfig {
   id: string;
   name: string;
@@ -205,6 +220,52 @@ function WordPressCredentialsForm({ projectId }: { projectId: string }) {
 
 export function ChannelConnectionsSection() {
   const { selectedProjectId } = useProjectStore();
+  const [metaConnectionInfo, setMetaConnectionInfo] = useState<MetaConnectionInfo | null>(null);
+
+  // Load Meta connection info from localStorage
+  useEffect(() => {
+    if (selectedProjectId) {
+      const saved = localStorage.getItem(`meta_credentials_${selectedProjectId}`);
+      if (saved) {
+        try {
+          setMetaConnectionInfo(JSON.parse(saved));
+        } catch {
+          // ignore parse errors
+        }
+      }
+    }
+  }, [selectedProjectId]);
+
+  // Check URL params for Meta OAuth callback result
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const metaConnected = params.get('meta_connected');
+    if (metaConnected && selectedProjectId) {
+      try {
+        const connectionInfo = JSON.parse(decodeURIComponent(metaConnected));
+        localStorage.setItem(`meta_credentials_${selectedProjectId}`, JSON.stringify(connectionInfo));
+        setMetaConnectionInfo(connectionInfo);
+        // Clean URL
+        window.history.replaceState({}, '', window.location.pathname);
+        alert('Meta 계정이 연결되었습니다!');
+      } catch {
+        // ignore parse errors
+      }
+    }
+    const metaError = params.get('meta_error');
+    if (metaError) {
+      alert(`Meta 연결 실패: ${metaError}`);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [selectedProjectId]);
+
+  function disconnectMeta() {
+    if (!selectedProjectId) return;
+    localStorage.removeItem(`meta_credentials_${selectedProjectId}`);
+    setMetaConnectionInfo(null);
+  }
+
+  const isMetaChannel = (id: string) => id === 'instagram' || id === 'facebook' || id === 'threads';
 
   return (
     <Card>
@@ -217,7 +278,6 @@ export function ChannelConnectionsSection() {
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground">
           채널을 연동하면 ContentFlow에서 직접 콘텐츠를 발행할 수 있습니다.
-          OAuth 연동은 Phase 2에서 지원됩니다.
         </p>
 
         <div className="grid gap-3">
@@ -245,12 +305,61 @@ export function ChannelConnectionsSection() {
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">{channel.description}</p>
+                  {/* Meta 연결 시 계정 정보 표시 */}
+                  {isMetaChannel(channel.id) && metaConnectionInfo && (
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {channel.id === 'instagram' && metaConnectionInfo.pages?.[0]?.instagram && (
+                        <span>@{metaConnectionInfo.pages[0].instagram.username}</span>
+                      )}
+                      {channel.id === 'facebook' && metaConnectionInfo.pages?.[0] && (
+                        <span>{metaConnectionInfo.pages[0].name}</span>
+                      )}
+                      {channel.id === 'threads' && (
+                        <span>{metaConnectionInfo.userName}</span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* 연결 상태 + 버튼 */}
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {channel.id === 'wordpress' && selectedProjectId ? (
                     <WordPressStatusBadge projectId={selectedProjectId} />
+                  ) : isMetaChannel(channel.id) && selectedProjectId ? (
+                    metaConnectionInfo ? (
+                      <>
+                        <Badge variant="outline" className="text-xs text-green-600 border-green-500/40 gap-1">
+                          <CheckCircle2 size={10} />
+                          연결됨
+                        </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs h-7 px-2"
+                          onClick={disconnectMeta}
+                        >
+                          연결 해제
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Badge
+                          variant="outline"
+                          className="text-xs text-muted-foreground border-muted-foreground/30"
+                        >
+                          미연결
+                        </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs h-7 px-2"
+                          onClick={() => window.location.href = '/api/auth/meta'}
+                        >
+                          <ExternalLink size={12} className="mr-1" />
+                          Meta 연결
+                        </Button>
+                      </>
+                    )
                   ) : (
                     <>
                       <Badge
@@ -280,11 +389,6 @@ export function ChannelConnectionsSection() {
             </div>
           ))}
         </div>
-
-        <p className="text-xs text-muted-foreground pt-1">
-          * Phase 2에서 OAuth 2.0 기반 채널 연동이 지원될 예정입니다.
-          현재는 API 키 탭에서 수동으로 토큰을 입력할 수 있습니다.
-        </p>
       </CardContent>
     </Card>
   );

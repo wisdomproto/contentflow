@@ -13,16 +13,18 @@ const CHANNELS = [
 export function ChannelCards() {
   const { selectedProjectId } = useProjectStore()
   const [wpConnected, setWpConnected] = useState(false)
+  const [metaConnected, setMetaConnected] = useState(false)
 
   useEffect(() => {
     if (selectedProjectId) {
-      const saved = localStorage.getItem(`wp_credentials_${selectedProjectId}`)
-      setWpConnected(!!saved)
+      setWpConnected(!!localStorage.getItem(`wp_credentials_${selectedProjectId}`))
+      setMetaConnected(!!localStorage.getItem(`meta_credentials_${selectedProjectId}`))
     }
   }, [selectedProjectId])
 
   function isConnected(channelId: string) {
     if (channelId === 'wordpress') return wpConnected
+    if (channelId === 'instagram' || channelId === 'facebook') return metaConnected
     return false
   }
 
