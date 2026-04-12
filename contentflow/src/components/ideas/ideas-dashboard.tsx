@@ -333,21 +333,32 @@ Return ONLY a JSON array of 8 Korean seed keywords (single words or short phrase
       setSelectedCategory(null)
 
       // 5. AI strategy recommendation based on golden keywords
-      const top20 = goldenItems.slice(0, 20).map(g => `${g.keyword} (${g.naverMonthly?.toLocaleString()}/월, 경쟁:${g.naverComp})`).join('\n')
-      const strategyPrompt = `You are a Korean SEO/content marketing strategist. Based on these golden keywords (high volume, low competition), create an actionable content strategy.
+      // Separate low-competition gems from medium
+      const lowComp = goldenItems.filter(g => g.naverComp === '낮음').slice(0, 10)
+      const midComp = goldenItems.filter(g => g.naverComp === '중간').slice(0, 15)
+      const lowList = lowComp.map(g => `- ${g.keyword} (${g.naverMonthly?.toLocaleString()}/월, 경쟁:낮음)`).join('\n')
+      const midList = midComp.map(g => `- ${g.keyword} (${g.naverMonthly?.toLocaleString()}/월, 경쟁:중간)`).join('\n')
+
+      const strategyPrompt = `You are a Korean SEO/content marketing strategist. Analyze these golden keywords and create a concrete, actionable strategy.
 
 Business: ${project.name} (${project.industry || ''})
 Brand: ${project.brand_name || project.name}
+Description: ${project.brand_description || ''}
 
-Top golden keywords:
-${top20}
+=== 🥇 경쟁 낮음 키워드 (최우선 공략 대상) ===
+${lowList || '(없음)'}
 
-Respond in Korean. Return a concise strategy with this structure:
-1. **핵심 전략 요약** (2-3문장)
-2. **즉시 공략 키워드** (경쟁 낮음, TOP 3~5개) — 왜 이 키워드를 먼저 공략해야 하는지
-3. **콘텐츠 퍼널 설계** — 정보형(유입) → 상업형(전환) 키워드 연결 구조
-4. **추천 콘텐츠 주제** (5개) — 구체적 제목 예시
-5. **예상 성과** — 3개월 내 기대 효과`
+=== 🥈 경쟁 중간 키워드 (검색량 높은 순) ===
+${midList || '(없음)'}
+
+IMPORTANT: 경쟁 "낮음" 키워드는 반드시 전략에 포함하세요. 이들이 가장 빠르게 상위 노출할 수 있는 핵심 기회입니다.
+
+Respond in Korean. Return strategy:
+1. **핵심 전략 요약** (2-3문장, 비즈니스에 맞춤)
+2. **즉시 공략 키워드** — 경쟁 낮음 키워드 전부 분석. 각각 왜 공략해야 하는지, 어떤 콘텐츠를 만들지
+3. **콘텐츠 퍼널 설계** — 정보형(유입) → 상업형(전환) 키워드 연결 구조. 구체적 키워드 매핑
+4. **추천 콘텐츠 주제** (7개) — 블로그 제목 예시 (경쟁 낮음 키워드 우선 활용)
+5. **3개월 실행 로드맵** — 월별 구체적 액션 플랜`
 
       setGoldenStrategy('')
       try {
