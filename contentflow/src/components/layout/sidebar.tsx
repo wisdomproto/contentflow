@@ -13,6 +13,12 @@ const navGroups = [
     ],
   },
   {
+    label: '광고',
+    items: [
+      { href: '/ads', icon: '📢', label: '광고 관리' },
+    ],
+  },
+  {
     label: '성장',
     items: [
       { href: '/monitoring', icon: '💬', label: '모니터링 / 댓글' },

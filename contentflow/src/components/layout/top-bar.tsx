@@ -14,6 +14,7 @@ const pageTitles: Record<string, string> = {
   '/competitors': '경쟁사',
   '/strategy': '마케팅 전략',
   '/settings': '설정',
+  '/ads': '광고 관리',
 }
 
 export function TopBar() {
