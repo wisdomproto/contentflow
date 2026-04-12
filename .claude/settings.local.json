@@ -168,7 +168,9 @@
       "Bash(powershell -Command \"Remove-Item -Recurse -Force 'C:\\\\projects\\\\ContentFlow\\\\contentflow\\\\.next' -ErrorAction SilentlyContinue\")",
       "Bash(node -e ':*)",
       "Bash(find src/components -name \"*.tsx\" -exec sed -i \"s/generateId\\('[^']*'\\)/generateId\\(\\)/g\" {} +)",
-      "Bash(powershell -Command \"Remove-Item -Force 'C:\\\\projects\\\\ContentFlow\\\\contentflow\\\\.next\\\\dev\\\\lock' -ErrorAction SilentlyContinue\")"
+      "Bash(powershell -Command \"Remove-Item -Force 'C:\\\\projects\\\\ContentFlow\\\\contentflow\\\\.next\\\\dev\\\\lock' -ErrorAction SilentlyContinue\")",
+      "Bash(gh repo:*)",
+      "Bash(where gh:*)"
     ]
   }
 }
