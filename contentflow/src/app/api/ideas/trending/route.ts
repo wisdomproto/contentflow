@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import crypto from 'crypto'
 
 export async function POST(req: NextRequest) {
   const { keywords, language, period } = await req.json()
@@ -75,16 +76,21 @@ export async function POST(req: NextRequest) {
       // Use Naver Search Ad API for keyword stats
       for (const keyword of keywords.slice(0, 5)) {
         try {
-          // Use Naver keyword tool API
-          const timestamp = Date.now()
-          const apiUrl = `https://api.naver.com/keywordstool?hintKeywords=${encodeURIComponent(keyword)}&showDetail=1`
+          const timestamp = String(Date.now())
+          const method = 'GET'
+          const uri = '/keywordstool'
+          const hmac = crypto.createHmac('sha256', naverSecret)
+          hmac.update(`${timestamp}.${method}.${uri}`)
+          const signature = hmac.digest('base64')
+          const apiUrl = `https://api.searchad.naver.com${uri}?hintKeywords=${encodeURIComponent(keyword)}&showDetail=1`
 
           const res = await fetch(apiUrl, {
+            cache: 'no-store',
             headers: {
-              'X-Timestamp': String(timestamp),
+              'X-Timestamp': timestamp,
               'X-API-KEY': naverLicense,
               'X-Customer': naverClientId,
-              'X-Signature': naverSecret,
+              'X-Signature': signature,
             },
           })
 

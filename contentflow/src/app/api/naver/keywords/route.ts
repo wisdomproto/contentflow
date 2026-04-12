@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 
-const NAVER_API_BASE = 'https://api.naver.com';
+const NAVER_API_BASE = 'https://api.searchad.naver.com';
 
 function generateSignature(timestamp: string, method: string, uri: string, secretKey: string): string {
   const message = `${timestamp}.${method}.${uri}`;
@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
 
     const response = await fetch(`${NAVER_API_BASE}${uri}?${params.toString()}`, {
       method: 'GET',
+      cache: 'no-store',
       headers: {
         'X-Timestamp': timestamp,
         'X-API-KEY': licenseKey,
