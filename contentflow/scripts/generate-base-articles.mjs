@@ -3,7 +3,9 @@ import crypto from 'crypto';
 
 const SUPABASE_URL = 'https://hpjvtphijdaketuqtpep.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwanZ0cGhpamRha2V0dXF0cGVwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTA3MTQwMSwiZXhwIjoyMDkwNjQ3NDAxfQ.De4vH6MOSceauQ2v49L6IkxaB07i1zNt8en6576fpd4';
-const GEMINI_KEY = 'AIzaSyDZc3rwia0qorTKYSmhV2dH3DZYdhi8LME';
+import { readFileSync } from 'fs';
+const envFile = readFileSync('.env.local', 'utf-8');
+const GEMINI_KEY = envFile.match(/GEMINI_API_KEY=(.+)/)?.[1]?.trim();
 const MODEL = 'gemini-2.5-flash';
 const PROJECT_ID = '6cc3c9c6-1718-4097-b7a0-0f95ae74d913';
 
