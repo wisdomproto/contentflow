@@ -311,9 +311,36 @@ Return ONLY a JSON array of 8 Korean seed keywords (single words or short phrase
       }
 
       // 3. Filter: volume >= 300 AND competition is 낮음 or 중간
-      const golden = [...allResults.values()]
+      const candidates = [...allResults.values()]
         .filter(r => r.vol >= 300 && (r.comp === '낮음' || r.comp === '중간'))
         .sort((a, b) => b.vol - a.vol)
+
+      // 3.5 AI relevance filter — remove keywords unrelated to the business
+      let golden = candidates
+      if (candidates.length > 0) {
+        const kwList = candidates.slice(0, 100).map(c => c.keyword).join(', ')
+        const filterPrompt = `You are a keyword relevance filter. Given a business and a list of keywords, return ONLY the keywords that are directly relevant to the business. Remove any unrelated keywords.
+
+Business: ${project.name}
+Industry: ${project.industry || ''}
+Description: ${project.brand_description || ''}
+${seedKeyword ? `Focus: ${seedKeyword}` : ''}
+
+Keywords to filter:
+${kwList}
+
+Return ONLY a JSON array of relevant keywords (exact spelling):
+["키워드1","키워드2",...]`
+
+        try {
+          const filterText = await fetchAiGenerate(filterPrompt, 'gemini-2.5-flash')
+          const filterMatch = filterText.match(/\[[\s\S]*?\]/)
+          if (filterMatch) {
+            const relevant = new Set<string>(JSON.parse(filterMatch[0]))
+            golden = candidates.filter(c => relevant.has(c.keyword))
+          }
+        } catch {}
+      }
 
       // 4. Convert to KeywordGroup format — group by competition level
       function toItem(g: typeof golden[0], cat: string): KeywordItem {
