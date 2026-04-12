@@ -5,8 +5,7 @@ import { usePathname } from 'next/navigation'
 const pageTitles: Record<string, string> = {
   '/content': '콘텐츠 생성',
   '/ideas': '아이디어',
-  '/calendar': '캘린더',
-  '/publish': '채널 발행',
+  '/publish': '발행 관리',
   '/monitoring': '모니터링',
   '/seo': 'SEO 분석',
   '/analytics': 'Google 애널리틱스',

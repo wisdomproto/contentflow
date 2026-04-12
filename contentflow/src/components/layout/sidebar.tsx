@@ -10,7 +10,6 @@ const navGroups = [
       { href: '/content', icon: '📝', label: '콘텐츠 생성' },
       { href: '/ideas', icon: '💡', label: '아이디어' },
       { href: '/publish', icon: '🚀', label: '발행' },
-      { href: '/calendar', icon: '📅', label: '캘린더' },
     ],
   },
   {
