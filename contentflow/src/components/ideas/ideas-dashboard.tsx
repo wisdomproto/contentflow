@@ -123,7 +123,7 @@ export function IdeasDashboard() {
   const [keywordGroups, setKeywordGroups] = useState<KeywordGroup[]>([])
   const [seedKeyword, setSeedKeyword] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  type SortCol = 'volume' | 'naver' | 'difficulty' | 'priority'
+  type SortCol = 'volume' | 'naver' | 'difficulty' | 'priority' | 'competition'
   const [sortCols, setSortCols] = useState<{ col: SortCol; dir: 'asc' | 'desc' }[]>([])
 
   // --- Saved/pinned keywords ---
@@ -326,11 +326,14 @@ Return ONLY a JSON array of 8 Korean seed keywords (single words or short phrase
           naverMonthly: g.vol, naverPc: g.pc, naverMobile: g.mob, naverComp: g.comp,
         }
       }
-      const lowItems = golden.filter(g => g.comp === '낮음')
-      const midItems = golden.filter(g => g.comp === '중간')
+      // Classify: 🏆 황금 = volume 1000+ & comp 낮음, 🥇 유망 = comp 낮음 or (volume 3000+ & comp 중간), 🥈 일반
+      const goldTier = golden.filter(g => g.vol >= 1000 && g.comp === '낮음')
+      const silverTier = golden.filter(g => !goldTier.includes(g) && (g.comp === '낮음' || (g.vol >= 3000 && g.comp === '중간')))
+      const bronzeTier = golden.filter(g => !goldTier.includes(g) && !silverTier.includes(g))
       const groups: KeywordGroup[] = []
-      if (lowItems.length > 0) groups.push({ category: '🥇 경쟁 낮음', keywords: lowItems.map(g => toItem(g, '🥇 경쟁 낮음')) })
-      if (midItems.length > 0) groups.push({ category: '🥈 경쟁 중간', keywords: midItems.map(g => toItem(g, '🥈 경쟁 중간')) })
+      if (goldTier.length > 0) groups.push({ category: '🏆 황금 키워드', keywords: goldTier.map(g => toItem(g, '🏆 황금 키워드')) })
+      if (silverTier.length > 0) groups.push({ category: '🥇 유망 키워드', keywords: silverTier.map(g => toItem(g, '🥇 유망 키워드')) })
+      if (bronzeTier.length > 0) groups.push({ category: '🥈 일반 키워드', keywords: bronzeTier.map(g => toItem(g, '🥈 일반 키워드')) })
 
       const goldenItems = [...(groups[0]?.keywords || []), ...(groups[1]?.keywords || [])]
       setKeywordGroups(groups)
@@ -385,12 +388,14 @@ Respond in Korean. Return strategy:
   const priorityOrder: Record<string, number> = { high: 3, medium: 2, low: 1 }
   const difficultyOrder: Record<string, number> = { '어려움': 3, 'Hard': 3, '보통': 2, 'Medium': 2, '쉬움': 1, 'Easy': 1 }
   const volumeOrder: Record<string, number> = { '높음': 3, 'High': 3, '중간': 2, 'Medium': 2, '낮음': 1, 'Low': 1 }
+  const compOrder: Record<string, number> = { '높음': 3, '중간': 2, '낮음': 1 }
 
   function colValue(kw: KeywordItem, col: SortCol): number {
     if (col === 'naver') return kw.naverMonthly ?? -1
     if (col === 'volume') return volumeOrder[kw.estimatedVolume || ''] ?? 0
     if (col === 'priority') return priorityOrder[kw.priority] ?? 0
     if (col === 'difficulty') return difficultyOrder[kw.difficulty || ''] ?? 0
+    if (col === 'competition') return compOrder[kw.naverComp || ''] ?? 0
     return 0
   }
 
@@ -638,7 +643,7 @@ Respond in Korean. Return strategy:
                   <span>정렬:</span>
                   {sortCols.map((s, i) => (
                     <span key={s.col} className="bg-muted px-2 py-0.5 rounded">
-                      {s.col === 'priority' ? '우선순위' : s.col === 'volume' ? '예상 볼륨' : s.col === 'naver' ? '네이버 검색량' : '난이도'}
+                      {s.col === 'priority' ? '우선순위' : s.col === 'volume' ? '예상 볼륨' : s.col === 'naver' ? '네이버 검색량' : s.col === 'competition' ? '경쟁도' : '난이도'}
                       {s.dir === 'desc' ? ' ↓' : ' ↑'}
                       {i < sortCols.length - 1 && <span className="ml-1">→</span>}
                     </span>
@@ -657,7 +662,10 @@ Respond in Korean. Return strategy:
                       <th className="text-center px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={e => toggleSort('priority', e.shiftKey)}>우선순위{sortIcon('priority')}</th>
                       <th className="text-center px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={e => toggleSort('volume', e.shiftKey)}>예상 볼륨{sortIcon('volume')}</th>
                       {selectedLang === 'ko' && (
-                        <th className="text-center px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={e => toggleSort('naver', e.shiftKey)}>네이버 검색량{sortIcon('naver')}</th>
+                        <>
+                          <th className="text-center px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={e => toggleSort('naver', e.shiftKey)}>네이버 검색량{sortIcon('naver')}</th>
+                          <th className="text-center px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={e => toggleSort('competition', e.shiftKey)}>경쟁도{sortIcon('competition')}</th>
+                        </>
                       )}
                       <th className="text-center px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={e => toggleSort('difficulty', e.shiftKey)}>난이도{sortIcon('difficulty')}</th>
                       <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">액션</th>
@@ -685,19 +693,25 @@ Respond in Korean. Return strategy:
                         </td>
                         <td className="px-4 py-2.5 text-center text-xs text-muted-foreground">{kw.estimatedVolume || '-'}</td>
                         {selectedLang === 'ko' && (
-                          <td className="px-4 py-2.5 text-center text-xs">
-                            {(kw as any).naverMonthly != null ? (
-                              <div>
-                                <span className="font-medium">{((kw as any).naverMonthly as number).toLocaleString()}</span>
-                                <span className="text-muted-foreground text-[10px] ml-1">/ 월</span>
-                                {(kw as any).naverComp && (
-                                  <div className="text-[10px] text-muted-foreground">경쟁 {(kw as any).naverComp}</div>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </td>
+                          <>
+                            <td className="px-4 py-2.5 text-center text-xs">
+                              {kw.naverMonthly != null ? (
+                                <div>
+                                  <span className="font-medium">{kw.naverMonthly.toLocaleString()}</span>
+                                  <span className="text-muted-foreground text-[10px] ml-1">/ 월</span>
+                                </div>
+                              ) : <span className="text-muted-foreground">-</span>}
+                            </td>
+                            <td className="px-4 py-2.5 text-center text-xs">
+                              {kw.naverComp ? (
+                                <Badge variant="outline" className={cn('text-[10px]',
+                                  kw.naverComp === '낮음' ? 'bg-green-500/10 text-green-500' :
+                                  kw.naverComp === '중간' ? 'bg-yellow-500/10 text-yellow-500' :
+                                  'bg-red-500/10 text-red-500'
+                                )}>{kw.naverComp}</Badge>
+                              ) : <span className="text-muted-foreground">-</span>}
+                            </td>
+                          </>
                         )}
                         <td className="px-4 py-2.5 text-center text-xs text-muted-foreground">{kw.difficulty || '-'}</td>
                         <td className="px-4 py-2.5 text-center">
@@ -908,7 +922,10 @@ Respond in Korean. Return strategy:
                       <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">우선순위</th>
                       <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">예상 볼륨</th>
                       {selectedLang === 'ko' && (
-                        <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">네이버 검색량</th>
+                        <>
+                          <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">네이버 검색량</th>
+                          <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">경쟁도</th>
+                        </>
                       )}
                       <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">난이도</th>
                       <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">액션</th>
@@ -934,15 +951,25 @@ Respond in Korean. Return strategy:
                         </td>
                         <td className="px-4 py-2.5 text-center text-xs text-muted-foreground">{kw.estimatedVolume || '-'}</td>
                         {selectedLang === 'ko' && (
-                          <td className="px-4 py-2.5 text-center text-xs">
-                            {kw.naverMonthly != null ? (
-                              <div>
-                                <span className="font-medium">{kw.naverMonthly.toLocaleString()}</span>
-                                <span className="text-muted-foreground text-[10px] ml-1">/ 월</span>
-                                {kw.naverComp && <div className="text-[10px] text-muted-foreground">경쟁 {kw.naverComp}</div>}
-                              </div>
+                          <>
+                            <td className="px-4 py-2.5 text-center text-xs">
+                              {kw.naverMonthly != null ? (
+                                <div>
+                                  <span className="font-medium">{kw.naverMonthly.toLocaleString()}</span>
+                                  <span className="text-muted-foreground text-[10px] ml-1">/ 월</span>
+                                </div>
                             ) : <span className="text-muted-foreground">-</span>}
-                          </td>
+                            </td>
+                            <td className="px-4 py-2.5 text-center text-xs">
+                              {kw.naverComp ? (
+                                <Badge variant="outline" className={cn('text-[10px]',
+                                  kw.naverComp === '낮음' ? 'bg-green-500/10 text-green-500' :
+                                  kw.naverComp === '중간' ? 'bg-yellow-500/10 text-yellow-500' :
+                                  'bg-red-500/10 text-red-500'
+                                )}>{kw.naverComp}</Badge>
+                              ) : <span className="text-muted-foreground">-</span>}
+                            </td>
+                          </>
                         )}
                         <td className="px-4 py-2.5 text-center text-xs text-muted-foreground">{kw.difficulty || '-'}</td>
                         <td className="px-4 py-2.5 text-center">
