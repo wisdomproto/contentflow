@@ -8,7 +8,7 @@ const navGroups = [
     label: '콘텐츠',
     items: [
       { href: '/content', icon: '📝', label: '콘텐츠 생성' },
-      { href: '/ideas', icon: '💡', label: '아이디어' },
+      { href: '/ideas', icon: '💡', label: '키워드 / 아이디어' },
       { href: '/publish', icon: '🚀', label: '발행' },
     ],
   },
@@ -23,7 +23,6 @@ const navGroups = [
     items: [
       { href: '/site-analysis', icon: '📊', label: '사이트 분석' },
       { href: '/meta-analytics', icon: '📱', label: '채널 분석' },
-      { href: '/keywords', icon: '🔑', label: '키워드' },
       { href: '/competitors', icon: '🎯', label: '경쟁사' },
     ],
   },
