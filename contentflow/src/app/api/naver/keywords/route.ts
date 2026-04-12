@@ -49,8 +49,11 @@ export async function POST(req: NextRequest) {
     const uri = '/keywordstool';
     const signature = generateSignature(timestamp, method, uri, secret);
 
+    // Naver API rejects keywords containing spaces — strip them
+    const cleanKeywords = keywords.map((k: string) => k.replace(/\s+/g, ''));
+
     const params = new URLSearchParams({
-      hintKeywords: keywords.join(','),
+      hintKeywords: cleanKeywords.join(','),
       showDetail: '1',
     });
 

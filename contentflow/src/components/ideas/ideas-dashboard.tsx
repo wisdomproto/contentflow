@@ -191,14 +191,24 @@ Generate 30-50 keywords in ${langLabel} grouped by category. All keywords must b
 
         // Korean: fetch real Naver search volume for each keyword
         if (selectedLang === 'ko' && groups.length > 0) {
-          const allKeywords = groups.flatMap((g: any) => g.keywords.map((k: any) => k.keyword))
+          const allKws = groups.flatMap((g: any) => g.keywords.map((k: any) => k.keyword))
           try {
-            const naverRes = await fetch('/api/naver/keywords', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ keywords: allKeywords.slice(0, 50) }),
-            })
-            const naverData = await naverRes.json()
+            // Naver API accepts max ~5 hintKeywords per request; batch with delay
+            let allNaverKws: any[] = []
+            for (let i = 0; i < allKws.length; i += 5) {
+              const batch = allKws.slice(i, i + 5)
+              if (i > 0) await new Promise(r => setTimeout(r, 300))
+              try {
+                const res = await fetch('/api/naver/keywords', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ keywords: batch }),
+                })
+                const d = await res.json()
+                if (d.keywords?.length) allNaverKws = allNaverKws.concat(d.keywords)
+              } catch {}
+            }
+            const naverData = { keywords: allNaverKws }
             const naverMap = new Map<string, { pc: number; mobile: number; comp: string }>(
               (naverData.keywords || []).map((nk: any) => [
                 nk.keyword,
@@ -210,11 +220,11 @@ Generate 30-50 keywords in ${langLabel} grouped by category. All keywords must b
               ])
             )
 
-            // Merge Naver data into keywords
+            // Merge Naver data into keywords (try exact match, then stripped match)
             groups = groups.map((g: any) => ({
               ...g,
               keywords: g.keywords.map((k: any) => {
-                const naver = naverMap.get(k.keyword)
+                const naver = naverMap.get(k.keyword) || naverMap.get(k.keyword.replace(/\s+/g, ''))
                 if (naver) {
                   const total = naver.pc + naver.mobile
                   return {
