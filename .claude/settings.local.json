@@ -179,7 +179,19 @@
       "Bash(sed -i \"s/publishChannels=\\\\[{ id: 'instagram', label: 'Instagram', icon: '📸' }, { id: 'facebook', label: 'Facebook', icon: '👤' }\\\\]/publishChannels={[{ id: 'instagram', label: 'Instagram', icon: '📸' }]}/\" src/components/content/cardnews-panel.tsx)",
       "Bash(sed -i \"s/publishChannels=\\\\[{ id: 'threads', label: 'Threads', icon: '💬' }, { id: 'facebook', label: 'Facebook', icon: '👤' }\\\\]/publishChannels={[{ id: 'threads', label: 'Threads', icon: '💬' }]}/\" src/components/content/threads-panel.tsx)",
       "Bash(sed -i \"s|NAVER_API_SECRET_KEY=.*|NAVER_API_SECRET_KEY=AQAAAAAo++BMGivM5b6QkDHdZCegUJPI3C73NbA07r07GFGbMQ==|\" .env.local)",
-      "Bash(sed -i \"s/NAVER_API_CUSTOMER_ID=.*/NAVER_API_CUSTOMER_ID=3998741/\" .env.local)"
+      "Bash(sed -i \"s/NAVER_API_CUSTOMER_ID=.*/NAVER_API_CUSTOMER_ID=3998741/\" .env.local)",
+      "Bash(git push:*)",
+      "Bash(npx -y next --version)",
+      "Bash(npx kill-port:*)",
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(disown)",
+      "Bash(node -e \"const fs=require\\('fs'\\),ch=require\\('cheerio'\\);const h=fs.readFileSync\\('../marketing/연세새봄의원_마케팅전략 260323.html','utf-8'\\);const d=ch.load\\(h\\);let f=false;d\\('table'\\).each\\(\\(i,t\\)=>{if\\(f\\)return;if\\(d\\(t\\).text\\(\\).includes\\('A-01'\\)\\){f=true;console.log\\('TABLE '+i\\);d\\(t\\).find\\('tr'\\).slice\\(0,5\\).each\\(\\(j,r\\)=>{const c=[];d\\(r\\).find\\('td,th'\\).each\\(\\(k,td\\)=>{c.push\\(d\\(td\\).text\\(\\).trim\\(\\).replace\\(/\\\\n/g,' '\\).replace\\(/\\\\s+/g,' '\\).substr\\(0,80\\)\\)}\\);console.log\\(j+':'+JSON.stringify\\(c\\)\\)}\\)}}\\);\")",
+      "Bash(node -e \"const fs=require\\('fs'\\);const ch=require\\('cheerio'\\);const h=fs.readFileSync\\('../marketing/연세새봄의원_마케팅전략 260323.html','utf-8'\\);const d=ch.load\\(h\\);let f=false;d\\('table'\\).each\\(function\\(i\\){if\\(f\\)return;if\\(d\\(this\\).text\\(\\).indexOf\\('A-01'\\)>=0\\){f=true;console.log\\('TABLE '+i\\);d\\(this\\).find\\('tr'\\).slice\\(0,5\\).each\\(function\\(j\\){var c=[];d\\(this\\).find\\('td,th'\\).each\\(function\\(\\){c.push\\(d\\(this\\).text\\(\\).trim\\(\\).replace\\(/\\\\n/g,' '\\).replace\\(/\\\\s+/g,' '\\).substring\\(0,80\\)\\)}\\);console.log\\(j+':'+JSON.stringify\\(c\\)\\)}\\)}}\\)\")",
+      "Bash(node -e \"const fs=require\\('fs'\\); const c=require\\('cheerio'\\); const h=fs.readFileSync\\('../marketing/연세새봄의원_마케팅전략 260323.html','utf-8'\\); const d=c.load\\(h\\); console.log\\('tables:', d\\('table'\\).length\\); let x=''; d\\('table'\\).each\\(function\\(i\\){if\\(d\\(this\\).text\\(\\).indexOf\\('A-01'\\)>-1\\){x+=i+','}}\\);console.log\\('topic tables:',x\\);\")",
+      "Bash(node -e \"const fs=require\\('fs'\\); const h=fs.readFileSync\\('../marketing/연세새봄의원_마케팅전략 260323.html','utf-8'\\); const idx=h.indexOf\\('A-01'\\); console.log\\('A-01 at index:', idx\\); console.log\\(h.substring\\(idx-200, idx+200\\)\\);\")",
+      "Bash(node scripts/generate-base-articles.mjs)",
+      "Bash(node scripts/fix-article-tone.mjs)",
+      "Bash(kill %1)"
     ]
   }
 }

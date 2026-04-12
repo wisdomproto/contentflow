@@ -275,13 +275,13 @@ Generate 30-50 keywords in ${langLabel} grouped by category. All keywords must b
           })
           const googleData = await googleRes.json()
           if (googleData.keywords?.length) {
-            const googleMap = new Map(
+            const googleMap = new Map<string, { vol: number; comp: string; cpc: number }>(
               googleData.keywords.map((gk: any) => [gk.keyword, { vol: gk.searchVolume, comp: gk.competition, cpc: gk.cpc }])
             )
             groups = groups.map((g: any) => ({
               ...g,
               keywords: g.keywords.map((k: any) => {
-                const gd = googleMap.get(k.keyword) || googleMap.get(k.keyword.replace(/\s+/g, ''))
+                const gd: any = googleMap.get(k.keyword) || googleMap.get(k.keyword.replace(/\s+/g, ''))
                 return gd ? { ...k, googleVolume: gd.vol, googleComp: gd.comp, googleCpc: gd.cpc } : k
               }),
             }))
