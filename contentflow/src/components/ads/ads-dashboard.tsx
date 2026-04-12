@@ -279,15 +279,28 @@ export function AdsDashboard() {
           <div>
             <label className="text-xs text-muted-foreground mb-1 block">타겟팅</label>
             <div className="grid grid-cols-3 gap-3">
-              <div>
-                <label className="text-[10px] text-muted-foreground mb-0.5 block">지역</label>
-                <select className="w-full bg-muted text-xs rounded-md px-2 py-1.5 border border-border">
-                  <option>대한민국</option>
-                  <option>미국</option>
-                  <option>태국</option>
-                  <option>베트남</option>
-                  <option>전 세계</option>
-                </select>
+              <div className="col-span-3 space-y-2">
+                <label className="text-[10px] text-muted-foreground block">지역</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <select className="bg-muted text-xs rounded-md px-2 py-1.5 border border-border">
+                    <option>대한민국</option>
+                    <option>미국</option>
+                    <option>태국</option>
+                    <option>베트남</option>
+                    <option>일본</option>
+                    <option>중국</option>
+                    <option>전 세계</option>
+                  </select>
+                  <Input placeholder="도시 (예: 서울, 강남구)" className="text-xs h-8" />
+                  <div className="flex gap-1">
+                    <Input placeholder="반경" type="number" className="text-xs h-8 w-20" />
+                    <select className="bg-muted text-xs rounded-md px-1.5 py-1 border border-border">
+                      <option>km</option>
+                      <option>mi</option>
+                    </select>
+                  </div>
+                </div>
+                <p className="text-[10px] text-muted-foreground">도시 입력 시 해당 도시 중심 반경으로 타겟팅됩니다. 비워두면 국가 전체.</p>
               </div>
               <div>
                 <label className="text-[10px] text-muted-foreground mb-0.5 block">성별</label>
