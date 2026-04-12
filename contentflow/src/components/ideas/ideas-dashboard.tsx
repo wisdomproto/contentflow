@@ -315,21 +315,25 @@ Return ONLY a JSON array of 8 Korean seed keywords (single words or short phrase
         .filter(r => r.vol >= 300 && (r.comp === '낮음' || r.comp === '중간'))
         .sort((a, b) => b.vol - a.vol)
 
-      // 4. Convert to KeywordGroup format
-      const goldenItems: KeywordItem[] = golden.map(g => ({
-        keyword: g.keyword,
-        category: '황금 키워드',
-        searchIntent: g.vol > 5000 ? 'commercial' as const : 'informational' as const,
-        priority: g.comp === '낮음' ? 'high' as const : g.vol > 3000 ? 'high' as const : g.vol > 1000 ? 'medium' as const : 'low' as const,
-        estimatedVolume: g.vol > 5000 ? '높음' : g.vol > 1000 ? '중간' : '낮음',
-        difficulty: g.comp === '낮음' ? '쉬움' : '보통',
-        naverMonthly: g.vol,
-        naverPc: g.pc,
-        naverMobile: g.mob,
-        naverComp: g.comp,
-      }))
+      // 4. Convert to KeywordGroup format — group by competition level
+      function toItem(g: typeof golden[0], cat: string): KeywordItem {
+        return {
+          keyword: g.keyword, category: cat,
+          searchIntent: g.vol > 5000 ? 'commercial' as const : 'informational' as const,
+          priority: g.comp === '낮음' ? 'high' as const : g.vol > 3000 ? 'high' as const : g.vol > 1000 ? 'medium' as const : 'low' as const,
+          estimatedVolume: g.vol > 5000 ? '높음' : g.vol > 1000 ? '중간' : '낮음',
+          difficulty: g.comp === '낮음' ? '쉬움' : '보통',
+          naverMonthly: g.vol, naverPc: g.pc, naverMobile: g.mob, naverComp: g.comp,
+        }
+      }
+      const lowItems = golden.filter(g => g.comp === '낮음')
+      const midItems = golden.filter(g => g.comp === '중간')
+      const groups: KeywordGroup[] = []
+      if (lowItems.length > 0) groups.push({ category: '🥇 경쟁 낮음', keywords: lowItems.map(g => toItem(g, '🥇 경쟁 낮음')) })
+      if (midItems.length > 0) groups.push({ category: '🥈 경쟁 중간', keywords: midItems.map(g => toItem(g, '🥈 경쟁 중간')) })
 
-      setKeywordGroups([{ category: '황금 키워드', keywords: goldenItems }])
+      const goldenItems = [...(groups[0]?.keywords || []), ...(groups[1]?.keywords || [])]
+      setKeywordGroups(groups)
       setSelectedCategory(null)
 
       // 5. AI strategy recommendation based on golden keywords
