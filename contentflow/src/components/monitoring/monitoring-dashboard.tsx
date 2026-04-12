@@ -13,8 +13,26 @@ const PLATFORMS = [
   { id: 'naver_blog', label: '블로그', icon: '📰' },
 ]
 
+const PLATFORM_ICONS: Record<string, string> = {
+  youtube: '🎬',
+  naver_jisikin: '📗',
+  naver_blog: '📰',
+  instagram: '📸',
+}
+
 interface FeedItem {
-  id: string; platform: string; author: string; title: string; snippet: string; time: string; language: string
+  id: string
+  platform: string
+  author: string
+  title: string
+  snippet: string
+  time?: string
+  language: string
+  url?: string
+  thumbnail?: string
+  publishedAt?: string
+  views?: string
+  engagement?: { likes: number; comments: number }
 }
 
 export function MonitoringDashboard() {
@@ -23,9 +41,8 @@ export function MonitoringDashboard() {
   const [newKeyword, setNewKeyword] = useState('')
   const [commentLoading, setCommentLoading] = useState<string | null>(null)
   const [comments, setComments] = useState<Record<string, string>>({})
-
-  // Placeholder feed data — real data comes from monitoring_feed table
-  const feed: FeedItem[] = []
+  const [feedItems, setFeedItems] = useState<FeedItem[]>([])
+  const [searching, setSearching] = useState(false)
 
   function addKeyword() {
     if (newKeyword.trim() && !keywords.includes(newKeyword.trim())) {
@@ -34,20 +51,80 @@ export function MonitoringDashboard() {
     }
   }
 
+  async function handleSearch() {
+    if (keywords.length === 0) return
+    setSearching(true)
+    const allItems: FeedItem[] = []
+
+    for (const keyword of keywords) {
+      // YouTube search
+      try {
+        const ytRes = await fetch('/api/monitoring/search/youtube', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ keyword, language: 'ko' }),
+        })
+        const ytData = await ytRes.json()
+        allItems.push(...(ytData.items || []))
+      } catch {}
+
+      // Naver 지식인 search (Korean only)
+      try {
+        const nvRes = await fetch('/api/monitoring/search/naver', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ keyword }),
+        })
+        const nvData = await nvRes.json()
+        allItems.push(...(nvData.items || []))
+      } catch {}
+    }
+
+    setFeedItems(allItems)
+    setSearching(false)
+  }
+
   async function generateComment(item: FeedItem) {
     setCommentLoading(item.id)
     try {
       const res = await fetch('/api/monitoring/comment', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contentText: item.snippet, platform: item.platform, tone: 'professional', language: item.language }),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contentText: item.snippet || item.title,
+          platform: item.platform,
+          tone: 'professional',
+          language: item.language,
+        }),
       })
       const data = await res.json()
       setComments(prev => ({ ...prev, [item.id]: data.comment }))
-    } catch {} finally { setCommentLoading(null) }
+    } catch {}
+    finally { setCommentLoading(null) }
   }
 
   function copyComment(id: string) {
     navigator.clipboard.writeText(comments[id] || '')
+  }
+
+  const filteredFeed =
+    platform === 'all' ? feedItems : feedItems.filter(item => item.platform === platform)
+
+  function formatPublished(val?: string) {
+    if (!val) return ''
+    // ISO date → relative or raw
+    try {
+      const d = new Date(val)
+      if (!isNaN(d.getTime())) {
+        const diff = Date.now() - d.getTime()
+        const days = Math.floor(diff / 86400000)
+        if (days === 0) return '오늘'
+        if (days === 1) return '어제'
+        if (days < 30) return `${days}일 전`
+        return d.toLocaleDateString('ko-KR')
+      }
+    } catch {}
+    return val
   }
 
   return (
@@ -55,60 +132,159 @@ export function MonitoringDashboard() {
       {/* Platform Filter */}
       <div className="flex items-center gap-2">
         {PLATFORMS.map(p => (
-          <button key={p.id} onClick={() => setPlatform(p.id)}
-            className={cn('px-3 py-1.5 rounded-md text-xs', platform === p.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground')}>
-            {p.icon && <span className="mr-1">{p.icon}</span>}{p.label}
+          <button
+            key={p.id}
+            onClick={() => setPlatform(p.id)}
+            className={cn(
+              'px-3 py-1.5 rounded-md text-xs',
+              platform === p.id
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground'
+            )}
+          >
+            {p.icon && <span className="mr-1">{p.icon}</span>}
+            {p.label}
           </button>
         ))}
       </div>
 
-      {/* Keywords */}
+      {/* Keywords + Search */}
       <div className="flex gap-2 flex-wrap items-center">
         {keywords.map(kw => (
-          <span key={kw} className="bg-primary/10 text-primary border border-primary/20 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-primary/20"
-            onClick={() => setKeywords(keywords.filter(k => k !== kw))}>
+          <span
+            key={kw}
+            className="bg-primary/10 text-primary border border-primary/20 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-primary/20"
+            onClick={() => setKeywords(keywords.filter(k => k !== kw))}
+          >
             {kw} ×
           </span>
         ))}
         <div className="flex gap-1">
-          <Input placeholder="키워드 추가" value={newKeyword} onChange={e => setNewKeyword(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && addKeyword()} className="h-7 w-32 text-xs" />
-          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={addKeyword}>+</Button>
+          <Input
+            placeholder="키워드 추가"
+            value={newKeyword}
+            onChange={e => setNewKeyword(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && addKeyword()}
+            className="h-7 w-32 text-xs"
+          />
+          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={addKeyword}>
+            +
+          </Button>
         </div>
+        <Button
+          size="sm"
+          className="h-7 text-xs ml-2"
+          onClick={handleSearch}
+          disabled={searching || keywords.length === 0}
+        >
+          {searching ? '검색 중...' : '🔍 검색'}
+        </Button>
       </div>
 
       {/* Feed */}
-      {feed.length === 0 ? (
+      {filteredFeed.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
           <p className="text-4xl mb-4">💬</p>
-          <p className="text-sm">모니터링할 키워드를 설정하면 관련 콘텐츠가 여기에 표시됩니다</p>
-          <p className="text-xs mt-2">4시간 간격으로 자동 수집됩니다</p>
+          <p className="text-sm">
+            {feedItems.length === 0
+              ? '키워드를 설정하고 검색 버튼을 눌러 콘텐츠를 불러오세요'
+              : `${platform} 플랫폼에 검색 결과가 없습니다`}
+          </p>
+          <p className="text-xs mt-2 text-muted-foreground/60">
+            YouTube · 네이버 지식인에서 실시간 검색합니다
+          </p>
         </div>
       ) : (
         <div className="space-y-3">
-          {feed.map(item => (
+          {filteredFeed.map(item => (
             <div key={item.id} className="bg-card border border-border rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-sm font-semibold">{item.author}</span>
-                <span className="text-xs text-muted-foreground">{item.time}</span>
+              {/* Header */}
+              <div className="flex items-start gap-2 mb-2">
+                <span className="text-base leading-none mt-0.5">
+                  {PLATFORM_ICONS[item.platform] || '🌐'}
+                </span>
+                <div className="flex-1 min-w-0">
+                  {item.url ? (
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-semibold hover:underline line-clamp-2"
+                    >
+                      {item.title}
+                    </a>
+                  ) : (
+                    <p className="text-sm font-semibold line-clamp-2">{item.title}</p>
+                  )}
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {item.author && (
+                      <span className="text-xs text-muted-foreground">{item.author}</span>
+                    )}
+                    {item.publishedAt && (
+                      <span className="text-xs text-muted-foreground">
+                        {formatPublished(item.publishedAt)}
+                      </span>
+                    )}
+                    {item.views && (
+                      <span className="text-xs text-muted-foreground">조회 {item.views}</span>
+                    )}
+                    {item.engagement && (
+                      <span className="text-xs text-muted-foreground">
+                        ♥ {item.engagement.likes} · 💬 {item.engagement.comments}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {item.thumbnail && (
+                  <img
+                    src={item.thumbnail}
+                    alt=""
+                    className="w-16 h-12 object-cover rounded flex-shrink-0"
+                  />
+                )}
               </div>
-              <p className="text-sm mb-3">{item.snippet}</p>
 
+              {/* Snippet */}
+              {item.snippet && (
+                <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{item.snippet}</p>
+              )}
+
+              {/* Comment section */}
               {comments[item.id] ? (
                 <div className="bg-muted rounded-md p-3 border-l-2 border-primary">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-xs text-purple-400 font-semibold">✨ AI 댓글 제안</span>
-                    <Button size="sm" variant="ghost" className="h-5 text-[10px] ml-auto" onClick={() => generateComment(item)}>재생성</Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-5 text-[10px] ml-auto"
+                      onClick={() => generateComment(item)}
+                    >
+                      재생성
+                    </Button>
                   </div>
                   <p className="text-sm mb-2">{comments[item.id]}</p>
                   <div className="flex gap-2">
-                    <Button size="sm" className="h-6 text-xs" onClick={() => copyComment(item.id)}>📋 복사</Button>
-                    <Button size="sm" variant="outline" className="h-6 text-xs">톤 조절</Button>
+                    <Button
+                      size="sm"
+                      className="h-6 text-xs"
+                      onClick={() => copyComment(item.id)}
+                    >
+                      📋 복사
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-6 text-xs">
+                      톤 조절
+                    </Button>
                   </div>
                 </div>
               ) : (
-                <Button size="sm" variant="outline" className="text-xs" onClick={() => generateComment(item)}
-                  disabled={commentLoading === item.id}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-xs"
+                  onClick={() => generateComment(item)}
+                  disabled={commentLoading === item.id}
+                >
                   {commentLoading === item.id ? '생성 중...' : '✨ AI 댓글 생성'}
                 </Button>
               )}
@@ -121,7 +297,9 @@ export function MonitoringDashboard() {
       <div className="bg-card border border-border rounded-lg p-3 border-l-4 border-l-yellow-500 flex items-center gap-2">
         <span className="text-lg">🔔</span>
         <span className="text-sm font-semibold">알림 설정</span>
-        <span className="text-xs text-muted-foreground ml-auto">새 콘텐츠 발견 시 알림 · 일 3회 요약 리포트</span>
+        <span className="text-xs text-muted-foreground ml-auto">
+          새 콘텐츠 발견 시 알림 · 일 3회 요약 리포트
+        </span>
       </div>
     </div>
   )
