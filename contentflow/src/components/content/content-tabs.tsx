@@ -69,8 +69,22 @@ export function ContentTabs() {
             <div className="text-center">
               <p className="text-4xl mb-4">📱</p>
               <p className="text-lg font-medium">숏폼</p>
-              <p className="text-sm mt-2">YouTube Shorts · Instagram Reels · TikTok</p>
-              <p className="text-xs mt-1 text-muted-foreground">60초 이내 세로 영상 (9:16)</p>
+              <p className="text-sm mt-2">60초 이내 세로 영상 (9:16)</p>
+              <div className="flex gap-3 justify-center mt-4">
+                <div className="bg-card border border-border rounded-lg px-4 py-3 text-center">
+                  <div className="text-lg mb-1">🎬</div>
+                  <div className="text-xs font-medium">YouTube Shorts</div>
+                </div>
+                <div className="bg-card border border-border rounded-lg px-4 py-3 text-center">
+                  <div className="text-lg mb-1">📸</div>
+                  <div className="text-xs font-medium">Instagram Reels</div>
+                </div>
+                <div className="bg-card border border-border rounded-lg px-4 py-3 text-center">
+                  <div className="text-lg mb-1">🎵</div>
+                  <div className="text-xs font-medium">TikTok</div>
+                </div>
+              </div>
+              <p className="text-xs mt-4 text-muted-foreground">발행 시 채널 선택 가능</p>
             </div>
           </div>
         )}
