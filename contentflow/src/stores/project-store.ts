@@ -60,9 +60,10 @@ interface ProjectState {
   duplicateProject: (projectId: string) => void;
 
   // Content CRUD
-  createContent: (data: { project_id: string; title: string; category?: string; tags?: string[] }) => void;
+  createContent: (data: { project_id: string; title: string; category?: string; tags?: string[]; topic?: string }) => void;
   updateContent: (contentId: string, updates: Partial<Content>) => void;
   deleteContent: (contentId: string) => void;
+  reorderContents: (contentIds: string[]) => void;
 
   // BaseArticle CRUD
   createOrUpdateBaseArticle: (contentId: string, data: Partial<BaseArticle>) => void;
@@ -631,8 +632,9 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       category: data.category ?? null,
       tags: data.tags ?? null,
       memo: null,
-      topic: null,
+      topic: data.topic ?? null,
       status: 'draft',
+      confirmed: false,
       ai_model_settings: null,
       sort_order: get().contents.filter((c) => c.project_id === data.project_id).length,
       created_at: now,
@@ -663,6 +665,18 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
           : c
       ),
     }));
+  },
+
+  reorderContents: async (contentIds) => {
+    const supabase = createClient()
+    const updates = contentIds.map((id, i) => supabase.from('contents').update({ sort_order: i } as Record<string, unknown>).eq('id', id))
+    await Promise.all(updates)
+    set((state) => ({
+      contents: state.contents.map(c => {
+        const idx = contentIds.indexOf(c.id)
+        return idx >= 0 ? { ...c, sort_order: idx } : c
+      }).sort((a, b) => a.sort_order - b.sort_order),
+    }))
   },
 
   deleteContent: async (contentId) => {

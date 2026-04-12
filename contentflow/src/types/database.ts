@@ -152,6 +152,7 @@ export interface Content {
   topic: string | null;
   status: ContentStatus;
   ai_model_settings: Record<string, unknown> | null;
+  confirmed: boolean;
   sort_order: number;
   created_at: string;
   updated_at: string;

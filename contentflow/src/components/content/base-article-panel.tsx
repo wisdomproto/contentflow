@@ -309,6 +309,33 @@ function BaseArticlePanelInner({ content, project }: BaseArticlePanelInnerProps)
         onAbort={abort}
       />
 
+      {/* Confirm / Unconfirm */}
+      <div className="flex items-center gap-3 pt-4 border-t border-border">
+        {(content as any).confirmed ? (
+          <>
+            <div className="flex items-center gap-2 text-green-500">
+              <Check size={16} />
+              <span className="text-sm font-medium">원장님 컨펌 완료</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => updateContent(content.id, { confirmed: false } as any)}
+              className="text-xs"
+            >
+              ↩️ 컨펌 해제
+            </Button>
+          </>
+        ) : (
+          <Button
+            onClick={() => updateContent(content.id, { confirmed: true } as any)}
+            className="bg-green-600 hover:bg-green-700 text-white gap-1.5"
+          >
+            <Check size={14} /> 원장님 컨펌
+          </Button>
+        )}
+      </div>
+
       {/* Topic Suggestion Dialog */}
       <TopicSuggestionDialog
         open={showTopicDialog}
