@@ -30,16 +30,20 @@ export async function POST(req: NextRequest) {
       const author = $el.find('.total_sub .name, .questioner').text().trim()
 
       if (title) {
-        items.push({
-          platform: 'naver_jisikin',
-          id: url,
-          title,
-          snippet: snippet.substring(0, 200),
-          author: author || '익명',
-          url: url.startsWith('http') ? url : `https://search.naver.com${url}`,
-          publishedAt: date,
-          language: 'ko',
-        })
+        const fullUrl = url.startsWith('http') ? url : `https://search.naver.com${url}`
+        // Only include actual 지식인 results, skip YouTube/blog/other embeds
+        if (fullUrl.includes('kin.naver.com') || fullUrl.includes('search.naver.com') || !fullUrl.includes('youtube.com')) {
+          items.push({
+            platform: 'naver_jisikin',
+            id: `naver-${i}-${Date.now()}`,
+            title,
+            snippet: snippet.substring(0, 200),
+            author: author || '익명',
+            url: fullUrl,
+            publishedAt: date,
+            language: 'ko',
+          })
+        }
       }
     })
 
