@@ -61,6 +61,10 @@ interface KeywordItem {
   estimatedVolume?: string
   difficulty?: string
   used?: boolean
+  naverMonthly?: number
+  naverPc?: number
+  naverMobile?: number
+  naverComp?: string
 }
 
 interface KeywordGroup {
@@ -119,6 +123,8 @@ export function IdeasDashboard() {
   const [keywordGroups, setKeywordGroups] = useState<KeywordGroup[]>([])
   const [seedKeyword, setSeedKeyword] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [sortBy, setSortBy] = useState<'none' | 'volume' | 'naver' | 'difficulty' | 'priority'>('none')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
   // --- Trending tab state ---
   const [trendKeywords, setTrendKeywords] = useState('')
