@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Send, Clock, Link2Off } from 'lucide-react'
 import type { BlogCard } from '@/types/database'
+import { createClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import {
   Dialog,
@@ -175,6 +176,19 @@ export function LanguageSelector({ onTranslate, translationStatuses = {}, channe
         })
         const result = await res.json()
         if (result.success) {
+          // Save publish record to Supabase
+          const supabase = createClient()
+          await supabase.from('publish_records').insert({
+            content_id: selectedContentId,
+            project_id: selectedProjectId,
+            channel: 'wordpress',
+            language: selectedLanguage,
+            status: 'published',
+            published_at: new Date().toISOString(),
+            platform_post_id: String(result.postId || ''),
+            published_url: result.url || '',
+            metadata: { title },
+          })
           alert(`발행 성공!\n${result.url}`)
         } else {
           alert(`발행 실패: ${result.error}`)
@@ -234,6 +248,18 @@ export function LanguageSelector({ onTranslate, translationStatuses = {}, channe
         })
         const result = await res.json()
         if (result.success) {
+          const supabase = createClient()
+          await supabase.from('publish_records').insert({
+            content_id: selectedContentId,
+            project_id: selectedProjectId,
+            channel: 'wordpress',
+            language: selectedLanguage,
+            status: 'scheduled',
+            scheduled_at: scheduledAt,
+            platform_post_id: String(result.postId || ''),
+            published_url: result.url || '',
+            metadata: { title },
+          })
           alert(`예약 발행 성공!\n예약 시간: ${scheduledAt}\n${result.url}`)
         } else {
           alert(`예약 실패: ${result.error}`)

@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
+import { useProjectStore } from '@/stores/project-store'
+import { createClient } from '@/lib/supabase/client'
 
 const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
@@ -28,9 +30,22 @@ const FILTERS = [
 
 export function PublishQueue() {
   const [filter, setFilter] = useState('all')
+  const [records, setRecords] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const { selectedProjectId } = useProjectStore()
 
-  // TODO: fetch from /api/publish/queue with useEffect
-  const records: any[] = []
+  useEffect(() => {
+    if (!selectedProjectId) { setRecords([]); setLoading(false); return }
+    const supabase = createClient()
+    supabase.from('publish_records').select('*').eq('project_id', selectedProjectId)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        setRecords(data || [])
+        setLoading(false)
+      })
+  }, [selectedProjectId])
+
+  const filteredRecords = filter === 'all' ? records : records.filter(r => r.status === filter)
 
   return (
     <div>
@@ -52,17 +67,26 @@ export function PublishQueue() {
         </div>
       </div>
 
-      {records.length === 0 ? (
+      {loading ? (
+        <div className="text-center py-12 text-muted-foreground text-sm">로딩중...</div>
+      ) : filteredRecords.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground text-sm">
-          발행 기록이 없습니다
+          {filter === 'all' ? '발행 기록이 없습니다' : `${STATUS_LABELS[filter] || filter} 기록이 없습니다`}
         </div>
       ) : (
         <div className="space-y-2">
-          {records.map((record) => (
+          {filteredRecords.map((record) => (
             <div key={record.id} className="bg-card border border-border rounded-lg p-3 flex items-center gap-3">
               <div className="flex-1">
-                <div className="text-sm">{record.title || 'Untitled'}</div>
-                <div className="text-xs text-muted-foreground">{record.channel} · {record.language}</div>
+                <div className="text-sm">{record.metadata?.title || 'Untitled'}</div>
+                <div className="text-xs text-muted-foreground">
+                  {record.channel} · {record.language?.toUpperCase()}
+                  {record.published_url && (
+                    <a href={record.published_url} target="_blank" rel="noopener noreferrer" className="ml-2 text-primary hover:underline">
+                      보기 →
+                    </a>
+                  )}
+                </div>
               </div>
               <span className={cn('px-2 py-0.5 rounded text-xs', STATUS_COLORS[record.status])}>
                 {STATUS_LABELS[record.status]}
