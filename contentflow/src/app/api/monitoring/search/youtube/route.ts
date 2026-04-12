@@ -1,5 +1,12 @@
 import { NextRequest } from 'next/server'
 
+function formatViews(n: number): string {
+  if (n < 1000) return String(n)
+  if (n < 10000) return n.toLocaleString()
+  if (n < 100000000) return `${(n / 10000).toFixed(1)}만`
+  return `${(n / 100000000).toFixed(1)}억`
+}
+
 export async function POST(req: NextRequest) {
   const { keyword, language, maxResults } = await req.json()
   if (!keyword) return Response.json({ error: 'keyword required' }, { status: 400 })
@@ -26,17 +33,58 @@ export async function POST(req: NextRequest) {
       return await fallbackYoutubeSearch(keyword, language)
     }
 
-    const items = (data.items || []).map((item: any) => ({
-      platform: 'youtube',
-      id: item.id?.videoId,
-      title: item.snippet?.title,
-      snippet: item.snippet?.description,
-      author: item.snippet?.channelTitle,
-      url: `https://www.youtube.com/watch?v=${item.id?.videoId}`,
-      thumbnail: item.snippet?.thumbnails?.medium?.url,
-      publishedAt: item.snippet?.publishedAt,
-      language: language || 'ko',
-    }))
+    const videoIds = (data.items || [])
+      .map((item: any) => item.id?.videoId)
+      .filter(Boolean)
+      .join(',')
+
+    // Fetch statistics for all videos in a single call
+    let statsMap: Record<string, any> = {}
+    if (videoIds && youtubeApiKey) {
+      try {
+        const statsParams = new URLSearchParams({
+          part: 'statistics,snippet',
+          id: videoIds,
+          key: youtubeApiKey,
+        })
+        const statsRes = await fetch(
+          `https://www.googleapis.com/youtube/v3/videos?${statsParams}`
+        )
+        const statsData = await statsRes.json()
+        for (const v of statsData.items || []) {
+          statsMap[v.id] = v.statistics
+        }
+      } catch {
+        // stats fetch failed — continue without stats
+      }
+    }
+
+    const items = (data.items || []).map((item: any) => {
+      const videoId = item.id?.videoId
+      const stat = statsMap[videoId] || {}
+      const viewCount = stat.viewCount ? Number(stat.viewCount) : undefined
+      return {
+        platform: 'youtube',
+        id: videoId,
+        title: item.snippet?.title,
+        snippet: item.snippet?.description,
+        author: item.snippet?.channelTitle,
+        url: `https://www.youtube.com/watch?v=${videoId}`,
+        thumbnail: item.snippet?.thumbnails?.medium?.url,
+        publishedAt: item.snippet?.publishedAt,
+        language: language || 'ko',
+        views: viewCount !== undefined ? formatViews(viewCount) : undefined,
+        likes: stat.likeCount ? Number(stat.likeCount) : undefined,
+        comments: stat.commentCount ? Number(stat.commentCount) : undefined,
+        engagement:
+          stat.likeCount !== undefined || stat.commentCount !== undefined
+            ? {
+                likes: Number(stat.likeCount || 0),
+                comments: Number(stat.commentCount || 0),
+              }
+            : undefined,
+      }
+    })
 
     return Response.json({ items })
   } catch {

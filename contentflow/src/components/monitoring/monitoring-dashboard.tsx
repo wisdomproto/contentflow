@@ -82,6 +82,29 @@ export function MonitoringDashboard() {
         const nvData = await nvRes.json()
         allItems.push(...(nvData.items || []))
       } catch {}
+
+      // Instagram search (if Meta connected)
+      const projectId = localStorage.getItem('cf_selectedProjectId')
+      const metaCredsRaw = projectId ? localStorage.getItem(`meta_credentials_${projectId}`) : null
+      if (metaCredsRaw) {
+        try {
+          const metaCreds = JSON.parse(metaCredsRaw)
+          const page = metaCreds.pages?.[0]
+          if (page?.instagram?.id) {
+            const igRes = await fetch('/api/monitoring/search/instagram', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                keyword,
+                accessToken: page.pageAccessToken,
+                igUserId: page.instagram.id,
+              }),
+            })
+            const igData = await igRes.json()
+            allItems.push(...(igData.items || []))
+          }
+        } catch {}
+      }
     }
 
     setFeedItems(allItems)
