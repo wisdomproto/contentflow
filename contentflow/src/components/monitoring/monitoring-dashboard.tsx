@@ -4,7 +4,10 @@ import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Plus } from 'lucide-react'
 import { useProjectStore } from '@/stores/project-store'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { TargetLanguagesSection } from '@/components/project/target-languages-section'
 
 const PLATFORMS = [
   { id: 'all', label: '전체' },
@@ -62,6 +65,7 @@ export function MonitoringDashboard() {
     : ['ko', ...rawLanguages]
 
   const [selectedLang, setSelectedLang] = useState('ko')
+  const [showLangDialog, setShowLangDialog] = useState(false)
   const [keywordsPerLang, setKeywordsPerLang] = useState<Record<string, string[]>>({
     ko: ['소아성장', '성장호르몬'],
   })
@@ -294,7 +298,29 @@ export function MonitoringDashboard() {
             </button>
           )
         })}
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-8 text-xs gap-1 text-muted-foreground border-b-2 border-transparent"
+          onClick={() => setShowLangDialog(true)}
+        >
+          <Plus className="w-3.5 h-3.5" /> 언어 추가
+        </Button>
       </div>
+
+      {/* Language Add Dialog */}
+      <Dialog open={showLangDialog} onOpenChange={setShowLangDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>타겟 언어 관리</DialogTitle>
+          </DialogHeader>
+          {project && (
+            <TargetLanguagesSection project={project} onUpdate={(updates) => {
+              useProjectStore.getState().updateProject(project.id, updates)
+            }} />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Keywords + Translate + Search */}
       <div className="flex gap-2 flex-wrap items-center">
