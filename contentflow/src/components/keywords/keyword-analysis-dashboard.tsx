@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { useProjectStore } from '@/stores/project-store'
+import { AnalyticsLanguageTabs } from '@/components/analytics/language-tabs'
 
 async function fetchAiGenerate(prompt: string, model: string): Promise<string> {
   const res = await fetch('/api/ai/generate', {
@@ -61,11 +62,20 @@ export function KeywordAnalysisDashboard() {
   const [keywordGroups, setKeywordGroups] = useState<KeywordGroup[]>([])
   const [seedKeyword, setSeedKeyword] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [selectedLang, setSelectedLang] = useState('ko')
 
   async function generateKeywords() {
     if (!project) return
     setGenerating(true)
     try {
+      const langMap: Record<string, string> = {
+        ko: 'Korean', en: 'English', th: 'Thai', vi: 'Vietnamese',
+        ja: 'Japanese', zh: 'Chinese', ms: 'Malay', id: 'Indonesian',
+      }
+      const langLabel = langMap[selectedLang] || selectedLang.toUpperCase()
+      const volumeLabel = selectedLang === 'ko' ? '높음/중간/낮음' : 'High/Medium/Low'
+      const diffLabel = selectedLang === 'ko' ? '쉬움/보통/어려움' : 'Easy/Medium/Hard'
+
       const prompt = `You are a Google SEO keyword strategist. Analyze this project and generate a comprehensive keyword map.
 
 Project: ${project.name}
@@ -76,19 +86,20 @@ Target audience: ${JSON.stringify(project.target_audience) || ''}
 USP: ${project.usp || ''}
 ${seedKeyword ? `Seed keyword: ${seedKeyword}` : ''}
 Existing content count: ${contents.filter(c => c.project_id === selectedProjectId).length}
+Language: ${langLabel}
 
-Generate 30-50 keywords grouped by category. Return ONLY valid JSON:
+Generate 30-50 keywords in ${langLabel} grouped by category. All keywords must be written in ${langLabel}. Return ONLY valid JSON:
 {
   "groups": [
     {
-      "category": "카테고리명 (예: 핵심 서비스, 증상/문제, 치료 방법, 비용/보험, FAQ, 비교/리뷰, 지역 키워드)",
+      "category": "Category name in ${langLabel}",
       "keywords": [
         {
-          "keyword": "키워드 (한국어)",
+          "keyword": "keyword in ${langLabel}",
           "searchIntent": "informational",
           "priority": "high",
-          "estimatedVolume": "높음/중간/낮음",
-          "difficulty": "쉬움/보통/어려움"
+          "estimatedVolume": "${volumeLabel}",
+          "difficulty": "${diffLabel}"
         }
       ]
     }
@@ -131,8 +142,29 @@ Generate 30-50 keywords grouped by category. Return ONLY valid JSON:
     low: 'bg-gray-500/10 text-gray-500',
   }
 
+  const seedPlaceholder = selectedLang === 'ko'
+    ? '시드 키워드 입력 (선택사항, 예: 성장클리닉)'
+    : selectedLang === 'en'
+    ? 'Enter seed keyword (optional, e.g. growth clinic)'
+    : selectedLang === 'ja'
+    ? 'シードキーワードを入力（任意）'
+    : selectedLang === 'zh'
+    ? '输入种子关键词（可选）'
+    : selectedLang === 'th'
+    ? 'ใส่คำสำคัญเริ่มต้น (ไม่บังคับ)'
+    : selectedLang === 'vi'
+    ? 'Nhập từ khóa hạt giống (tùy chọn)'
+    : selectedLang === 'id'
+    ? 'Masukkan kata kunci awal (opsional)'
+    : selectedLang === 'ms'
+    ? 'Masukkan kata kunci permulaan (pilihan)'
+    : 'Enter seed keyword (optional)'
+
   return (
     <div className="p-6 max-w-6xl space-y-6">
+      {/* Language Tabs */}
+      <AnalyticsLanguageTabs selectedLang={selectedLang} onLangChange={setSelectedLang} />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -149,7 +181,7 @@ Generate 30-50 keywords grouped by category. Return ONLY valid JSON:
           <Input
             value={seedKeyword}
             onChange={e => setSeedKeyword(e.target.value)}
-            placeholder="시드 키워드 입력 (선택사항, 예: 성장클리닉)"
+            placeholder={seedPlaceholder}
             className="flex-1 text-sm"
           />
           <Button onClick={generateKeywords} disabled={generating}>

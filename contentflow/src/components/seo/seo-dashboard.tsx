@@ -11,6 +11,7 @@ import { useProjectStore } from '@/stores/project-store'
 import { calculateNaverSeoScore } from '@/lib/seo-scorer'
 import { keywordRankingQueries } from '@/lib/supabase/queries'
 import type { KeywordRanking } from '@/types/database'
+import { AnalyticsLanguageTabs } from '@/components/analytics/language-tabs'
 
 type TabId = 'audit' | 'content' | 'keywords' | 'schema'
 
@@ -39,6 +40,7 @@ interface ContentSeoRow {
 export function SeoDashboard() {
   const { selectedProjectId, blogContents, blogCards, getBlogCards } = useProjectStore()
   const [activeTab, setActiveTab] = useState<TabId>('audit')
+  const [selectedLang, setSelectedLang] = useState('ko')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<AuditResult | null>(null)
 
@@ -139,7 +141,7 @@ export function SeoDashboard() {
         project_id: selectedProjectId,
         keyword: newKeyword.trim(),
         search_engine: 'google',
-        country: 'ko',
+        country: selectedLang,
         position: null,
         url: null,
         date: new Date().toISOString().slice(0, 10),
@@ -167,7 +169,7 @@ export function SeoDashboard() {
       const res = await fetch('/api/seo/schema-generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: schemaContent, schemaType }),
+        body: JSON.stringify({ content: schemaContent, schemaType, language: selectedLang }),
       })
       const data = await res.json()
       setSchemaResult(data.schema || '')
@@ -199,6 +201,9 @@ export function SeoDashboard() {
 
   return (
     <div className="p-6 max-w-5xl space-y-6">
+      {/* Language Tabs */}
+      <AnalyticsLanguageTabs selectedLang={selectedLang} onLangChange={setSelectedLang} />
+
       {/* Tab bar */}
       <div className="flex gap-1 border-b border-border pb-2">
         {TABS.map(tab => (

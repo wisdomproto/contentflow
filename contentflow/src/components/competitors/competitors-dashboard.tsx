@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useProjectStore } from '@/stores/project-store'
+import { AnalyticsLanguageTabs } from '@/components/analytics/language-tabs'
 
 type TabId = 'gap' | 'keywords' | 'serp'
 const TABS: { id: TabId; label: string }[] = [
@@ -35,6 +36,7 @@ export function CompetitorsDashboard() {
   const project = projects.find(p => p.id === selectedProjectId)
 
   const [tab, setTab] = useState<TabId>('gap')
+  const [selectedLang, setSelectedLang] = useState('ko')
   const [projectUrl, setProjectUrl] = useState(project?.funnel_config?.websiteUrl || '')
   const [competitorUrl, setCompetitorUrl] = useState('')
   const [competitors, setCompetitors] = useState<string[]>([])
@@ -64,7 +66,7 @@ export function CompetitorsDashboard() {
     try {
       const res = await fetch('/api/competitors/gap-analysis', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectUrl, competitorUrls: competitors }),
+        body: JSON.stringify({ projectUrl, competitorUrls: competitors, language: selectedLang }),
       })
       const data = await res.json()
       setGaps(data.gaps || [])
@@ -92,6 +94,7 @@ export function CompetitorsDashboard() {
           projectUrl: projectUrl || '',
           competitorUrls: competitors,
           keywords: keywordsToAnalyze,
+          language: selectedLang,
         }),
       })
       const data = await res.json()
@@ -129,6 +132,9 @@ export function CompetitorsDashboard() {
 
   return (
     <div className="p-6 max-w-5xl space-y-6">
+      {/* Language Tabs */}
+      <AnalyticsLanguageTabs selectedLang={selectedLang} onLangChange={setSelectedLang} />
+
       <div className="flex gap-1 border-b border-border pb-2">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
