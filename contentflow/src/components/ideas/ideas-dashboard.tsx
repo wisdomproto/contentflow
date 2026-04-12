@@ -65,6 +65,9 @@ interface KeywordItem {
   naverPc?: number
   naverMobile?: number
   naverComp?: string
+  googleVolume?: number
+  googleComp?: string
+  googleCpc?: number
 }
 
 interface KeywordGroup {
@@ -123,7 +126,7 @@ export function IdeasDashboard() {
   const [keywordGroups, setKeywordGroups] = useState<KeywordGroup[]>([])
   const [seedKeyword, setSeedKeyword] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  type SortCol = 'volume' | 'naver' | 'difficulty' | 'priority' | 'competition'
+  type SortCol = 'volume' | 'naver' | 'google' | 'difficulty' | 'priority' | 'competition'
   const [sortCols, setSortCols] = useState<{ col: SortCol; dir: 'asc' | 'desc' }[]>([])
 
   // --- Saved/pinned keywords ---
@@ -261,6 +264,29 @@ Generate 30-50 keywords in ${langLabel} grouped by category. All keywords must b
           }
         }
 
+        // Google search volume via DataForSEO (all keywords in one request)
+        try {
+          const allKwList = groups.flatMap((g: any) => g.keywords.map((k: any) => k.keyword))
+          const googleRes = await fetch('/api/google/keywords', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keywords: allKwList }),
+          })
+          const googleData = await googleRes.json()
+          if (googleData.keywords?.length) {
+            const googleMap = new Map(
+              googleData.keywords.map((gk: any) => [gk.keyword, { vol: gk.searchVolume, comp: gk.competition, cpc: gk.cpc }])
+            )
+            groups = groups.map((g: any) => ({
+              ...g,
+              keywords: g.keywords.map((k: any) => {
+                const gd = googleMap.get(k.keyword) || googleMap.get(k.keyword.replace(/\s+/g, ''))
+                return gd ? { ...k, googleVolume: gd.vol, googleComp: gd.comp, googleCpc: gd.cpc } : k
+              }),
+            }))
+          }
+        } catch {}
+
         setKeywordGroups(groups)
       }
     } catch (err) {
@@ -362,6 +388,26 @@ Return ONLY a JSON array of relevant keywords (exact spelling):
       if (silverTier.length > 0) groups.push({ category: '🥇 유망 키워드', keywords: silverTier.map(g => toItem(g, '🥇 유망 키워드')) })
       if (bronzeTier.length > 0) groups.push({ category: '🥈 일반 키워드', keywords: bronzeTier.map(g => toItem(g, '🥈 일반 키워드')) })
 
+      // 4.5 Fetch Google search volume for golden keywords
+      try {
+        const allGoldenKws = groups.flatMap(g => g.keywords.map(k => k.keyword))
+        const gRes = await fetch('/api/google/keywords', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ keywords: allGoldenKws }),
+        })
+        const gData = await gRes.json()
+        if (gData.keywords?.length) {
+          const gMap = new Map(gData.keywords.map((gk: any) => [gk.keyword, { vol: gk.searchVolume, comp: gk.competition, cpc: gk.cpc }]))
+          for (const group of groups) {
+            group.keywords = group.keywords.map(k => {
+              const gd: any = gMap.get(k.keyword) || gMap.get(k.keyword.replace(/\s+/g, ''))
+              return gd ? { ...k, googleVolume: gd.vol, googleComp: gd.comp, googleCpc: gd.cpc } : k
+            })
+          }
+        }
+      } catch {}
+
       const goldenItems = [...(groups[0]?.keywords || []), ...(groups[1]?.keywords || [])]
       setKeywordGroups(groups)
       setSelectedCategory(null)
@@ -419,6 +465,7 @@ Respond in Korean. Return strategy:
 
   function colValue(kw: KeywordItem, col: SortCol): number {
     if (col === 'naver') return kw.naverMonthly ?? -1
+    if (col === 'google') return kw.googleVolume ?? -1
     if (col === 'volume') return volumeOrder[kw.estimatedVolume || ''] ?? 0
     if (col === 'priority') return priorityOrder[kw.priority] ?? 0
     if (col === 'difficulty') return difficultyOrder[kw.difficulty || ''] ?? 0
@@ -670,7 +717,7 @@ Respond in Korean. Return strategy:
                   <span>정렬:</span>
                   {sortCols.map((s, i) => (
                     <span key={s.col} className="bg-muted px-2 py-0.5 rounded">
-                      {s.col === 'priority' ? '우선순위' : s.col === 'volume' ? '예상 볼륨' : s.col === 'naver' ? '네이버 검색량' : s.col === 'competition' ? '경쟁도' : '난이도'}
+                      {s.col === 'priority' ? '우선순위' : s.col === 'volume' ? '예상 볼륨' : s.col === 'naver' ? '네이버 검색량' : s.col === 'google' ? 'Google 검색량' : s.col === 'competition' ? '경쟁도' : '난이도'}
                       {s.dir === 'desc' ? ' ↓' : ' ↑'}
                       {i < sortCols.length - 1 && <span className="ml-1">→</span>}
                     </span>
@@ -690,10 +737,11 @@ Respond in Korean. Return strategy:
                       <th className="text-center px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={e => toggleSort('volume', e.shiftKey)}>예상 볼륨{sortIcon('volume')}</th>
                       {selectedLang === 'ko' && (
                         <>
-                          <th className="text-center px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={e => toggleSort('naver', e.shiftKey)}>네이버 검색량{sortIcon('naver')}</th>
+                          <th className="text-center px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={e => toggleSort('naver', e.shiftKey)}>네이버{sortIcon('naver')}</th>
                           <th className="text-center px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={e => toggleSort('competition', e.shiftKey)}>경쟁도{sortIcon('competition')}</th>
                         </>
                       )}
+                      <th className="text-center px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={e => toggleSort('google', e.shiftKey)}>Google{sortIcon('google')}</th>
                       <th className="text-center px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={e => toggleSort('difficulty', e.shiftKey)}>난이도{sortIcon('difficulty')}</th>
                       <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">액션</th>
                     </tr>
@@ -740,6 +788,14 @@ Respond in Korean. Return strategy:
                             </td>
                           </>
                         )}
+                        <td className="px-4 py-2.5 text-center text-xs">
+                          {kw.googleVolume != null && kw.googleVolume > 0 ? (
+                            <div>
+                              <span className="font-medium">{kw.googleVolume.toLocaleString()}</span>
+                              <span className="text-muted-foreground text-[10px] ml-1">/ 월</span>
+                            </div>
+                          ) : <span className="text-muted-foreground">-</span>}
+                        </td>
                         <td className="px-4 py-2.5 text-center text-xs text-muted-foreground">{kw.difficulty || '-'}</td>
                         <td className="px-4 py-2.5 text-center">
                           <Button
@@ -835,37 +891,6 @@ Respond in Korean. Return strategy:
               </div>
             </div>
 
-            {/* Naver Search Volume (Korean only) */}
-            {selectedLang === 'ko' && (
-              <div className="bg-card border border-border rounded-lg overflow-hidden">
-                <div className="px-4 py-2.5 border-b border-border flex items-center gap-2">
-                  <span className="text-green-500 font-bold text-sm">N</span>
-                  <span className="text-sm font-semibold">Naver 검색량</span>
-                </div>
-                <div className="divide-y divide-border max-h-[360px] overflow-y-auto">
-                  {naverTrends.map((item, i) => (
-                    <button key={i} onClick={() => handleGenerateIdeas(item.keyword)}
-                      className="w-full flex items-center gap-3 p-3 hover:bg-accent text-left">
-                      <span className="text-sm flex-1">{item.keyword}</span>
-                      {item.totalSearches > 0 ? (
-                        <div className="text-right">
-                          <div className="text-xs text-muted-foreground">월 {item.totalSearches.toLocaleString()}회</div>
-                          {item.compIdx && (
-                            <div className="text-xs text-muted-foreground">경쟁도: {item.compIdx}</div>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">검색량 없음</span>
-                      )}
-                    </button>
-                  ))}
-                  {naverTrends.length === 0 && (
-                    <div className="p-4 text-center text-xs text-muted-foreground">키워드를 입력하고 검색하세요</div>
-                  )}
-                </div>
-              </div>
-            )}
-
             {/* Google Trends (non-Korean) */}
             {selectedLang !== 'ko' && googleTrends.length > 0 && (
               <div className="bg-card border border-border rounded-lg overflow-hidden">
@@ -950,10 +975,11 @@ Respond in Korean. Return strategy:
                       <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">예상 볼륨</th>
                       {selectedLang === 'ko' && (
                         <>
-                          <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">네이버 검색량</th>
+                          <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">네이버</th>
                           <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">경쟁도</th>
                         </>
                       )}
+                      <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">Google</th>
                       <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">난이도</th>
                       <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">액션</th>
                     </tr>
@@ -998,6 +1024,14 @@ Respond in Korean. Return strategy:
                             </td>
                           </>
                         )}
+                        <td className="px-4 py-2.5 text-center text-xs">
+                          {kw.googleVolume != null && kw.googleVolume > 0 ? (
+                            <div>
+                              <span className="font-medium">{kw.googleVolume.toLocaleString()}</span>
+                              <span className="text-muted-foreground text-[10px] ml-1">/ 월</span>
+                            </div>
+                          ) : <span className="text-muted-foreground">-</span>}
+                        </td>
                         <td className="px-4 py-2.5 text-center text-xs text-muted-foreground">{kw.difficulty || '-'}</td>
                         <td className="px-4 py-2.5 text-center">
                           <Button size="sm" variant="ghost" className="h-6 text-[10px]" onClick={() => { setIdeaTopic(kw.keyword); handleGenerateIdeas(kw.keyword) }}>
