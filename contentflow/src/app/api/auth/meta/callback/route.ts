@@ -33,18 +33,40 @@ export async function GET(req: NextRequest) {
     // Get user info + pages + Instagram accounts
     const [userRes, pagesRes] = await Promise.all([
       fetch(`https://graph.facebook.com/v21.0/me?fields=id,name&access_token=${accessToken}`),
-      fetch(`https://graph.facebook.com/v21.0/me/accounts?fields=id,name,access_token,instagram_business_account{id,username}&access_token=${accessToken}`),
+      fetch(`https://graph.facebook.com/v21.0/me/accounts?fields=id,name,access_token,instagram_business_account%7Bid,username%7D&access_token=${accessToken}`),
     ])
 
     const user = await userRes.json()
     const pages = await pagesRes.json()
+
+    // If me/accounts returns empty, try fetching pages user has access to
+    let pagesData = pages.data || []
+    if (pagesData.length === 0) {
+      // Fallback: get pages from user's permissions
+      const permPagesRes = await fetch(
+        `https://graph.facebook.com/v21.0/me/accounts?access_token=${accessToken}`
+      )
+      const permPages = await permPagesRes.json()
+      if (permPages.data?.length > 0) {
+        // Fetch full details for each page
+        const pageDetails = await Promise.all(
+          permPages.data.map(async (p: { id: string }) => {
+            const res = await fetch(
+              `https://graph.facebook.com/v21.0/${p.id}?fields=id,name,access_token,instagram_business_account%7Bid,username%7D&access_token=${accessToken}`
+            )
+            return res.json()
+          })
+        )
+        pagesData = pageDetails.filter((p: { error?: unknown }) => !p.error)
+      }
+    }
 
     // Build connection info
     const connectionInfo = {
       accessToken,
       userId: user.id,
       userName: user.name,
-      pages: pages.data?.map((page: { id: string; name: string; access_token: string; instagram_business_account?: { id: string; username: string } }) => ({
+      pages: pagesData.map((page: { id: string; name: string; access_token: string; instagram_business_account?: { id: string; username: string } }) => ({
         id: page.id,
         name: page.name,
         pageAccessToken: page.access_token,
