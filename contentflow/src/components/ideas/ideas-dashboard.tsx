@@ -123,8 +123,8 @@ export function IdeasDashboard() {
   const [keywordGroups, setKeywordGroups] = useState<KeywordGroup[]>([])
   const [seedKeyword, setSeedKeyword] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  const [sortBy, setSortBy] = useState<'none' | 'volume' | 'naver' | 'difficulty' | 'priority'>('none')
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  type SortCol = 'volume' | 'naver' | 'difficulty' | 'priority'
+  const [sortCols, setSortCols] = useState<{ col: SortCol; dir: 'asc' | 'desc' }[]>([])
 
   // --- Trending tab state ---
   const [trendKeywords, setTrendKeywords] = useState('')
@@ -258,29 +258,51 @@ Generate 30-50 keywords in ${langLabel} grouped by category. All keywords must b
     ? allKeywords.filter(k => k.category === selectedCategory)
     : allKeywords
 
-  // Sort
-  const priorityOrder = { high: 3, medium: 2, low: 1 }
+  // Multi-column sort
+  const priorityOrder: Record<string, number> = { high: 3, medium: 2, low: 1 }
   const difficultyOrder: Record<string, number> = { '어려움': 3, 'Hard': 3, '보통': 2, 'Medium': 2, '쉬움': 1, 'Easy': 1 }
   const volumeOrder: Record<string, number> = { '높음': 3, 'High': 3, '중간': 2, 'Medium': 2, '낮음': 1, 'Low': 1 }
 
-  const sortedKeywords = sortBy === 'none' ? filteredKeywords : [...filteredKeywords].sort((a, b) => {
-    let av = 0, bv = 0
-    if (sortBy === 'naver') { av = a.naverMonthly ?? -1; bv = b.naverMonthly ?? -1 }
-    else if (sortBy === 'volume') { av = volumeOrder[a.estimatedVolume || ''] ?? 0; bv = volumeOrder[b.estimatedVolume || ''] ?? 0 }
-    else if (sortBy === 'priority') { av = priorityOrder[a.priority] ?? 0; bv = priorityOrder[b.priority] ?? 0 }
-    else if (sortBy === 'difficulty') { av = difficultyOrder[a.difficulty || ''] ?? 0; bv = difficultyOrder[b.difficulty || ''] ?? 0 }
-    return sortDir === 'desc' ? bv - av : av - bv
-  })
-
-  function toggleSort(col: typeof sortBy) {
-    if (sortBy === col) {
-      if (sortDir === 'desc') setSortDir('asc')
-      else { setSortBy('none'); setSortDir('desc') }
-    } else { setSortBy(col); setSortDir('desc') }
+  function colValue(kw: KeywordItem, col: SortCol): number {
+    if (col === 'naver') return kw.naverMonthly ?? -1
+    if (col === 'volume') return volumeOrder[kw.estimatedVolume || ''] ?? 0
+    if (col === 'priority') return priorityOrder[kw.priority] ?? 0
+    if (col === 'difficulty') return difficultyOrder[kw.difficulty || ''] ?? 0
+    return 0
   }
 
-  const sortIcon = (col: typeof sortBy) =>
-    sortBy !== col ? ' ↕' : sortDir === 'desc' ? ' ↓' : ' ↑'
+  const sortedKeywords = sortCols.length === 0 ? filteredKeywords : [...filteredKeywords].sort((a, b) => {
+    for (const { col, dir } of sortCols) {
+      const av = colValue(a, col), bv = colValue(b, col)
+      if (av !== bv) return dir === 'desc' ? bv - av : av - bv
+    }
+    return 0
+  })
+
+  // Click: replace with single sort. Shift+click: add/toggle multi-sort.
+  function toggleSort(col: SortCol, shift: boolean) {
+    setSortCols(prev => {
+      const idx = prev.findIndex(s => s.col === col)
+      if (idx >= 0) {
+        // Already sorted by this column — toggle direction or remove
+        const cur = prev[idx]
+        if (cur.dir === 'desc') return prev.map((s, i) => i === idx ? { ...s, dir: 'asc' as const } : s)
+        // Was asc → remove
+        return prev.filter((_, i) => i !== idx)
+      }
+      // Add new column
+      if (shift) return [...prev, { col, dir: 'desc' as const }]
+      return [{ col, dir: 'desc' as const }]
+    })
+  }
+
+  function sortIcon(col: SortCol) {
+    const entry = sortCols.find(s => s.col === col)
+    if (!entry) return ' ↕'
+    const idx = sortCols.indexOf(entry)
+    const num = sortCols.length > 1 ? `${idx + 1}` : ''
+    return entry.dir === 'desc' ? ` ${num}↓` : ` ${num}↑`
+  }
 
   const intentColors: Record<string, string> = {
     informational: 'bg-blue-500/10 text-blue-500',
@@ -462,6 +484,19 @@ Generate 30-50 keywords in ${langLabel} grouped by category. All keywords must b
               </div>
 
               {/* Keyword Table */}
+              {sortCols.length > 0 && (
+                <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                  <span>정렬:</span>
+                  {sortCols.map((s, i) => (
+                    <span key={s.col} className="bg-muted px-2 py-0.5 rounded">
+                      {s.col === 'priority' ? '우선순위' : s.col === 'volume' ? '예상 볼륨' : s.col === 'naver' ? '네이버 검색량' : '난이도'}
+                      {s.dir === 'desc' ? ' ↓' : ' ↑'}
+                      {i < sortCols.length - 1 && <span className="ml-1">→</span>}
+                    </span>
+                  ))}
+                  <button onClick={() => setSortCols([])} className="text-muted-foreground hover:text-foreground ml-1">✕ 초기화</button>
+                </div>
+              )}
               <div className="bg-card border border-border rounded-lg overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
@@ -469,12 +504,12 @@ Generate 30-50 keywords in ${langLabel} grouped by category. All keywords must b
                       <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">키워드</th>
                       <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">카테고리</th>
                       <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">검색 의도</th>
-                      <th className="text-center px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort('priority')}>우선순위{sortIcon('priority')}</th>
-                      <th className="text-center px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort('volume')}>예상 볼륨{sortIcon('volume')}</th>
+                      <th className="text-center px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={e => toggleSort('priority', e.shiftKey)}>우선순위{sortIcon('priority')}</th>
+                      <th className="text-center px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={e => toggleSort('volume', e.shiftKey)}>예상 볼륨{sortIcon('volume')}</th>
                       {selectedLang === 'ko' && (
-                        <th className="text-center px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort('naver')}>네이버 검색량{sortIcon('naver')}</th>
+                        <th className="text-center px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={e => toggleSort('naver', e.shiftKey)}>네이버 검색량{sortIcon('naver')}</th>
                       )}
-                      <th className="text-center px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort('difficulty')}>난이도{sortIcon('difficulty')}</th>
+                      <th className="text-center px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={e => toggleSort('difficulty', e.shiftKey)}>난이도{sortIcon('difficulty')}</th>
                       <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">액션</th>
                     </tr>
                   </thead>
