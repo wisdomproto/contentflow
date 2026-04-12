@@ -940,7 +940,8 @@ export function CardNewsPanel() {
         onAdd={() => addInstagramContent(content.id)}
         onDelete={(id) => deleteInstagramContent(id)}
         addLabel="새 카드뉴스 추가"
-        onAddToQueue={(id) => alert(`발행 큐에 추가되었습니다 (ID: ${id})`)}
+        onAddToQueue={(id, channel) => alert(`${channel}에 발행 큐 추가 (ID: ${id})`)}
+        publishChannels={[{ id: 'instagram', label: 'Instagram', icon: '📸' }, { id: 'facebook', label: 'Facebook', icon: '👤' }]}
         renderContent={(igContent) => (
           <CardNewsPanelInner
             key={igContent.id}

@@ -554,7 +554,7 @@ export function YoutubePanel() {
         onAdd={() => addYoutubeContent(content.id)}
         onDelete={(id) => deleteYoutubeContent(id)}
         addLabel="새 유튜브 대본 추가"
-        onAddToQueue={(id) => alert(`발행 큐에 추가되었습니다 (ID: ${id})`)}
+        onAddToQueue={(id, channel) => alert(`${channel}에 발행 큐 추가 (ID: ${id})`)}
         renderContent={(youtubeContent) => (
           <YoutubePanelInner
             key={youtubeContent.id}

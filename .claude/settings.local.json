@@ -170,7 +170,12 @@
       "Bash(find src/components -name \"*.tsx\" -exec sed -i \"s/generateId\\('[^']*'\\)/generateId\\(\\)/g\" {} +)",
       "Bash(powershell -Command \"Remove-Item -Force 'C:\\\\projects\\\\ContentFlow\\\\contentflow\\\\.next\\\\dev\\\\lock' -ErrorAction SilentlyContinue\")",
       "Bash(gh repo:*)",
-      "Bash(where gh:*)"
+      "Bash(where gh:*)",
+      "Bash(sed -i \"s/onAddToQueue={\\(id\\) => alert\\(\\\\`발행 큐에 추가되었습니다 \\(ID: \\\\${id}\\)\\\\`\\)}/onAddToQueue={\\(id, channel\\) => alert\\(\\\\`\\\\${channel}에 발행 큐 추가 \\(ID: \\\\${id}\\)\\\\`\\)}\\\\n        publishChannels={[{ id: 'instagram', label: 'Instagram', icon: '📸' }, { id: 'facebook', label: 'Facebook', icon: '👤' }]}/\" src/components/content/cardnews-panel.tsx)",
+      "Bash(sed -i \"s/onAddToQueue={\\(id\\) => alert\\(\\\\`발행 큐에 추가되었습니다 \\(ID: \\\\${id}\\)\\\\`\\)}/onAddToQueue={\\(id, channel\\) => alert\\(\\\\`\\\\${channel}에 발행 큐 추가 \\(ID: \\\\${id}\\)\\\\`\\)}\\\\n        publishChannels={[{ id: 'threads', label: 'Threads', icon: '💬' }, { id: 'facebook', label: 'Facebook', icon: '👤' }]}/\" src/components/content/threads-panel.tsx)",
+      "Bash(sed -i \"s/onAddToQueue={\\(id\\) => alert\\(\\\\`발행 큐에 추가되었습니다 \\(ID: \\\\${id}\\)\\\\`\\)}/onAddToQueue={\\(id, channel\\) => alert\\(\\\\`\\\\${channel}에 발행 큐 추가 \\(ID: \\\\${id}\\)\\\\`\\)}/\" src/components/content/wordpress-panel.tsx)",
+      "Bash(sed -i \"s/onAddToQueue={\\(id\\) => alert\\(\\\\`발행 큐에 추가되었습니다 \\(ID: \\\\${id}\\)\\\\`\\)}/onAddToQueue={\\(id, channel\\) => alert\\(\\\\`\\\\${channel}에 발행 큐 추가 \\(ID: \\\\${id}\\)\\\\`\\)}/\" src/components/content/blog-panel.tsx)",
+      "Bash(sed -i \"s/onAddToQueue={\\(id\\) => alert\\(\\\\`발행 큐에 추가되었습니다 \\(ID: \\\\${id}\\)\\\\`\\)}/onAddToQueue={\\(id, channel\\) => alert\\(\\\\`\\\\${channel}에 발행 큐 추가 \\(ID: \\\\${id}\\)\\\\`\\)}/\" src/components/content/youtube-panel.tsx)"
     ]
   }
 }

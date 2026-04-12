@@ -622,7 +622,7 @@ export function BlogPanel() {
         onAdd={() => addBlogContent(content.id)}
         onDelete={(id) => deleteBlogContent(id)}
         addLabel="새 블로그 글 추가"
-        onAddToQueue={(id) => alert(`발행 큐에 추가되었습니다 (ID: ${id})`)}
+        onAddToQueue={(id, channel) => alert(`${channel}에 발행 큐 추가 (ID: ${id})`)}
         renderContent={(blogContent) => (
           <BlogPanelInner
             key={blogContent.id}

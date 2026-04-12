@@ -6,6 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { ErrorBoundary } from '@/components/error-boundary';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
 
 interface ChannelContentListProps<T> {
   items: T[];
@@ -14,7 +20,8 @@ interface ChannelContentListProps<T> {
   onTitleChange: (itemId: string, title: string) => void;
   onAdd: () => Promise<string>; // returns new item id
   onDelete: (itemId: string) => void;
-  onAddToQueue?: (itemId: string) => void;
+  onAddToQueue?: (itemId: string, channel: string) => void;
+  publishChannels?: Array<{ id: string; label: string; icon: string }>;
   addLabel: string;
   renderContent: (item: T) => React.ReactNode;
 }
@@ -27,6 +34,7 @@ export function ChannelContentList<T>({
   onAdd,
   onDelete,
   onAddToQueue,
+  publishChannels,
   addLabel,
   renderContent,
 }: ChannelContentListProps<T>) {
@@ -150,14 +158,34 @@ export function ChannelContentList<T>({
 
               {/* Publish queue button — right end */}
               {onAddToQueue && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={(e) => { e.stopPropagation(); onAddToQueue(id); }}
-                  className="h-6 text-[10px] gap-1 ml-auto shrink-0"
-                >
-                  <Send size={10} /> 발행 큐
-                </Button>
+                <div className="ml-auto shrink-0" onClick={(e) => e.stopPropagation()}>
+                  {publishChannels && publishChannels.length > 1 ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger className="h-6 px-2 text-[10px] gap-1 inline-flex items-center rounded-md border border-border hover:bg-accent">
+                        <Send size={10} /> 발행 ▼
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        {publishChannels.map(ch => (
+                          <DropdownMenuItem key={ch.id} onClick={() => onAddToQueue(id, ch.id)} className="text-xs gap-2">
+                            <span>{ch.icon}</span> {ch.label}
+                          </DropdownMenuItem>
+                        ))}
+                        <DropdownMenuItem onClick={() => { publishChannels.forEach(ch => onAddToQueue(id, ch.id)); }} className="text-xs gap-2 font-medium">
+                          🚀 전체 발행
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onAddToQueue(id, publishChannels?.[0]?.id || 'default')}
+                      className="h-6 text-[10px] gap-1"
+                    >
+                      <Send size={10} /> 발행 큐
+                    </Button>
+                  )}
+                </div>
               )}
             </div>
 
