@@ -13,6 +13,7 @@ const PLATFORMS = [
   { id: 'threads', label: '스레드', icon: '💬' },
   { id: 'naver_jisikin', label: '지식인', icon: '📗' },
   { id: 'naver_blog', label: '블로그', icon: '📰' },
+  { id: 'wordpress', label: '구글블로그', icon: '🌐' },
 ]
 
 const PLATFORM_ICONS: Record<string, string> = {
@@ -22,6 +23,7 @@ const PLATFORM_ICONS: Record<string, string> = {
   threads: '💬',
   naver_jisikin: '📗',
   naver_blog: '📰',
+  wordpress: '🌐',
 }
 
 interface FeedItem {
@@ -81,6 +83,28 @@ export function MonitoringDashboard() {
         })
         const nvData = await nvRes.json()
         allItems.push(...(nvData.items || []))
+      } catch {}
+
+      // Naver Blog search (Korean only)
+      try {
+        const nbRes = await fetch('/api/monitoring/search/naver-blog', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ keyword }),
+        })
+        const nbData = await nbRes.json()
+        allItems.push(...(nbData.items || []))
+      } catch {}
+
+      // Google Blog search (all languages)
+      try {
+        const gbRes = await fetch('/api/monitoring/search/google-blog', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ keyword, language: 'ko' }),
+        })
+        const gbData = await gbRes.json()
+        allItems.push(...(gbData.items || []))
       } catch {}
 
       // Instagram search (if Meta connected)
@@ -222,7 +246,7 @@ export function MonitoringDashboard() {
               : `${platform} 플랫폼에 검색 결과가 없습니다`}
           </p>
           <p className="text-xs mt-2 text-muted-foreground/60">
-            YouTube · 네이버 지식인에서 실시간 검색합니다
+            YouTube · 네이버 지식인 · 네이버 블로그 · 구글 블로그에서 실시간 검색합니다
           </p>
         </div>
       ) : (
