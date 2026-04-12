@@ -126,6 +126,22 @@ export function IdeasDashboard() {
   type SortCol = 'volume' | 'naver' | 'difficulty' | 'priority'
   const [sortCols, setSortCols] = useState<{ col: SortCol; dir: 'asc' | 'desc' }[]>([])
 
+  // --- Saved/pinned keywords ---
+  const [savedKeywords, setSavedKeywords] = useState<KeywordItem[]>([])
+  const [goldenLoading, setGoldenLoading] = useState(false)
+
+  function togglePin(kw: KeywordItem) {
+    setSavedKeywords(prev => {
+      const exists = prev.some(s => s.keyword === kw.keyword)
+      if (exists) return prev.filter(s => s.keyword !== kw.keyword)
+      return [...prev, kw]
+    })
+  }
+
+  function isPinned(keyword: string) {
+    return savedKeywords.some(s => s.keyword === keyword)
+  }
+
   // --- Trending tab state ---
   const [trendKeywords, setTrendKeywords] = useState('')
   const [trendLoading, setTrendLoading] = useState(false)
@@ -250,6 +266,74 @@ Generate 30-50 keywords in ${langLabel} grouped by category. All keywords must b
       console.error('Keyword generation error:', err)
     } finally {
       setGenerating(false)
+    }
+  }
+
+  // ===== Golden keyword discovery =====
+  async function discoverGoldenKeywords() {
+    if (!project) return
+    setGoldenLoading(true)
+    try {
+      // 1. AI generates seed keywords from project info
+      const seedPrompt = `Based on this business, generate 8 seed keywords for Naver search volume research.
+Business: ${project.name}
+Industry: ${project.industry || ''}
+Brand: ${project.brand_name || project.name}
+Description: ${project.brand_description || ''}
+${seedKeyword ? `Focus area: ${seedKeyword}` : ''}
+
+Return ONLY a JSON array of 8 Korean seed keywords (single words or short phrases, no spaces):
+["키워드1","키워드2",...]`
+
+      const seedText = await fetchAiGenerate(seedPrompt, 'gemini-2.5-flash')
+      const seedMatch = seedText.match(/\[[\s\S]*?\]/)
+      const seeds: string[] = seedMatch ? JSON.parse(seedMatch[0]) : ['성장클리닉', '키성장', '성장호르몬', '성장판검사', '아이키']
+
+      // 2. Call Naver API for each seed (with delay)
+      const allResults = new Map<string, { keyword: string; vol: number; comp: string; pc: number; mob: number }>()
+      for (const seed of seeds) {
+        try {
+          const res = await fetch('/api/naver/keywords', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keywords: [seed] }),
+          })
+          const data = await res.json()
+          for (const nk of (data.keywords || [])) {
+            const vol = (nk.pcSearchVolume || 0) + (nk.mobileSearchVolume || 0)
+            if (!allResults.has(nk.keyword) || (allResults.get(nk.keyword)?.vol ?? 0) < vol) {
+              allResults.set(nk.keyword, { keyword: nk.keyword, vol, comp: nk.competition || '?', pc: nk.pcSearchVolume || 0, mob: nk.mobileSearchVolume || 0 })
+            }
+          }
+        } catch {}
+        await new Promise(r => setTimeout(r, 400))
+      }
+
+      // 3. Filter: volume >= 300 AND competition is 낮음 or 중간
+      const golden = [...allResults.values()]
+        .filter(r => r.vol >= 300 && (r.comp === '낮음' || r.comp === '중간'))
+        .sort((a, b) => b.vol - a.vol)
+
+      // 4. Convert to KeywordGroup format
+      const goldenItems: KeywordItem[] = golden.map(g => ({
+        keyword: g.keyword,
+        category: '황금 키워드',
+        searchIntent: g.vol > 5000 ? 'commercial' as const : 'informational' as const,
+        priority: g.comp === '낮음' ? 'high' as const : g.vol > 3000 ? 'high' as const : g.vol > 1000 ? 'medium' as const : 'low' as const,
+        estimatedVolume: g.vol > 5000 ? '높음' : g.vol > 1000 ? '중간' : '낮음',
+        difficulty: g.comp === '낮음' ? '쉬움' : '보통',
+        naverMonthly: g.vol,
+        naverPc: g.pc,
+        naverMobile: g.mob,
+        naverComp: g.comp,
+      }))
+
+      setKeywordGroups([{ category: '황금 키워드', keywords: goldenItems }])
+      setSelectedCategory(null)
+    } catch (err) {
+      console.error('Golden keyword error:', err)
+    } finally {
+      setGoldenLoading(false)
     }
   }
 
@@ -396,6 +480,9 @@ Generate 30-50 keywords in ${langLabel} grouped by category. All keywords must b
           >
             <span>{t.icon}</span>
             <span>{t.label}</span>
+            {t.id === 'saved' && savedKeywords.length > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-500 text-[10px] font-bold">{savedKeywords.length}</span>
+            )}
           </button>
         ))}
       </div>
@@ -427,9 +514,14 @@ Generate 30-50 keywords in ${langLabel} grouped by category. All keywords must b
                 onKeyDown={e => e.key === 'Enter' && generateKeywords()}
                 className="flex-1 text-sm"
               />
-              <Button onClick={generateKeywords} disabled={generating}>
+              <Button onClick={generateKeywords} disabled={generating || goldenLoading}>
                 {generating ? '분석 중...' : '✨ AI 키워드 분석'}
               </Button>
+              {selectedLang === 'ko' && (
+                <Button onClick={discoverGoldenKeywords} disabled={generating || goldenLoading} variant="outline" className="border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10">
+                  {goldenLoading ? '발굴 중...' : '🏆 황금 키워드'}
+                </Button>
+              )}
             </div>
             <p className="text-[11px] text-muted-foreground">
               프로젝트 설정(업종, 브랜드, 타겟 고객)을 기반으로 30~50개 키워드를 카테고리별로 분석합니다.
@@ -501,6 +593,7 @@ Generate 30-50 keywords in ${langLabel} grouped by category. All keywords must b
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border bg-muted/50">
+                      <th className="w-8 px-2 py-2.5"></th>
                       <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">키워드</th>
                       <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">카테고리</th>
                       <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">검색 의도</th>
@@ -515,7 +608,12 @@ Generate 30-50 keywords in ${langLabel} grouped by category. All keywords must b
                   </thead>
                   <tbody>
                     {sortedKeywords.map((kw, i) => (
-                      <tr key={i} className="border-b border-border hover:bg-muted/30">
+                      <tr key={i} className={cn('border-b border-border hover:bg-muted/30', isPinned(kw.keyword) && 'bg-yellow-500/5')}>
+                        <td className="px-2 py-2.5 text-center">
+                          <button onClick={() => togglePin(kw)} className="text-base hover:scale-125 transition-transform">
+                            {isPinned(kw.keyword) ? '★' : '☆'}
+                          </button>
+                        </td>
                         <td className="px-4 py-2.5 font-medium">{kw.keyword}</td>
                         <td className="px-4 py-2.5 text-muted-foreground text-xs">{kw.category}</td>
                         <td className="px-4 py-2.5 text-center">
@@ -735,9 +833,80 @@ Generate 30-50 keywords in ${langLabel} grouped by category. All keywords must b
 
       {/* ===== TAB 4: 보관함 ===== */}
       {tab === 'saved' && (
-        <div className="text-center py-16 text-muted-foreground">
-          <p className="text-4xl mb-4">📁</p>
-          <p className="text-sm">저장된 아이디어가 없습니다</p>
+        <div className="space-y-4">
+          {savedKeywords.length > 0 && (
+            <>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">고정된 키워드 <span className="font-bold text-foreground">{savedKeywords.length}</span>개</p>
+                <Button variant="ghost" size="sm" className="text-xs text-red-400 hover:text-red-500" onClick={() => setSavedKeywords([])}>전체 삭제</Button>
+              </div>
+              <div className="bg-card border border-border rounded-lg overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/50">
+                      <th className="w-8 px-2 py-2.5"></th>
+                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">키워드</th>
+                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">카테고리</th>
+                      <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">검색 의도</th>
+                      <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">우선순위</th>
+                      <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">예상 볼륨</th>
+                      {selectedLang === 'ko' && (
+                        <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">네이버 검색량</th>
+                      )}
+                      <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">난이도</th>
+                      <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">액션</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {savedKeywords.map((kw, i) => (
+                      <tr key={i} className="border-b border-border hover:bg-muted/30 bg-yellow-500/5">
+                        <td className="px-2 py-2.5 text-center">
+                          <button onClick={() => togglePin(kw)} className="text-base hover:scale-125 transition-transform">★</button>
+                        </td>
+                        <td className="px-4 py-2.5 font-medium">{kw.keyword}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground text-xs">{kw.category}</td>
+                        <td className="px-4 py-2.5 text-center">
+                          <Badge variant="outline" className={cn('text-[10px]', intentColors[kw.searchIntent])}>
+                            {intentLabels[kw.searchIntent] || kw.searchIntent}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-2.5 text-center">
+                          <Badge variant="outline" className={cn('text-[10px]', priorityColors[kw.priority])}>
+                            {kw.priority === 'high' ? '높음' : kw.priority === 'medium' ? '보통' : '낮음'}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-2.5 text-center text-xs text-muted-foreground">{kw.estimatedVolume || '-'}</td>
+                        {selectedLang === 'ko' && (
+                          <td className="px-4 py-2.5 text-center text-xs">
+                            {kw.naverMonthly != null ? (
+                              <div>
+                                <span className="font-medium">{kw.naverMonthly.toLocaleString()}</span>
+                                <span className="text-muted-foreground text-[10px] ml-1">/ 월</span>
+                                {kw.naverComp && <div className="text-[10px] text-muted-foreground">경쟁 {kw.naverComp}</div>}
+                              </div>
+                            ) : <span className="text-muted-foreground">-</span>}
+                          </td>
+                        )}
+                        <td className="px-4 py-2.5 text-center text-xs text-muted-foreground">{kw.difficulty || '-'}</td>
+                        <td className="px-4 py-2.5 text-center">
+                          <Button size="sm" variant="ghost" className="h-6 text-[10px]" onClick={() => { setIdeaTopic(kw.keyword); handleGenerateIdeas(kw.keyword) }}>
+                            콘텐츠 만들기
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+          {savedKeywords.length === 0 && (
+            <div className="text-center py-16 text-muted-foreground">
+              <p className="text-4xl mb-4">📁</p>
+              <p className="text-sm">고정된 키워드가 없습니다</p>
+              <p className="text-xs mt-2">키워드 분석 또는 황금 키워드 결과에서 ☆를 클릭하여 고정하세요</p>
+            </div>
+          )}
         </div>
       )}
     </div>
