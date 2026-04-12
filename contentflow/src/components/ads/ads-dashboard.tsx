@@ -349,6 +349,10 @@ export function AdsDashboard() {
             )}
           </div>
 
+          <div className="bg-muted/50 rounded-md p-2 flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">⚠️ 추후 {selectedPlatform === 'meta' ? 'Meta Marketing' : 'Google Ads'} API 연동 예정 — 현재는 캠페인 기획/관리용</span>
+          </div>
+
           <div className="flex gap-2 justify-end">
             <Button size="sm" variant="outline" onClick={() => setShowCreate(false)}>취소</Button>
             <Button size="sm" onClick={createCampaign} disabled={!newName.trim()}>캠페인 생성</Button>
