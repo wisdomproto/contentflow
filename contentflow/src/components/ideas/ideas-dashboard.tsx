@@ -201,11 +201,11 @@ Generate 30-50 keywords in ${langLabel} grouped by category. All keywords must b
             const naverData = await naverRes.json()
             const naverMap = new Map<string, { pc: number; mobile: number; comp: string }>(
               (naverData.keywords || []).map((nk: any) => [
-                nk.relKeyword,
+                nk.keyword,
                 {
-                  pc: parseInt(nk.monthlyPcQcCnt) || 0,
-                  mobile: parseInt(nk.monthlyMobileQcCnt) || 0,
-                  comp: nk.compIdx || '',
+                  pc: nk.pcSearchVolume || 0,
+                  mobile: nk.mobileSearchVolume || 0,
+                  comp: nk.competition || '',
                 },
               ])
             )
