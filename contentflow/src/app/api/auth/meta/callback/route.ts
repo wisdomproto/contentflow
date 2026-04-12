@@ -39,25 +39,44 @@ export async function GET(req: NextRequest) {
     const user = await userRes.json()
     const pages = await pagesRes.json()
 
-    // If me/accounts returns empty, try fetching pages user has access to
+    // Merge pages from me/accounts
     let pagesData = pages.data || []
-    if (pagesData.length === 0) {
-      // Fallback: get pages from user's permissions
-      const permPagesRes = await fetch(
-        `https://graph.facebook.com/v21.0/me/accounts?access_token=${accessToken}`
+
+    // Also try to get pages the user manages but me/accounts missed
+    // (New Pages Experience pages sometimes don't appear in me/accounts)
+    try {
+      const managedPagesRes = await fetch(
+        `https://graph.facebook.com/v21.0/me?fields=accounts%7Bid,name,access_token,instagram_business_account%7Bid,username%7D%7D&access_token=${accessToken}`
       )
-      const permPages = await permPagesRes.json()
-      if (permPages.data?.length > 0) {
-        // Fetch full details for each page
-        const pageDetails = await Promise.all(
-          permPages.data.map(async (p: { id: string }) => {
+      const managedPages = await managedPagesRes.json()
+      if (managedPages.accounts?.data?.length > 0) {
+        // Merge, avoiding duplicates
+        const existingIds = new Set(pagesData.map((p: { id: string }) => p.id))
+        for (const page of managedPages.accounts.data) {
+          if (!existingIds.has(page.id)) {
+            pagesData.push(page)
+          }
+        }
+      }
+    } catch {}
+
+    // If still empty, try fetching known page IDs directly
+    if (pagesData.length === 0 || !pagesData.some((p: { instagram_business_account?: unknown }) => p.instagram_business_account)) {
+      // Try fetching each page individually to get page access tokens
+      const pageIds = pagesData.map((p: { id: string }) => p.id)
+      const enriched = await Promise.all(
+        pageIds.map(async (pid: string) => {
+          try {
             const res = await fetch(
-              `https://graph.facebook.com/v21.0/${p.id}?fields=id,name,access_token,instagram_business_account%7Bid,username%7D&access_token=${accessToken}`
+              `https://graph.facebook.com/v21.0/${pid}?fields=id,name,access_token,instagram_business_account%7Bid,username%7D&access_token=${accessToken}`
             )
             return res.json()
-          })
-        )
-        pagesData = pageDetails.filter((p: { error?: unknown }) => !p.error)
+          } catch { return null }
+        })
+      )
+      const validPages = enriched.filter((p: unknown) => p && !(p as { error?: unknown }).error)
+      if (validPages.length > 0) {
+        pagesData = validPages as typeof pagesData
       }
     }
 
