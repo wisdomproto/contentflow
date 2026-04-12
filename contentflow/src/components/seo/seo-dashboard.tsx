@@ -10,11 +10,12 @@ import { useProjectStore } from '@/stores/project-store'
 import { calculateNaverSeoScore } from '@/lib/seo-scorer'
 import { AnalyticsLanguageTabs } from '@/components/analytics/language-tabs'
 
-type TabId = 'audit' | 'content' | 'schema'
+type TabId = 'audit' | 'content' | 'geo' | 'schema'
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'audit', label: '사이트 감사' },
   { id: 'content', label: '콘텐츠 SEO' },
+  { id: 'geo', label: 'GEO 분석' },
   { id: 'schema', label: 'Schema 마크업' },
 ]
 
@@ -43,6 +44,11 @@ export function SeoDashboard() {
   // --- Content SEO tab ---
   const [contentRows, setContentRows] = useState<ContentSeoRow[]>([])
   const [contentLoading, setContentLoading] = useState(false)
+
+  // --- GEO tab ---
+  const [geoUrl, setGeoUrl] = useState('')
+  const [geoLoading, setGeoLoading] = useState(false)
+  const [geoResult, setGeoResult] = useState('')
 
   // --- Schema tab ---
   const [schemaContent, setSchemaContent] = useState('')
@@ -105,6 +111,69 @@ export function SeoDashboard() {
     }
     setContentRows(rows.sort((a, b) => a.score - b.score))
     setContentLoading(false)
+  }
+
+  // --- GEO analysis ---
+  async function analyzeGeo() {
+    if (!geoUrl.trim()) return
+    setGeoLoading(true)
+    setGeoResult('')
+    try {
+      // Crawl and analyze with AI
+      const res = await fetch('/api/ai/strategy/crawl', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: geoUrl }),
+      })
+      const crawlData = await res.json()
+      const pageContent = crawlData.analysis || crawlData.text || ''
+
+      const prompt = `You are a GEO (Generative Engine Optimization) expert. Analyze this web page for AI search engine citation readiness.
+
+URL: ${geoUrl}
+Page content summary: ${pageContent.substring(0, 3000)}
+
+Analyze and provide scores + actionable recommendations in Korean:
+
+1. **GEO 종합 점수** (0-100) — AI 검색엔진 인용 가능성
+2. **구조화 데이터 분석** — Schema.org 마크업 존재 여부, 추천 타입
+3. **인용 적합성** — 질문-답변 구조, 명확한 정의문, 간결한 요약문 존재 여부
+4. **E-E-A-T 신호** — 저자 정보, 전문성 근거, 출처 인용, 날짜 표시
+5. **콘텐츠 구조** — 헤딩 계층, 리스트, 테이블, 통계 활용도
+6. **경쟁 분석** — 이 주제에서 AI Overview에 인용될 가능성 vs 경쟁 콘텐츠
+7. **즉시 개선 항목** (5개) — 구체적 액션 아이템`
+
+      const streamRes = await fetch('/api/ai/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, model: 'gemini-2.5-flash' }),
+      })
+      const reader = streamRes.body?.getReader()
+      if (!reader) throw new Error('No reader')
+      const decoder = new TextDecoder()
+      let fullText = ''
+      let buffer = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6)
+            if (data === '[DONE]') continue
+            try { const parsed = JSON.parse(data); if (parsed.text) fullText += parsed.text } catch {}
+          }
+        }
+      }
+      setGeoResult(fullText)
+    } catch (err) {
+      console.error('GEO analysis error:', err)
+      setGeoResult('GEO 분석 중 오류가 발생했습니다: ' + (err as Error).message)
+    } finally {
+      setGeoLoading(false)
+    }
   }
 
   // --- Schema markup generation ---
@@ -263,6 +332,68 @@ export function SeoDashboard() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── GEO 분석 ── */}
+      {activeTab === 'geo' && (
+        <div className="space-y-4">
+          <div className="bg-gradient-to-r from-purple-500/5 to-blue-500/5 border border-purple-500/20 rounded-lg p-4">
+            <h3 className="text-sm font-semibold mb-2">🌐 GEO (Generative Engine Optimization)</h3>
+            <p className="text-xs text-muted-foreground">AI 검색엔진(Google AI Overview, ChatGPT, Perplexity)에서 콘텐츠가 인용되도록 최적화합니다.</p>
+          </div>
+
+          <div className="flex gap-2">
+            <input
+              value={geoUrl}
+              onChange={e => setGeoUrl(e.target.value)}
+              placeholder="분석할 URL 입력 (예: https://example.com/blog/post)"
+              className="flex-1 bg-muted border border-border rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+              onKeyDown={e => e.key === 'Enter' && analyzeGeo()}
+            />
+            <Button onClick={analyzeGeo} disabled={geoLoading || !geoUrl.trim()}>
+              {geoLoading ? '분석 중...' : 'GEO 분석'}
+            </Button>
+          </div>
+
+          {geoLoading && (
+            <div className="text-center py-8 text-muted-foreground text-sm">
+              <span className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin inline-block mb-2" />
+              <p>AI 인용 최적화 분석 중...</p>
+            </div>
+          )}
+
+          {geoResult && !geoLoading && (
+            <div className="bg-card border border-border rounded-lg p-4">
+              <div className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed [&_strong]:text-foreground [&_strong]:font-semibold"
+                dangerouslySetInnerHTML={{ __html: geoResult.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') }}
+              />
+            </div>
+          )}
+
+          {!geoResult && !geoLoading && (
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold">GEO 체크리스트</h4>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { title: '구조화된 데이터', desc: 'Schema.org JSON-LD (FAQ, HowTo, Article)', icon: '📋' },
+                  { title: '인용 가능한 문장', desc: '명확한 정의/답변 형태의 문장 (2-3줄)', icon: '💬' },
+                  { title: 'E-E-A-T 신호', desc: '전문성, 경험, 권위성, 신뢰성 요소', icon: '🏆' },
+                  { title: '질문-답변 구조', desc: 'H2/H3에 질문, 바로 아래 간결한 답변', icon: '❓' },
+                  { title: '통계/수치 포함', desc: '구체적 데이터, 연구 결과, 비율', icon: '📊' },
+                  { title: '최신성', desc: '날짜 표시, 주기적 업데이트, 최신 정보', icon: '🕐' },
+                ].map((item, i) => (
+                  <div key={i} className="bg-muted/50 border border-border rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span>{item.icon}</span>
+                      <span className="text-sm font-medium">{item.title}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

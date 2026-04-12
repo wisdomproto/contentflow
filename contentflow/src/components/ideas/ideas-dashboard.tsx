@@ -37,11 +37,12 @@ async function fetchAiGenerate(prompt: string, model: string): Promise<string> {
   return fullText
 }
 
-type TabId = 'keywords' | 'trending' | 'ideas' | 'saved'
+type TabId = 'naver-kw' | 'google-kw' | 'youtube' | 'ideas' | 'saved'
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
-  { id: 'keywords', label: '키워드 분석', icon: '🔑' },
-  { id: 'trending', label: '트렌딩', icon: '📈' },
+  { id: 'naver-kw', label: 'N 키워드 분석', icon: '🟢' },
+  { id: 'google-kw', label: 'G 키워드 분석', icon: '🔵' },
+  { id: 'youtube', label: '유튜브 유행 분석', icon: '🔴' },
   { id: 'ideas', label: 'AI 아이디어', icon: '✨' },
   { id: 'saved', label: '보관함', icon: '📁' },
 ]
@@ -118,7 +119,7 @@ export function IdeasDashboard() {
   const { projects, selectedProjectId, contents } = useProjectStore()
   const project = projects.find(p => p.id === selectedProjectId)
 
-  const [tab, setTab] = useState<TabId>('keywords')
+  const [tab, setTab] = useState<TabId>('naver-kw')
   const [selectedLang, setSelectedLang] = useState('ko')
 
   // --- Keywords tab state ---
@@ -542,6 +543,66 @@ Respond in Korean. Return strategy:
     ? 'Masukkan kata kunci permulaan (pilihan)'
     : 'Enter seed keyword (optional)'
 
+  // ===== Google keyword analysis =====
+  async function handleGoogleKeywords() {
+    if (!project) return
+    setGenerating(true)
+    try {
+      const langMap: Record<string, string> = {
+        ko: 'Korean', en: 'English', th: 'Thai', vi: 'Vietnamese',
+        ja: 'Japanese', zh: 'Chinese', ms: 'Malay', id: 'Indonesian',
+      }
+      const langLabel = langMap[selectedLang] || 'English'
+      const prompt = `Generate 30-50 SEO keywords in ${langLabel} for Google search.
+Business: ${project.name} (${project.industry || ''})
+Brand: ${project.brand_name || project.name}
+Description: ${project.brand_description || ''}
+${seedKeyword ? `Focus: ${seedKeyword}` : ''}
+
+Group by category. Return ONLY valid JSON:
+{"groups":[{"category":"Category","keywords":[{"keyword":"keyword","searchIntent":"informational","priority":"high"}]}]}`
+
+      const text = await fetchAiGenerate(prompt, 'gemini-2.5-flash')
+      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        let groups = JSON.parse(jsonMatch[0]).groups || []
+        // Fetch Google search volume
+        const allKws = groups.flatMap((g: any) => g.keywords.map((k: any) => k.keyword))
+        try {
+          const langCode = selectedLang === 'ko' ? 'ko' : selectedLang === 'ja' ? 'ja' : selectedLang === 'zh' ? 'zh' : 'en'
+          const locCode = selectedLang === 'ko' ? 2410 : selectedLang === 'ja' ? 2392 : selectedLang === 'zh' ? 2156 : selectedLang === 'th' ? 2764 : selectedLang === 'vi' ? 2704 : 2840
+          const gRes = await fetch('/api/google/keywords', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keywords: allKws, languageCode: langCode, locationCode: locCode }),
+          })
+          const gData = await gRes.json()
+          if (gData.keywords?.length) {
+            const gMap = new Map(gData.keywords.map((gk: any) => [gk.keyword, gk]))
+            groups = groups.map((g: any) => ({
+              ...g,
+              keywords: g.keywords.map((k: any) => {
+                const gd: any = gMap.get(k.keyword)
+                return gd ? {
+                  ...k,
+                  googleVolume: gd.searchVolume || 0,
+                  googleComp: gd.competition || null,
+                  googleCpc: gd.cpc || 0,
+                  estimatedVolume: (gd.searchVolume || 0) > 5000 ? '높음' : (gd.searchVolume || 0) > 1000 ? '중간' : '낮음',
+                } : k
+              }),
+            }))
+          }
+        } catch {}
+        setKeywordGroups(groups)
+      }
+    } catch (err) {
+      console.error('Google keyword error:', err)
+    } finally {
+      setGenerating(false)
+    }
+  }
+
   // ===== Trending tab logic =====
   async function handleTrendSearch() {
     if (!trendKeywords.trim()) return
@@ -585,7 +646,7 @@ Respond in Korean. Return strategy:
 
       {/* Tab Bar */}
       <div className="flex gap-1 border-b border-border pb-2">
-        {TABS.map(t => (
+        {TABS.filter(t => t.id !== 'naver-kw' || selectedLang === 'ko').map(t => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
@@ -606,7 +667,7 @@ Respond in Korean. Return strategy:
       </div>
 
       {/* ===== TAB 1: 키워드 분석 ===== */}
-      {tab === 'keywords' && (
+      {tab === 'naver-kw' && (
         <div className="space-y-6">
           {/* Generation Controls */}
           <div className="bg-card border border-border rounded-lg p-4 space-y-3">
@@ -826,8 +887,115 @@ Respond in Korean. Return strategy:
         </div>
       )}
 
-      {/* ===== TAB 2: 트렌딩 ===== */}
-      {tab === 'trending' && (
+      {/* ===== TAB: G 키워드 분석 ===== */}
+      {tab === 'google-kw' && (
+        <div className="space-y-6">
+          <div className="bg-card border border-border rounded-lg p-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <Input
+                value={seedKeyword}
+                onChange={e => setSeedKeyword(e.target.value)}
+                placeholder="시드 키워드 입력 (예: growth clinic, pediatric growth)"
+                onKeyDown={e => e.key === 'Enter' && handleGoogleKeywords()}
+                className="flex-1 text-sm"
+              />
+              <Button onClick={handleGoogleKeywords} disabled={generating}>
+                {generating ? '분석 중...' : '🔵 Google 키워드 분석'}
+              </Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              DataForSEO(Google Ads) 기반 실제 검색량, 경쟁도, CPC를 조회합니다.
+            </p>
+          </div>
+
+          {/* Reuse keyword table if data exists */}
+          {keywordGroups.length > 0 && (
+            <>
+              <div className="grid grid-cols-4 gap-3">
+                <div className="bg-card border border-border rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold">{allKeywords.length}</div>
+                  <div className="text-xs text-muted-foreground">총 키워드</div>
+                </div>
+                <div className="bg-card border border-border rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold">{keywordGroups.length}</div>
+                  <div className="text-xs text-muted-foreground">카테고리</div>
+                </div>
+                <div className="bg-card border border-border rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-green-500">{allKeywords.filter(k => k.googleComp === 'LOW').length}</div>
+                  <div className="text-xs text-muted-foreground">경쟁 낮음</div>
+                </div>
+                <div className="bg-card border border-border rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-blue-500">{allKeywords.filter(k => (k.googleVolume ?? 0) >= 1000).length}</div>
+                  <div className="text-xs text-muted-foreground">검색량 1K+</div>
+                </div>
+              </div>
+
+              <div className="bg-card border border-border rounded-lg overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/50">
+                      <th className="w-8 px-2 py-2.5"></th>
+                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">키워드</th>
+                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">카테고리</th>
+                      <th className="text-center px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={e => toggleSort('google', e.shiftKey)}>Google 검색량{sortIcon('google')}</th>
+                      <th className="text-center px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={e => toggleSort('competition', e.shiftKey)}>경쟁도{sortIcon('competition')}</th>
+                      <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">CPC</th>
+                      <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">액션</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedKeywords.map((kw, i) => (
+                      <tr key={i} className={cn('border-b border-border hover:bg-muted/30', isPinned(kw.keyword) && 'bg-yellow-500/5')}>
+                        <td className="px-2 py-2.5 text-center">
+                          <button onClick={() => togglePin(kw)} className="text-base hover:scale-125 transition-transform">
+                            {isPinned(kw.keyword) ? '★' : '☆'}
+                          </button>
+                        </td>
+                        <td className="px-4 py-2.5 font-medium">{kw.keyword}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground text-xs">{kw.category}</td>
+                        <td className="px-4 py-2.5 text-center text-xs">
+                          {kw.googleVolume != null && kw.googleVolume > 0 ? (
+                            <span className="font-medium">{kw.googleVolume.toLocaleString()}<span className="text-muted-foreground text-[10px] ml-1">/ 월</span></span>
+                          ) : <span className="text-muted-foreground">-</span>}
+                        </td>
+                        <td className="px-4 py-2.5 text-center text-xs">
+                          {kw.googleComp ? (
+                            <Badge variant="outline" className={cn('text-[10px]',
+                              kw.googleComp === 'LOW' ? 'bg-green-500/10 text-green-500' :
+                              kw.googleComp === 'MEDIUM' ? 'bg-yellow-500/10 text-yellow-500' :
+                              'bg-red-500/10 text-red-500'
+                            )}>{kw.googleComp === 'LOW' ? '낮음' : kw.googleComp === 'MEDIUM' ? '중간' : '높음'}</Badge>
+                          ) : <span className="text-muted-foreground">-</span>}
+                        </td>
+                        <td className="px-4 py-2.5 text-center text-xs text-muted-foreground">
+                          {kw.googleCpc ? `$${kw.googleCpc.toFixed(2)}` : '-'}
+                        </td>
+                        <td className="px-4 py-2.5 text-center">
+                          <Button size="sm" variant="ghost" className="h-6 text-[10px]"
+                            onClick={() => { setIdeaTopic(kw.keyword); handleGenerateIdeas(kw.keyword) }}>
+                            콘텐츠 만들기
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+
+          {keywordGroups.length === 0 && !generating && (
+            <div className="text-center py-16 text-muted-foreground">
+              <p className="text-4xl mb-4">🔵</p>
+              <p className="text-sm">Google 검색량 기반 키워드를 분석합니다</p>
+              <p className="text-xs mt-2">시드 키워드를 입력하고 분석 버튼을 클릭하세요</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ===== TAB: 유튜브 유행 분석 ===== */}
+      {tab === 'youtube' && (
         <div className="space-y-6">
           {/* Search Bar + Period Selector */}
           <div className="flex gap-2">
