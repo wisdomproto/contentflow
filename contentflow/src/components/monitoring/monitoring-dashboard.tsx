@@ -11,17 +11,15 @@ import { TargetLanguagesSection } from '@/components/project/target-languages-se
 
 const PLATFORMS = [
   { id: 'all', label: '전체' },
-  { id: 'youtube', label: '유튜브', icon: '🎬' },
-  { id: 'instagram', label: '인스타', icon: '📸' },
-  { id: 'facebook', label: '페이스북', icon: '👤' },
-  { id: 'threads', label: '스레드', icon: '💬' },
   { id: 'naver_jisikin', label: '지식인', icon: '📗' },
   { id: 'naver_blog', label: 'N블로그', icon: '📰' },
   { id: 'wordpress', label: '구글블로그', icon: '🌐' },
+  { id: 'instagram', label: '인스타', icon: '📸' },
+  { id: 'facebook', label: '페이스북', icon: '👤' },
+  { id: 'threads', label: '스레드', icon: '💬' },
 ]
 
 const PLATFORM_ICONS: Record<string, string> = {
-  youtube: '🎬',
   instagram: '📸',
   facebook: '👤',
   threads: '💬',
@@ -159,17 +157,6 @@ export function MonitoringDashboard() {
     const isKorean = selectedLang === 'ko'
 
     for (const keyword of keywords) {
-      // YouTube search (all languages)
-      try {
-        const ytRes = await fetch('/api/monitoring/search/youtube', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ keyword, language: selectedLang }),
-        })
-        const ytData = await ytRes.json()
-        allItems.push(...(ytData.items || []))
-      } catch {}
-
       // Naver searches (Korean only)
       if (isKorean) {
         try {
