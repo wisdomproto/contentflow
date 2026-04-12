@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useProjectStore } from '@/stores/project-store'
 
 const PLATFORMS = [
   { id: 'all', label: '전체' },
@@ -12,7 +13,7 @@ const PLATFORMS = [
   { id: 'facebook', label: '페이스북', icon: '👤' },
   { id: 'threads', label: '스레드', icon: '💬' },
   { id: 'naver_jisikin', label: '지식인', icon: '📗' },
-  { id: 'naver_blog', label: '블로그', icon: '📰' },
+  { id: 'naver_blog', label: 'N블로그', icon: '📰' },
   { id: 'wordpress', label: '구글블로그', icon: '🌐' },
 ]
 
@@ -24,6 +25,17 @@ const PLATFORM_ICONS: Record<string, string> = {
   naver_jisikin: '📗',
   naver_blog: '📰',
   wordpress: '🌐',
+}
+
+const LANGUAGE_INFO: Record<string, { label: string; flag: string }> = {
+  ko: { label: '한국어', flag: '🇰🇷' },
+  en: { label: 'English', flag: '🇺🇸' },
+  th: { label: 'ไทย', flag: '🇹🇭' },
+  vi: { label: 'Tiếng Việt', flag: '🇻🇳' },
+  ja: { label: '日本語', flag: '🇯🇵' },
+  zh: { label: '中文', flag: '🇨🇳' },
+  ms: { label: 'Bahasa Melayu', flag: '🇲🇾' },
+  id: { label: 'Bahasa Indonesia', flag: '🇮🇩' },
 }
 
 interface FeedItem {
@@ -42,72 +54,153 @@ interface FeedItem {
 }
 
 export function MonitoringDashboard() {
+  const { projects, selectedProjectId } = useProjectStore()
+  const project = projects.find(p => p.id === selectedProjectId)
+  const rawLanguages = project?.target_languages ?? ['ko']
+  const targetLanguages = rawLanguages.includes('ko')
+    ? ['ko', ...rawLanguages.filter((l: string) => l !== 'ko')]
+    : ['ko', ...rawLanguages]
+
+  const [selectedLang, setSelectedLang] = useState('ko')
+  const [keywordsPerLang, setKeywordsPerLang] = useState<Record<string, string[]>>({
+    ko: ['소아성장', '성장호르몬'],
+  })
+  const [feedItemsPerLang, setFeedItemsPerLang] = useState<Record<string, FeedItem[]>>({})
+  const [translating, setTranslating] = useState(false)
+
   const [platform, setPlatform] = useState('all')
-  const [keywords, setKeywords] = useState<string[]>(['소아성장', '성장호르몬'])
   const [newKeyword, setNewKeyword] = useState('')
   const [commentLoading, setCommentLoading] = useState<string | null>(null)
   const [comments, setComments] = useState<Record<string, string>>({})
-  const [feedItems, setFeedItems] = useState<FeedItem[]>([])
   const [searching, setSearching] = useState(false)
 
+  const currentKeywords = keywordsPerLang[selectedLang] || []
+  const currentFeedItems = feedItemsPerLang[selectedLang] || []
+
+  // Naver platforms hidden for non-Korean
+  const visiblePlatforms = selectedLang === 'ko'
+    ? PLATFORMS
+    : PLATFORMS.filter(p => !p.id.startsWith('naver'))
+
   function addKeyword() {
-    if (newKeyword.trim() && !keywords.includes(newKeyword.trim())) {
-      setKeywords([...keywords, newKeyword.trim()])
+    const kw = newKeyword.trim()
+    if (kw && !currentKeywords.includes(kw)) {
+      setKeywordsPerLang(prev => ({
+        ...prev,
+        [selectedLang]: [...(prev[selectedLang] || []), kw],
+      }))
       setNewKeyword('')
     }
   }
 
+  function removeKeyword(kw: string) {
+    setKeywordsPerLang(prev => ({
+      ...prev,
+      [selectedLang]: (prev[selectedLang] || []).filter(k => k !== kw),
+    }))
+  }
+
+  async function handleTranslate() {
+    const koKeywords = keywordsPerLang['ko'] || []
+    if (koKeywords.length === 0) return
+    setTranslating(true)
+    try {
+      const prompt = `Translate these Korean keywords to ${LANGUAGE_INFO[selectedLang]?.label || selectedLang}. Return ONLY a JSON array of translated strings, no explanation.\n\nKeywords: ${JSON.stringify(koKeywords)}`
+
+      const res = await fetch('/api/ai/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, model: 'gemini-2.5-flash' }),
+      })
+      const reader = res.body?.getReader()
+      if (!reader) throw new Error('No reader')
+      const decoder = new TextDecoder()
+      let fullText = ''
+      let buffer = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6)
+            if (data === '[DONE]') continue
+            try {
+              const parsed = JSON.parse(data)
+              if (parsed.text) fullText += parsed.text
+            } catch {}
+          }
+        }
+      }
+
+      const match = fullText.match(/\[[\s\S]*\]/)
+      if (match) {
+        const translated = JSON.parse(match[0])
+        setKeywordsPerLang(prev => ({ ...prev, [selectedLang]: translated }))
+      }
+    } catch (err) {
+      console.error('Translation error:', err)
+    } finally {
+      setTranslating(false)
+    }
+  }
+
   async function handleSearch() {
+    const keywords = keywordsPerLang[selectedLang] || []
     if (keywords.length === 0) return
     setSearching(true)
     const allItems: FeedItem[] = []
+    const isKorean = selectedLang === 'ko'
 
     for (const keyword of keywords) {
-      // YouTube search
+      // YouTube search (all languages)
       try {
         const ytRes = await fetch('/api/monitoring/search/youtube', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ keyword, language: 'ko' }),
+          body: JSON.stringify({ keyword, language: selectedLang }),
         })
         const ytData = await ytRes.json()
         allItems.push(...(ytData.items || []))
       } catch {}
 
-      // Naver 지식인 search (Korean only)
-      try {
-        const nvRes = await fetch('/api/monitoring/search/naver', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ keyword }),
-        })
-        const nvData = await nvRes.json()
-        allItems.push(...(nvData.items || []))
-      } catch {}
+      // Naver searches (Korean only)
+      if (isKorean) {
+        try {
+          const nvRes = await fetch('/api/monitoring/search/naver', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keyword }),
+          })
+          const nvData = await nvRes.json()
+          allItems.push(...(nvData.items || []))
+        } catch {}
 
-      // Naver Blog search (Korean only)
-      try {
-        const nbRes = await fetch('/api/monitoring/search/naver-blog', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ keyword }),
-        })
-        const nbData = await nbRes.json()
-        allItems.push(...(nbData.items || []))
-      } catch {}
+        try {
+          const nbRes = await fetch('/api/monitoring/search/naver-blog', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keyword }),
+          })
+          const nbData = await nbRes.json()
+          allItems.push(...(nbData.items || []))
+        } catch {}
+      }
 
       // Google Blog search (all languages)
       try {
         const gbRes = await fetch('/api/monitoring/search/google-blog', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ keyword, language: 'ko' }),
+          body: JSON.stringify({ keyword, language: selectedLang }),
         })
         const gbData = await gbRes.json()
         allItems.push(...(gbData.items || []))
       } catch {}
 
-      // Instagram search (if Meta connected)
+      // Instagram (if connected)
       const projectId = localStorage.getItem('cf_selectedProjectId')
       const metaCredsRaw = projectId ? localStorage.getItem(`meta_credentials_${projectId}`) : null
       if (metaCredsRaw) {
@@ -131,7 +224,7 @@ export function MonitoringDashboard() {
       }
     }
 
-    setFeedItems(allItems)
+    setFeedItemsPerLang(prev => ({ ...prev, [selectedLang]: allItems }))
     setSearching(false)
   }
 
@@ -145,7 +238,7 @@ export function MonitoringDashboard() {
           contentText: item.snippet || item.title,
           platform: item.platform,
           tone: 'professional',
-          language: item.language,
+          language: selectedLang,
         }),
       })
       const data = await res.json()
@@ -159,11 +252,12 @@ export function MonitoringDashboard() {
   }
 
   const filteredFeed =
-    platform === 'all' ? feedItems : feedItems.filter(item => item.platform === platform)
+    platform === 'all'
+      ? currentFeedItems
+      : currentFeedItems.filter(item => item.platform === platform)
 
   function formatPublished(val?: string) {
     if (!val) return ''
-    // ISO date → relative or raw
     try {
       const d = new Date(val)
       if (!isNaN(d.getTime())) {
@@ -179,37 +273,36 @@ export function MonitoringDashboard() {
   }
 
   return (
-    <div className="p-6 max-w-5xl space-y-6">
-      {/* Platform Tabs with counts */}
+    <div className="p-6 max-w-5xl space-y-4">
+      {/* Language Tabs */}
       <div className="flex items-center gap-1 border-b border-border">
-        {PLATFORMS.map(p => {
-          const count = p.id === 'all' ? feedItems.length : feedItems.filter(f => f.platform === p.id).length
+        {targetLanguages.map(lang => {
+          const info = LANGUAGE_INFO[lang] || { label: lang, flag: '' }
           return (
             <button
-              key={p.id}
-              onClick={() => setPlatform(p.id)}
+              key={lang}
+              onClick={() => { setSelectedLang(lang); setPlatform('all') }}
               className={cn(
-                'px-4 py-2.5 text-xs font-medium border-b-2 transition-colors',
-                platform === p.id
+                'px-4 py-2.5 text-xs font-medium border-b-2 transition-colors flex items-center gap-1',
+                selectedLang === lang
                   ? 'border-primary text-primary'
                   : 'border-transparent text-muted-foreground hover:text-foreground'
               )}
             >
-              {p.icon && <span className="mr-1">{p.icon}</span>}
-              {p.label}
-              {count > 0 && <span className="ml-1.5 bg-muted px-1.5 py-0.5 rounded-full text-[10px]">{count}</span>}
+              <span>{info.flag}</span>
+              <span>{info.label}</span>
             </button>
           )
         })}
       </div>
 
-      {/* Keywords + Search */}
+      {/* Keywords + Translate + Search */}
       <div className="flex gap-2 flex-wrap items-center">
-        {keywords.map(kw => (
+        {currentKeywords.map(kw => (
           <span
             key={kw}
             className="bg-primary/10 text-primary border border-primary/20 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-primary/20"
-            onClick={() => setKeywords(keywords.filter(k => k !== kw))}
+            onClick={() => removeKeyword(kw)}
           >
             {kw} ×
           </span>
@@ -226,14 +319,56 @@ export function MonitoringDashboard() {
             +
           </Button>
         </div>
+        {/* Translate button: only for non-Korean tabs */}
+        {selectedLang !== 'ko' && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-xs"
+            onClick={handleTranslate}
+            disabled={translating || (keywordsPerLang['ko'] || []).length === 0}
+          >
+            {translating ? '번역 중...' : '번역'}
+          </Button>
+        )}
         <Button
           size="sm"
-          className="h-7 text-xs ml-2"
+          className="h-7 text-xs ml-1"
           onClick={handleSearch}
-          disabled={searching || keywords.length === 0}
+          disabled={searching || currentKeywords.length === 0}
         >
           {searching ? '검색 중...' : '🔍 검색'}
         </Button>
+      </div>
+
+      {/* Platform Tabs with counts */}
+      <div className="flex items-center gap-1 border-b border-border">
+        {visiblePlatforms.map(p => {
+          const count =
+            p.id === 'all'
+              ? currentFeedItems.length
+              : currentFeedItems.filter(f => f.platform === p.id).length
+          return (
+            <button
+              key={p.id}
+              onClick={() => setPlatform(p.id)}
+              className={cn(
+                'px-4 py-2.5 text-xs font-medium border-b-2 transition-colors',
+                platform === p.id
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {p.icon && <span className="mr-1">{p.icon}</span>}
+              {p.label}
+              {count > 0 && (
+                <span className="ml-1.5 bg-muted px-1.5 py-0.5 rounded-full text-[10px]">
+                  {count}
+                </span>
+              )}
+            </button>
+          )
+        })}
       </div>
 
       {/* Feed */}
@@ -241,18 +376,23 @@ export function MonitoringDashboard() {
         <div className="text-center py-16 text-muted-foreground">
           <p className="text-4xl mb-4">💬</p>
           <p className="text-sm">
-            {feedItems.length === 0
+            {currentFeedItems.length === 0
               ? '키워드를 설정하고 검색 버튼을 눌러 콘텐츠를 불러오세요'
               : `${platform} 플랫폼에 검색 결과가 없습니다`}
           </p>
           <p className="text-xs mt-2 text-muted-foreground/60">
-            YouTube · 네이버 지식인 · 네이버 블로그 · 구글 블로그에서 실시간 검색합니다
+            {selectedLang === 'ko'
+              ? 'YouTube · 네이버 지식인 · 네이버 블로그 · 구글 블로그에서 실시간 검색합니다'
+              : 'YouTube · 구글 블로그에서 실시간 검색합니다'}
           </p>
         </div>
       ) : (
         <div className="space-y-3 max-h-[65vh] overflow-y-auto pr-1">
           {filteredFeed.map((item, idx) => (
-            <div key={`${item.platform}-${item.id}-${idx}`} className="bg-card border border-border rounded-lg p-4">
+            <div
+              key={`${item.platform}-${item.id}-${idx}`}
+              className="bg-card border border-border rounded-lg p-4"
+            >
               {/* Header */}
               <div className="flex items-start gap-2 mb-2">
                 <span className="text-base leading-none mt-0.5">
