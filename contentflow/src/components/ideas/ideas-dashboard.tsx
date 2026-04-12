@@ -129,6 +129,7 @@ export function IdeasDashboard() {
   // --- Saved/pinned keywords ---
   const [savedKeywords, setSavedKeywords] = useState<KeywordItem[]>([])
   const [goldenLoading, setGoldenLoading] = useState(false)
+  const [goldenStrategy, setGoldenStrategy] = useState('')
 
   function togglePin(kw: KeywordItem) {
     setSavedKeywords(prev => {
@@ -330,6 +331,29 @@ Return ONLY a JSON array of 8 Korean seed keywords (single words or short phrase
 
       setKeywordGroups([{ category: '황금 키워드', keywords: goldenItems }])
       setSelectedCategory(null)
+
+      // 5. AI strategy recommendation based on golden keywords
+      const top20 = goldenItems.slice(0, 20).map(g => `${g.keyword} (${g.naverMonthly?.toLocaleString()}/월, 경쟁:${g.naverComp})`).join('\n')
+      const strategyPrompt = `You are a Korean SEO/content marketing strategist. Based on these golden keywords (high volume, low competition), create an actionable content strategy.
+
+Business: ${project.name} (${project.industry || ''})
+Brand: ${project.brand_name || project.name}
+
+Top golden keywords:
+${top20}
+
+Respond in Korean. Return a concise strategy with this structure:
+1. **핵심 전략 요약** (2-3문장)
+2. **즉시 공략 키워드** (경쟁 낮음, TOP 3~5개) — 왜 이 키워드를 먼저 공략해야 하는지
+3. **콘텐츠 퍼널 설계** — 정보형(유입) → 상업형(전환) 키워드 연결 구조
+4. **추천 콘텐츠 주제** (5개) — 구체적 제목 예시
+5. **예상 성과** — 3개월 내 기대 효과`
+
+      setGoldenStrategy('')
+      try {
+        const strategy = await fetchAiGenerate(strategyPrompt, 'gemini-2.5-flash')
+        setGoldenStrategy(strategy)
+      } catch {}
     } catch (err) {
       console.error('Golden keyword error:', err)
     } finally {
@@ -551,6 +575,24 @@ Return ONLY a JSON array of 8 Korean seed keywords (single words or short phrase
                   <div className="text-xs text-muted-foreground">정보형 키워드</div>
                 </div>
               </div>
+
+              {/* Golden Strategy */}
+              {goldenStrategy && (
+                <div className="bg-gradient-to-r from-yellow-500/5 to-orange-500/5 border border-yellow-500/20 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold flex items-center gap-2">🏆 AI 추천 전략</h3>
+                    <button onClick={() => setGoldenStrategy('')} className="text-xs text-muted-foreground hover:text-foreground">접기</button>
+                  </div>
+                  <div className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed [&_strong]:text-foreground [&_strong]:font-semibold"
+                    dangerouslySetInnerHTML={{ __html: goldenStrategy.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') }}
+                  />
+                </div>
+              )}
+              {goldenLoading && !goldenStrategy && keywordGroups.length > 0 && (
+                <div className="bg-gradient-to-r from-yellow-500/5 to-orange-500/5 border border-yellow-500/20 rounded-lg p-4 text-center text-sm text-muted-foreground">
+                  🏆 AI 전략 분석 중...
+                </div>
+              )}
 
               {/* Category Filter */}
               <div className="flex gap-2 flex-wrap">
