@@ -7,8 +7,8 @@ const navGroups = [
   {
     label: '콘텐츠',
     items: [
-      { href: '/content', icon: '📝', label: '콘텐츠 생성' },
       { href: '/ideas', icon: '💡', label: '키워드 / 아이디어' },
+      { href: '/content', icon: '📝', label: '콘텐츠 생성' },
       { href: '/publish', icon: '🚀', label: '발행' },
     ],
   },
