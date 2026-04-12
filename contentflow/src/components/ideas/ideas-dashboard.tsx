@@ -181,7 +181,54 @@ Generate 30-50 keywords in ${langLabel} grouped by category. All keywords must b
       const jsonMatch = fullText.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0])
-        setKeywordGroups(parsed.groups || [])
+        let groups = parsed.groups || []
+
+        // Korean: fetch real Naver search volume for each keyword
+        if (selectedLang === 'ko' && groups.length > 0) {
+          const allKeywords = groups.flatMap((g: any) => g.keywords.map((k: any) => k.keyword))
+          try {
+            const naverRes = await fetch('/api/naver/keywords', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ keywords: allKeywords.slice(0, 50) }),
+            })
+            const naverData = await naverRes.json()
+            const naverMap = new Map<string, { pc: number; mobile: number; comp: string }>(
+              (naverData.keywords || []).map((nk: any) => [
+                nk.relKeyword,
+                {
+                  pc: parseInt(nk.monthlyPcQcCnt) || 0,
+                  mobile: parseInt(nk.monthlyMobileQcCnt) || 0,
+                  comp: nk.compIdx || '',
+                },
+              ])
+            )
+
+            // Merge Naver data into keywords
+            groups = groups.map((g: any) => ({
+              ...g,
+              keywords: g.keywords.map((k: any) => {
+                const naver = naverMap.get(k.keyword)
+                if (naver) {
+                  const total = naver.pc + naver.mobile
+                  return {
+                    ...k,
+                    naverMonthly: total,
+                    naverPc: naver.pc,
+                    naverMobile: naver.mobile,
+                    naverComp: naver.comp,
+                    estimatedVolume: total > 5000 ? '높음' : total > 1000 ? '중간' : total > 0 ? '낮음' : k.estimatedVolume,
+                  }
+                }
+                return k
+              }),
+            }))
+          } catch (err) {
+            console.error('Naver keyword fetch error:', err)
+          }
+        }
+
+        setKeywordGroups(groups)
       }
     } catch (err) {
       console.error('Keyword generation error:', err)
@@ -297,6 +344,20 @@ Generate 30-50 keywords in ${langLabel} grouped by category. All keywords must b
           {/* Generation Controls */}
           <div className="bg-card border border-border rounded-lg p-4 space-y-3">
             <div className="flex items-center gap-3">
+              {/* Help button */}
+              <div className="relative group">
+                <button className="w-5 h-5 rounded-full bg-muted text-muted-foreground text-[10px] font-bold hover:bg-primary/10 hover:text-primary">?</button>
+                <div className="absolute left-0 top-7 z-50 w-72 bg-card border border-border rounded-lg p-3 shadow-lg hidden group-hover:block">
+                  <h4 className="text-xs font-semibold mb-2">키워드 분석 안내</h4>
+                  <div className="text-[11px] text-muted-foreground space-y-1.5">
+                    <p><strong>검색량</strong> — {selectedLang === 'ko' ? '네이버 검색광고 API 기준 월간 검색량 (PC + 모바일)' : 'Google 추정 기준 (AI 분석)'}</p>
+                    <p><strong>예상 볼륨</strong> — AI가 추정한 검색량 등급 (높음/중간/낮음)</p>
+                    <p><strong>난이도</strong> — 해당 키워드로 상위 노출하기 위한 경쟁 난이도</p>
+                    <p><strong>검색 의도</strong> — 정보형(~란?), 상업형(~추천), 거래형(~예약), 탐색형(브랜드)</p>
+                    {selectedLang === 'ko' && <p><strong>네이버 검색량</strong> — 네이버 검색광고 API 실제 데이터. 경쟁은 광고 입찰 경쟁도.</p>}
+                  </div>
+                </div>
+              </div>
               <Input
                 value={seedKeyword}
                 onChange={e => setSeedKeyword(e.target.value)}
@@ -370,6 +431,9 @@ Generate 30-50 keywords in ${langLabel} grouped by category. All keywords must b
                       <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">검색 의도</th>
                       <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">우선순위</th>
                       <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">예상 볼륨</th>
+                      {selectedLang === 'ko' && (
+                        <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">네이버 검색량</th>
+                      )}
                       <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">난이도</th>
                       <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">액션</th>
                     </tr>
@@ -390,6 +454,21 @@ Generate 30-50 keywords in ${langLabel} grouped by category. All keywords must b
                           </Badge>
                         </td>
                         <td className="px-4 py-2.5 text-center text-xs text-muted-foreground">{kw.estimatedVolume || '-'}</td>
+                        {selectedLang === 'ko' && (
+                          <td className="px-4 py-2.5 text-center text-xs">
+                            {(kw as any).naverMonthly != null ? (
+                              <div>
+                                <span className="font-medium">{((kw as any).naverMonthly as number).toLocaleString()}</span>
+                                <span className="text-muted-foreground text-[10px] ml-1">/ 월</span>
+                                {(kw as any).naverComp && (
+                                  <div className="text-[10px] text-muted-foreground">경쟁 {(kw as any).naverComp}</div>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
+                        )}
                         <td className="px-4 py-2.5 text-center text-xs text-muted-foreground">{kw.difficulty || '-'}</td>
                         <td className="px-4 py-2.5 text-center">
                           <Button
