@@ -130,17 +130,15 @@ export function IdeasDashboard() {
   type SortCol = 'volume' | 'naver' | 'google' | 'difficulty' | 'priority' | 'competition'
   const [sortCols, setSortCols] = useState<{ col: SortCol; dir: 'asc' | 'desc' }[]>([])
 
-  // --- Saved/pinned keywords ---
-  const [savedKeywords, setSavedKeywords] = useState<KeywordItem[]>([])
+  // --- Saved/pinned keywords (from project store, persisted to Supabase) ---
+  const { savedKeywords: storeSavedKeywords, addSavedKeyword, removeSavedKeyword, clearSavedKeywords } = useProjectStore()
+  const savedKeywords = storeSavedKeywords as KeywordItem[]
   const [goldenLoading, setGoldenLoading] = useState(false)
   const [goldenStrategy, setGoldenStrategy] = useState('')
 
   function togglePin(kw: KeywordItem) {
-    setSavedKeywords(prev => {
-      const exists = prev.some(s => s.keyword === kw.keyword)
-      if (exists) return prev.filter(s => s.keyword !== kw.keyword)
-      return [...prev, kw]
-    })
+    if (isPinned(kw.keyword)) removeSavedKeyword(kw.keyword)
+    else addSavedKeyword(kw)
   }
 
   function isPinned(keyword: string) {
@@ -1129,7 +1127,7 @@ Group by category. Return ONLY valid JSON:
             <>
               <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">고정된 키워드 <span className="font-bold text-foreground">{savedKeywords.length}</span>개</p>
-                <Button variant="ghost" size="sm" className="text-xs text-red-400 hover:text-red-500" onClick={() => setSavedKeywords([])}>전체 삭제</Button>
+                <Button variant="ghost" size="sm" className="text-xs text-red-400 hover:text-red-500" onClick={() => clearSavedKeywords()}>전체 삭제</Button>
               </div>
               <div className="bg-card border border-border rounded-lg overflow-hidden">
                 <table className="w-full text-sm">

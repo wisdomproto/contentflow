@@ -53,6 +53,12 @@ interface ProjectState {
   setYoutubeCards: (youtubeCards: YoutubeCard[]) => void;
   toggleSidebar: () => void;
 
+  // Saved keywords (pinned from keyword analysis)
+  savedKeywords: Array<{ keyword: string; naverMonthly?: number; naverComp?: string; googleVolume?: number; googleComp?: string; category?: string }>;
+  addSavedKeyword: (kw: { keyword: string; naverMonthly?: number; naverComp?: string; googleVolume?: number; googleComp?: string; category?: string }) => void;
+  removeSavedKeyword: (keyword: string) => void;
+  clearSavedKeywords: () => void;
+
   // Project CRUD
   createProject: (data: { name: string; description?: string }) => void;
   updateProject: (projectId: string, updates: Partial<Project>) => void;
@@ -158,6 +164,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
   youtubeContents: [],
   youtubeCards: [],
   strategies: [],
+  savedKeywords: [],
   sidebarCollapsed: false,
   showProjectSettings: false,
   showStrategy: false,
@@ -199,13 +206,17 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       instagramContents: [], instagramCards: [],
       threadsContents: [], threadsCards: [],
       youtubeContents: [], youtubeCards: [],
-      strategies: [],
+      strategies: [], savedKeywords: [],
     })
     if (!projectId) return
 
     const supabase = createClient()
     const { data: contents } = await supabase.from('contents').select('*').eq('project_id', projectId).order('sort_order')
     if (contents) set({ contents: contents as Content[] })
+
+    // Load saved keywords
+    const { data: proj } = await supabase.from('projects').select('saved_keywords').eq('id', projectId).single()
+    if (proj?.saved_keywords) set({ savedKeywords: proj.saved_keywords as any[] })
 
     // TODO: marketing_strategies table does not exist yet — load strategies when table is created
   },
@@ -577,6 +588,35 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     }).catch(() => {
       // R2 cleanup failure is non-blocking
     });
+  },
+
+  // Saved keywords CRUD
+  addSavedKeyword: async (kw) => {
+    const { savedKeywords, selectedProjectId } = get()
+    if (savedKeywords.some(s => s.keyword === kw.keyword)) return
+    const updated = [...savedKeywords, kw]
+    set({ savedKeywords: updated })
+    if (selectedProjectId) {
+      const supabase = createClient()
+      await supabase.from('projects').update({ saved_keywords: updated } as any).eq('id', selectedProjectId)
+    }
+  },
+  removeSavedKeyword: async (keyword) => {
+    const { savedKeywords, selectedProjectId } = get()
+    const updated = savedKeywords.filter(s => s.keyword !== keyword)
+    set({ savedKeywords: updated })
+    if (selectedProjectId) {
+      const supabase = createClient()
+      await supabase.from('projects').update({ saved_keywords: updated } as any).eq('id', selectedProjectId)
+    }
+  },
+  clearSavedKeywords: async () => {
+    const { selectedProjectId } = get()
+    set({ savedKeywords: [] })
+    if (selectedProjectId) {
+      const supabase = createClient()
+      await supabase.from('projects').update({ saved_keywords: [] } as any).eq('id', selectedProjectId)
+    }
   },
 
   duplicateProject: async (projectId) => {

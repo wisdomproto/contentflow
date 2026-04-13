@@ -4,6 +4,7 @@ import { useCallback, useState, useMemo, useEffect, useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { BlogCardItem, AddCardButton } from './blog-card-item';
 import { ChannelModelSelector } from './channel-model-selector';
 import { ChannelContentList } from './channel-content-list';
@@ -20,6 +21,41 @@ import { GenerationButton } from './generation-button';
 import type { Content, Project, BlogContent, BlogCard } from '@/types/database';
 import type { ImportedStrategy } from '@/types/analytics';
 import { generateId, cn } from '@/lib/utils';
+
+// ─── SSE fetch helper ──────────────────────────────────────────
+async function fetchAiGenerate(prompt: string, model: string): Promise<string> {
+  const res = await fetch('/api/ai/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt, model }),
+  });
+  const reader = res.body?.getReader();
+  if (!reader) throw new Error('No reader');
+  const decoder = new TextDecoder();
+  let fullText = '';
+  let buffer = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        const data = line.slice(6);
+        if (data === '[DONE]') continue;
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed.text) fullText += parsed.text;
+          if (parsed.error) throw new Error(parsed.error);
+        } catch {}
+      }
+    }
+  }
+  return fullText;
+}
+
+// ─── SEO Score Display ─────────────────────────────────────────
 
 function SeoScoreDisplay({ score, details }: { score: number; details: SeoDetail[] }) {
   const [expanded, setExpanded] = useState(false);
@@ -52,6 +88,17 @@ function SeoScoreDisplay({ score, details }: { score: number; details: SeoDetail
     </div>
   );
 }
+
+// ─── Workflow types ─────────────────────────────────────────────
+
+type WorkflowStep = 1 | 2 | 3 | 4;
+
+const WORKFLOW_STEPS = [
+  { step: 1 as WorkflowStep, label: '키워드', icon: '🎯' },
+  { step: 2 as WorkflowStep, label: '구조', icon: '📐' },
+  { step: 3 as WorkflowStep, label: '생성', icon: '✨' },
+  { step: 4 as WorkflowStep, label: 'SEO', icon: '🔍' },
+];
 
 // ─── Inner: 개별 블로그 콘텐츠 ────────────────────────────────
 
@@ -88,21 +135,49 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
     return (project?.imported_strategy ?? null) as ImportedStrategy | null;
   });
 
+  const { savedKeywords } = useProjectStore();
+
   const baseArticle = getBaseArticle(content.id);
   const cards = getBlogCards(blogContent.id);
+
+  // ── Workflow step state ──
+  const [currentStep, setCurrentStep] = useState<WorkflowStep>(1);
+
+  // Auto-jump to Step 3 when cards exist from DB
+  useEffect(() => {
+    if (cards.length > 0 && currentStep === 1) {
+      setCurrentStep(3);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cards.length]);
 
   const [showPromptDialog, setShowPromptDialog] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [generatedPrompt, setGeneratedPrompt] = useState('');
-  // SEO 상태
+
+  // ── Keyword state (Step 1) ──
   const existingKeywords = blogContent.naver_keywords as { primary?: string; secondary?: string[] } | null;
   const [seoTitle, setSeoTitle] = useState(blogContent.seo_title ?? '');
-  const [primaryKeyword, setPrimaryKeyword] = useState(existingKeywords?.primary ?? '');
-  const [secondaryKeywords, setSecondaryKeywords] = useState<string[]>(existingKeywords?.secondary ?? []);
+  const [primaryKeyword, setPrimaryKeyword] = useState(
+    blogContent.primary_keyword ?? existingKeywords?.primary ?? ''
+  );
+  const [secondaryKeywords, setSecondaryKeywords] = useState<string[]>(
+    blogContent.secondary_keywords ?? existingKeywords?.secondary ?? []
+  );
+  const [searchIntent, setSearchIntent] = useState<string>(blogContent.search_intent ?? 'informational');
   const [newKeywordInput, setNewKeywordInput] = useState('');
   const [newGoldenInput, setNewGoldenInput] = useState('');
   const [customGoldenKeywords, setCustomGoldenKeywords] = useState<{ keyword: string; totalSearch: number }[]>([]);
   const [removedGoldenKeywords, setRemovedGoldenKeywords] = useState<string[]>([]);
+
+  // AI keyword recommendation state
+  const [recommendedKeywords, setRecommendedKeywords] = useState<any[]>([]);
+  const [recommending, setRecommending] = useState(false);
+
+  // ── Structure state (Step 2) ──
+  const [metaDescription, setMetaDescription] = useState(blogContent.meta_description ?? '');
+  const [headingStructure, setHeadingStructure] = useState(blogContent.heading_structure ?? '');
+  const [structureGenerating, setStructureGenerating] = useState(false);
 
   // 기본글이 있고 아직 SEO 제목/키워드가 비어있으면 자동 세팅
   useEffect(() => {
@@ -114,17 +189,25 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
         updateBlogContent(blogContent.id, { seo_title: autoTitle });
       }
     }
-    if (!primaryKeyword && !existingKeywords?.primary) {
+    if (!primaryKeyword && !existingKeywords?.primary && !blogContent.primary_keyword) {
       const tags = content.tags ?? [];
       if (tags.length > 0) {
         const primary = tags[0];
         const secondary = tags.slice(1);
         setPrimaryKeyword(primary);
         setSecondaryKeywords(secondary);
-        updateBlogContent(blogContent.id, { naver_keywords: { primary, secondary } });
+        updateBlogContent(blogContent.id, {
+          naver_keywords: { primary, secondary },
+          primary_keyword: primary,
+          secondary_keywords: secondary,
+        });
       } else if (content.title) {
         setPrimaryKeyword(content.title);
-        updateBlogContent(blogContent.id, { naver_keywords: { primary: content.title, secondary: [] } });
+        updateBlogContent(blogContent.id, {
+          naver_keywords: { primary: content.title, secondary: [] },
+          primary_keyword: content.title,
+          secondary_keywords: [],
+        });
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -141,7 +224,11 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
   }, [seoTitle, cards, naverKeywords]);
 
   const saveKeywords = useCallback((primary: string, secondary: string[]) => {
-    updateBlogContent(blogContent.id, { naver_keywords: { primary, secondary } });
+    updateBlogContent(blogContent.id, {
+      naver_keywords: { primary, secondary },
+      primary_keyword: primary,
+      secondary_keywords: secondary,
+    });
   }, [blogContent.id, updateBlogContent]);
 
   const handlePrimaryKeywordChange = (value: string) => {
@@ -170,7 +257,6 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
   const SEO_THRESHOLD = 0.9; // 90%
 
   function buildSeoFeedback(details: SeoDetail[]): string | null {
-    // 이미지 최적화 제외하고 90% 미만인 항목 수집
     const failedItems = details
       .filter(d => d.category !== 'image' && d.category !== 'title' && d.score < d.maxScore * SEO_THRESHOLD)
       .map(d => `- ${d.label}: ${d.score}/${d.maxScore} (${d.message})`);
@@ -280,7 +366,7 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
   });
   useEffect(() => { generateRef.current = generate; }, [generate]);
 
-  // Image generation (공통 훅)
+  // Image generation
   const { isGeneratingImage, generatingCardId, imageProgress, generateCardImage, generateAllImages: generateAllCardImages, abort: abortImageGeneration } = useCardImageGeneration({
     getPrompt: (card: BlogCard) => {
       const cardContent = card.content as { image_prompt?: string; image_style?: string };
@@ -312,7 +398,17 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
       seoTitle,
       keywords: naverKeywords,
     });
-    setGeneratedPrompt(prompt);
+    const structureInstruction = headingStructure.trim()
+      ? `\n\n## 콘텐츠 구조 (이 구조를 따르세요):\n${headingStructure}`
+      : '';
+    const intentMap: Record<string, string> = {
+      informational: '정보형',
+      commercial: '상업형',
+      transactional: '거래형',
+      navigational: '탐색형',
+    };
+    const naverPrompt = `${prompt}${structureInstruction}\n\n## 네이버 SEO 최적화 지침\n- 주 키워드: "${primaryKeyword}" — 제목, 첫 문단, 소제목에 자연스럽게 배치\n- 보조 키워드: ${secondaryKeywords.join(', ')} — 본문에 분산 배치\n- 검색 의도: ${intentMap[searchIntent] ?? searchIntent} — 이 의도에 맞는 콘텐츠 구성\n- 네이버 블로그 D.I.A. 최적화를 고려하세요`;
+    setGeneratedPrompt(naverPrompt);
     setShowPromptDialog(true);
   };
 
@@ -344,6 +440,7 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
     updateBlogContent(blogContent.id, { seo_title: value || null });
   };
 
+  // Golden keywords
   const importedGolden = importedStrategy?.keywords.filter(k => k.isGolden) ?? [];
   const allGoldenKeywords = [
     ...(strategy?.keywords?.goldenKeywords ?? []).map(gk => ({
@@ -372,117 +469,110 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
     setRemovedGoldenKeywords(prev => [...prev, keyword]);
   };
 
+  // AI keyword recommendation
+  const handleRecommendKeywords = async () => {
+    setRecommending(true);
+    setRecommendedKeywords([]);
+    try {
+      const res = await fetch('/api/keywords/recommend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: content.title,
+          baseArticle: baseArticle?.body_plain_text || baseArticle?.body || '',
+          industry: project.industry || '',
+          language: 'ko',
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setRecommendedKeywords(data.keywords ?? data ?? []);
+      } else {
+        // Fallback: use AI generation
+        const articleText = baseArticle?.body_plain_text || baseArticle?.body || content.title || '';
+        const prompt = `You are a Naver SEO keyword researcher. Suggest optimal keywords for a blog post.
+
+${project.industry ? `Industry: ${project.industry}` : ''}
+${project.brand_name ? `Brand: ${project.brand_name}` : ''}
+Article title: "${content.title}"
+${articleText ? `Article content (first 500 chars): ${articleText.substring(0, 500)}` : ''}
+
+Return ONLY valid JSON array (no explanation):
+[
+  { "keyword": "키워드1", "naverVolume": 5000, "naverComp": "중" },
+  { "keyword": "키워드2", "naverVolume": 3000, "naverComp": "낮음" },
+  { "keyword": "키워드3", "naverVolume": 2000, "naverComp": "높음" },
+  { "keyword": "키워드4", "naverVolume": 1500, "naverComp": "중" },
+  { "keyword": "키워드5", "naverVolume": 1000, "naverComp": "낮음" }
+]`;
+        const fullText = await fetchAiGenerate(prompt, channelModels.textModel);
+        const arrMatch = fullText.match(/\[[\s\S]*\]/);
+        if (arrMatch) {
+          const parsed = JSON.parse(arrMatch[0]);
+          setRecommendedKeywords(parsed);
+        }
+      }
+    } catch (err) {
+      console.error('Keyword recommendation error:', err);
+    } finally {
+      setRecommending(false);
+    }
+  };
+
+  // Content length calculation for SEO check
+  const totalContentLength = cards.reduce((acc, c) => {
+    const text = (c.content as Record<string, unknown>)?.text;
+    return acc + (typeof text === 'string' ? text.length : 0);
+  }, 0);
+
   return (
     <div className="space-y-4">
-      {/* Golden keyword banner from marketing strategy */}
-      {allGoldenKeywords.length > 0 && (
-        <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">🥇 추천 키워드 (마케팅 전략)</div>
-            <div className="flex items-center gap-1">
-              <Input
-                value={newGoldenInput}
-                onChange={(e) => setNewGoldenInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddGoldenKeyword(); } }}
-                placeholder="키워드 추가"
-                className="h-6 w-[120px] text-xs bg-white dark:bg-emerald-950"
-              />
-              <Button variant="ghost" size="sm" onClick={handleAddGoldenKeyword} className="h-6 w-6 p-0">
-                <Plus size={12} />
-              </Button>
-            </div>
-          </div>
-          <div className="flex gap-1.5 flex-wrap">
-            {allGoldenKeywords.map((gk) => (
-              <Badge
-                key={gk.keyword}
-                variant="secondary"
-                className="text-xs gap-1 pr-1 bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 cursor-pointer hover:bg-emerald-200 dark:hover:bg-emerald-800"
-              >
-                <button onClick={() => handlePrimaryKeywordChange(gk.keyword)} className="hover:underline">
-                  {gk.keyword} {gk.totalSearch > 0 ? `(${gk.totalSearch.toLocaleString()}/월)` : ''}
-                </button>
-                <button onClick={() => handleRemoveGoldenKeyword(gk.keyword)} className="hover:text-destructive ml-0.5">
-                  <X size={10} />
-                </button>
-              </Badge>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Naver keyword search — above action buttons */}
-      {hasBaseArticle && (
-        <NaverKeywordPanel
-          primaryKeyword={primaryKeyword}
-          secondaryKeywords={secondaryKeywords}
-          onSetPrimary={(kw) => handlePrimaryKeywordChange(kw)}
-          onAddSecondary={(kw) => {
-            const updated = [...secondaryKeywords, kw];
-            setSecondaryKeywords(updated);
-            saveKeywords(primaryKeyword, updated);
-          }}
-        />
-      )}
-
-      {/* Action buttons */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          {cards.length > 0 && (
-            <Badge variant="secondary" className="text-xs">{cards.length}개 섹션</Badge>
-          )}
-        </div>
-        <div className="flex gap-2">
-          <GenerationButton
-            variant="text"
-            isGenerating={isGenerating}
-            disabled={!hasBaseArticle}
-            onClick={handleGenerate}
-            onAbort={abort}
-          />
-          <GenerationButton
-            variant="batch-image"
-            isGenerating={isGeneratingImage}
-            disabled={cards.length === 0}
-            onClick={handleGenerateAllImages}
-            progress={imageProgress}
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowPreview(true)}
-            disabled={cards.length === 0}
-            className="gap-1.5"
+      {/* ── Step Progress Bar ── */}
+      <div className="flex items-center gap-1 p-1 bg-muted/30 rounded-lg">
+        {WORKFLOW_STEPS.map(({ step, label, icon }) => (
+          <button
+            key={step}
+            onClick={() => setCurrentStep(step)}
+            className={cn(
+              'flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-xs font-medium transition-colors',
+              currentStep === step
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : currentStep > step
+                  ? 'text-green-500 hover:bg-accent'
+                  : 'text-muted-foreground hover:bg-accent'
+            )}
           >
-            <Eye size={14} /> 미리보기
-          </Button>
-        </div>
+            <span>{currentStep > step ? '✓' : icon}</span>
+            <span>{label}</span>
+          </button>
+        ))}
       </div>
 
-      {/* No base article */}
-      {!hasBaseArticle && (
-        <p className="text-sm text-muted-foreground">
-          기본 글을 먼저 작성해 주세요.
-        </p>
-      )}
-
-      {/* SEO Section */}
-      {hasBaseArticle && (
-        <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
-          <h3 className="text-xs font-semibold">SEO 설정</h3>
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">SEO 타이틀</label>
-            <Input
-              value={seoTitle}
-              onChange={(e) => handleSeoTitleChange(e.target.value)}
-              placeholder="검색에 노출될 블로그 제목..."
-              maxLength={100}
-              className="text-sm"
-            />
-            <p className="text-xs text-muted-foreground mt-1">{seoTitle.length}/100자</p>
+      {/* ════════════════════════════════════════════════════════════
+         Step 1: 🎯 키워드 설정
+         ════════════════════════════════════════════════════════════ */}
+      {currentStep === 1 && (
+        <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold flex items-center gap-2">🎯 키워드 설정</h3>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs gap-1"
+              disabled={recommending || !hasBaseArticle}
+              onClick={handleRecommendKeywords}
+            >
+              {recommending ? <><Loader2 size={12} className="animate-spin" /> 추천 중...</> : '✨ AI 키워드 추천'}
+            </Button>
           </div>
+
+          {!hasBaseArticle && (
+            <p className="text-sm text-muted-foreground">기본 글을 먼저 작성해 주세요.</p>
+          )}
+
+          {/* Primary keyword */}
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">주요 키워드</label>
+            <label className="text-xs text-muted-foreground mb-1 block">주요 키워드 (Primary)</label>
             <Input
               value={primaryKeyword}
               onChange={(e) => handlePrimaryKeywordChange(e.target.value)}
@@ -490,8 +580,10 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
               className="text-sm"
             />
           </div>
+
+          {/* Secondary keywords */}
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">보조 키워드</label>
+            <label className="text-xs text-muted-foreground mb-1 block">보조 키워드 (Secondary)</label>
             <div className="flex gap-2 mb-2">
               <Input
                 value={newKeywordInput}
@@ -517,35 +609,471 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
               </div>
             )}
           </div>
-          {cards.length > 0 && (
-            <SeoScoreDisplay score={seoResult.score} details={seoResult.details} />
+
+          {/* Search intent selector */}
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">검색 의도</label>
+            <div className="flex gap-2">
+              {[
+                { value: 'informational', label: '정보형', desc: '~란?, ~방법' },
+                { value: 'commercial', label: '상업형', desc: '~추천, ~비교' },
+                { value: 'transactional', label: '거래형', desc: '~예약, ~가격' },
+                { value: 'navigational', label: '탐색형', desc: '브랜드 검색' },
+              ].map(({ value, label, desc }) => (
+                <button
+                  key={value}
+                  onClick={() => setSearchIntent(value)}
+                  className={cn(
+                    'flex-1 py-2 px-2 rounded-md text-xs border transition-colors',
+                    searchIntent === value
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border text-muted-foreground hover:border-primary/50'
+                  )}
+                >
+                  <div className="font-medium">{label}</div>
+                  <div className="text-[10px] opacity-70">{desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* AI Keyword Recommendation Results */}
+          {recommendedKeywords.length > 0 && (
+            <div className="rounded-md border border-border overflow-hidden">
+              <div className="bg-muted px-3 py-1.5 text-xs font-semibold">AI 추천 키워드</div>
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-border bg-muted/50">
+                    <th className="text-left px-3 py-1.5">키워드</th>
+                    <th className="text-right px-3 py-1.5">네이버 검색량</th>
+                    <th className="text-right px-3 py-1.5">경쟁도</th>
+                    <th className="text-right px-3 py-1.5">액션</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recommendedKeywords.map((kw: any, i: number) => (
+                    <tr key={i} className="border-b border-border last:border-0 hover:bg-muted/30">
+                      <td className="px-3 py-1.5 font-medium">{kw.keyword}</td>
+                      <td className="px-3 py-1.5 text-right text-muted-foreground">
+                        {kw.naverVolume?.toLocaleString() ?? kw.naver_volume?.toLocaleString() ?? '-'}
+                      </td>
+                      <td className="px-3 py-1.5 text-right text-muted-foreground">
+                        {kw.naverComp ?? kw.naver_comp ?? '-'}
+                      </td>
+                      <td className="px-3 py-1.5 text-right">
+                        <div className="flex gap-1 justify-end">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-5 text-[10px] px-1.5"
+                            onClick={() => handlePrimaryKeywordChange(kw.keyword)}
+                          >
+                            주요
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-5 text-[10px] px-1.5"
+                            onClick={() => {
+                              if (!secondaryKeywords.includes(kw.keyword)) {
+                                const updated = [...secondaryKeywords, kw.keyword];
+                                setSecondaryKeywords(updated);
+                                saveKeywords(primaryKeyword, updated);
+                              }
+                            }}
+                          >
+                            보조+
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
-        </div>
-      )}
 
-      {/* Card List */}
-      {cards.length > 0 && (
-        <div className="space-y-4">
-          {cards.map((card, i) => (
-            <BlogCardItem
-              key={card.id}
-              card={card}
-              index={i}
-              onUpdate={handleCardUpdate}
-              onDelete={handleCardDelete}
-              onGenerateImage={handleGenerateCardImage}
-              onAbortImage={abortImageGeneration}
-              isGeneratingImage={isGeneratingImage}
-              generatingCardId={generatingCardId}
+          {/* Golden keyword banner */}
+          {allGoldenKeywords.length > 0 && (
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">🥇 추천 키워드 (마케팅 전략)</div>
+                <div className="flex items-center gap-1">
+                  <Input
+                    value={newGoldenInput}
+                    onChange={(e) => setNewGoldenInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddGoldenKeyword(); } }}
+                    placeholder="키워드 추가"
+                    className="h-6 w-[120px] text-xs bg-white dark:bg-emerald-950"
+                  />
+                  <Button variant="ghost" size="sm" onClick={handleAddGoldenKeyword} className="h-6 w-6 p-0">
+                    <Plus size={12} />
+                  </Button>
+                </div>
+              </div>
+              <div className="flex gap-1.5 flex-wrap">
+                {allGoldenKeywords.map((gk) => (
+                  <Badge
+                    key={gk.keyword}
+                    variant="secondary"
+                    className="text-xs gap-1 pr-1 bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 cursor-pointer hover:bg-emerald-200 dark:hover:bg-emerald-800"
+                  >
+                    <button onClick={() => handlePrimaryKeywordChange(gk.keyword)} className="hover:underline">
+                      {gk.keyword} {gk.totalSearch > 0 ? `(${gk.totalSearch.toLocaleString()}/월)` : ''}
+                    </button>
+                    <button onClick={() => handleRemoveGoldenKeyword(gk.keyword)} className="hover:text-destructive ml-0.5">
+                      <X size={10} />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Saved keywords from store */}
+          {(savedKeywords as any[]).length > 0 && (
+            <div className="rounded-md border border-border p-3 space-y-2">
+              <div className="text-xs font-semibold text-muted-foreground">📁 보관함 키워드</div>
+              <div className="flex flex-wrap gap-1.5">
+                {(savedKeywords as any[]).map((sk: any) => (
+                  <Badge
+                    key={sk.keyword}
+                    variant="outline"
+                    className="text-xs gap-1 pr-1 cursor-pointer hover:bg-accent"
+                  >
+                    <button onClick={() => handlePrimaryKeywordChange(sk.keyword)} className="hover:underline" title="주요 키워드로 설정">
+                      {sk.keyword}
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (!secondaryKeywords.includes(sk.keyword)) {
+                          const updated = [...secondaryKeywords, sk.keyword];
+                          setSecondaryKeywords(updated);
+                          saveKeywords(primaryKeyword, updated);
+                        }
+                      }}
+                      className="hover:text-primary ml-0.5 text-[10px]"
+                      title="보조 키워드 추가"
+                    >
+                      +
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Naver keyword search */}
+          {hasBaseArticle && (
+            <NaverKeywordPanel
+              primaryKeyword={primaryKeyword}
+              secondaryKeywords={secondaryKeywords}
+              onSetPrimary={(kw) => handlePrimaryKeywordChange(kw)}
+              onAddSecondary={(kw) => {
+                const updated = [...secondaryKeywords, kw];
+                setSecondaryKeywords(updated);
+                saveKeywords(primaryKeyword, updated);
+              }}
             />
-          ))}
+          )}
+
+          {/* Next button */}
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              onClick={() => {
+                saveKeywords(primaryKeyword, secondaryKeywords);
+                updateBlogContent(blogContent.id, {
+                  search_intent: searchIntent,
+                  primary_keyword: primaryKeyword || null,
+                  secondary_keywords: secondaryKeywords,
+                });
+                setCurrentStep(2);
+              }}
+              disabled={!primaryKeyword.trim()}
+            >
+              다음: 구조 설계 →
+            </Button>
+          </div>
         </div>
       )}
 
-      {/* Add Section */}
-      {hasBaseArticle && <AddCardButton onAdd={handleAddSection} />}
+      {/* ════════════════════════════════════════════════════════════
+         Step 2: 📐 구조 설계
+         ════════════════════════════════════════════════════════════ */}
+      {currentStep === 2 && (
+        <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold flex items-center gap-2">📐 콘텐츠 구조 설계</h3>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs gap-1"
+              disabled={structureGenerating || !primaryKeyword.trim()}
+              onClick={async () => {
+                setStructureGenerating(true);
+                try {
+                  const prompt = `You are a Naver blog SEO expert. Generate an optimized content structure for a blog post.
 
-      {/* Prompt Dialog */}
+Primary keyword: "${primaryKeyword}"
+Secondary keywords: ${secondaryKeywords.join(', ') || 'none'}
+Search intent: ${searchIntent}
+${baseArticle?.body ? `Base article summary: ${(baseArticle as any).body_plain_text?.substring(0, 500) || baseArticle.body.substring(0, 500)}` : ''}
+${project.industry ? `Industry: ${project.industry}` : ''}
+
+Return ONLY valid JSON (no explanation) with this exact structure:
+{
+  "seoTitle": "60자 이내 SEO 최적화 제목 (한국어, 네이버 검색 최적화)",
+  "metaDescription": "120~160자 메타 설명 (한국어, 네이버 검색 결과에 표시)",
+  "headingStructure": "H2: 제목1\\n  H3: 소제목1\\n  H3: 소제목2\\nH2: 제목2\\n  H3: 소제목3\\nH2: 결론"
+}`;
+                  const fullText = await fetchAiGenerate(prompt, channelModels.textModel);
+                  const jsonMatch = fullText.match(/\{[\s\S]*\}/);
+                  if (jsonMatch) {
+                    const parsed = JSON.parse(jsonMatch[0]);
+                    if (parsed.seoTitle) {
+                      setSeoTitle(parsed.seoTitle);
+                      updateBlogContent(blogContent.id, { seo_title: parsed.seoTitle });
+                    }
+                    if (parsed.metaDescription) {
+                      setMetaDescription(parsed.metaDescription);
+                      updateBlogContent(blogContent.id, { meta_description: parsed.metaDescription });
+                    }
+                    if (parsed.headingStructure) {
+                      setHeadingStructure(parsed.headingStructure);
+                      updateBlogContent(blogContent.id, { heading_structure: parsed.headingStructure });
+                    }
+                  }
+                } catch (err) {
+                  console.error('Structure generation error:', err);
+                } finally {
+                  setStructureGenerating(false);
+                }
+              }}
+            >
+              {structureGenerating ? <><Loader2 size={12} className="animate-spin" /> 생성 중...</> : '✨ AI 자동 생성'}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">키워드 기반으로 AI가 SEO 타이틀, 메타 설명, H2/H3 구조를 자동 생성합니다.</p>
+
+          {/* SEO Title */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs text-muted-foreground">SEO 타이틀</label>
+              <span className={`text-[10px] ${seoTitle.length > 60 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                {seoTitle.length} / 60
+              </span>
+            </div>
+            <Input
+              value={seoTitle}
+              onChange={(e) => handleSeoTitleChange(e.target.value)}
+              placeholder="검색에 노출될 블로그 제목..."
+              maxLength={100}
+              className="text-sm"
+            />
+            {seoTitle.length > 60 && (
+              <p className="text-xs text-red-500 mt-1">60자를 초과하면 검색 결과에서 잘릴 수 있습니다.</p>
+            )}
+          </div>
+
+          {/* Meta Description */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs text-muted-foreground">메타 설명</label>
+              <span className={`text-[10px] ${metaDescription.length > 160 ? 'text-red-500' : metaDescription.length >= 120 ? 'text-green-500' : 'text-muted-foreground'}`}>
+                {metaDescription.length} / 120~160
+              </span>
+            </div>
+            <Textarea
+              value={metaDescription}
+              onChange={(e) => setMetaDescription(e.target.value)}
+              placeholder="검색 결과에 표시될 설명 (120~160자 권장)"
+              maxLength={200}
+              rows={2}
+              className="text-sm resize-none"
+            />
+            {metaDescription.length > 160 && (
+              <p className="text-xs text-red-500 mt-1">160자를 초과하면 검색 결과에서 잘릴 수 있습니다.</p>
+            )}
+          </div>
+
+          {/* Heading Structure */}
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Heading 구조 (H2/H3)</label>
+            <Textarea
+              value={headingStructure}
+              onChange={(e) => setHeadingStructure(e.target.value)}
+              placeholder={`H2: 소제목1\n  H3: 세부 항목1\n  H3: 세부 항목2\nH2: 소제목2\n  H3: 세부 항목3\nH2: 결론`}
+              rows={8}
+              className="text-sm font-mono"
+            />
+            <p className="text-xs text-muted-foreground mt-1">H2/H3 구조를 미리 잡으면 AI가 이 구조에 맞춰 생성합니다. 비워두면 AI가 자동 설계합니다.</p>
+          </div>
+
+          {/* Back / Next */}
+          <div className="flex justify-between">
+            <Button size="sm" variant="outline" onClick={() => setCurrentStep(1)}>← 키워드 설정</Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                updateBlogContent(blogContent.id, {
+                  seo_title: seoTitle || null,
+                  meta_description: metaDescription || null,
+                  heading_structure: headingStructure || null,
+                });
+                setCurrentStep(3);
+              }}
+            >
+              다음: AI 생성 →
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════════════════════════
+         Step 3: ✨ AI 콘텐츠 생성
+         ════════════════════════════════════════════════════════════ */}
+      {currentStep === 3 && (
+        <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
+          <h3 className="text-sm font-semibold flex items-center gap-2">✨ AI 콘텐츠 생성</h3>
+
+          {/* Summary box */}
+          <div className="bg-muted rounded-md p-3 text-xs space-y-1">
+            <div><span className="text-muted-foreground">주 키워드:</span> <span className="font-medium">{primaryKeyword || '미설정'}</span></div>
+            <div><span className="text-muted-foreground">보조 키워드:</span> <span className="font-medium">{secondaryKeywords.length > 0 ? secondaryKeywords.join(', ') : '미설정'}</span></div>
+            <div><span className="text-muted-foreground">검색 의도:</span> <span className="font-medium">{
+              searchIntent === 'informational' ? '정보형' :
+              searchIntent === 'commercial' ? '상업형' :
+              searchIntent === 'transactional' ? '거래형' :
+              searchIntent === 'navigational' ? '탐색형' : searchIntent
+            }</span></div>
+            <div><span className="text-muted-foreground">SEO 타이틀:</span> <span className="font-medium">{seoTitle || '미설정'}</span></div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              {cards.length > 0 && (
+                <Badge variant="secondary" className="text-xs">{cards.length}개 섹션</Badge>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <GenerationButton
+                variant="text"
+                isGenerating={isGenerating}
+                disabled={!hasBaseArticle}
+                onClick={handleGenerate}
+                onAbort={abort}
+              />
+              <GenerationButton
+                variant="batch-image"
+                isGenerating={isGeneratingImage}
+                disabled={cards.length === 0}
+                onClick={handleGenerateAllImages}
+                progress={imageProgress}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowPreview(true)}
+                disabled={cards.length === 0}
+                className="gap-1.5"
+              >
+                <Eye size={14} /> 미리보기
+              </Button>
+            </div>
+          </div>
+
+          {/* No base article */}
+          {!hasBaseArticle && (
+            <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+              기본글에서 콘텐츠를 먼저 작성하면, AI가 네이버 SEO에 최적화된 블로그 글로 변환합니다.
+            </div>
+          )}
+
+          {/* Card List */}
+          {cards.length > 0 && (
+            <div className="space-y-4">
+              {cards.map((card, i) => (
+                <BlogCardItem
+                  key={card.id}
+                  card={card}
+                  index={i}
+                  onUpdate={handleCardUpdate}
+                  onDelete={handleCardDelete}
+                  onGenerateImage={handleGenerateCardImage}
+                  onAbortImage={abortImageGeneration}
+                  isGeneratingImage={isGeneratingImage}
+                  generatingCardId={generatingCardId}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Add Section */}
+          {hasBaseArticle && <AddCardButton onAdd={handleAddSection} />}
+
+          {/* Back / Next */}
+          <div className="flex justify-between">
+            <Button size="sm" variant="outline" onClick={() => setCurrentStep(2)}>← 구조 설계</Button>
+            <Button size="sm" onClick={() => setCurrentStep(4)} disabled={cards.length === 0}>다음: SEO 검사 →</Button>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════════════════════════
+         Step 4: 🔍 네이버 SEO 검사
+         ════════════════════════════════════════════════════════════ */}
+      {currentStep === 4 && (
+        <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
+          <h3 className="text-sm font-semibold flex items-center gap-2">🔍 네이버 SEO 검사</h3>
+
+          {/* Existing SeoScoreDisplay */}
+          <SeoScoreDisplay score={seoResult.score} details={seoResult.details} />
+
+          {/* Score Cards Grid */}
+          <div className="grid grid-cols-4 gap-3 text-center">
+            {[
+              { label: 'SEO Title', value: seoTitle.length > 0 ? (seoTitle.length <= 60 ? '✓' : '!') : '—', ok: seoTitle.length > 0 && seoTitle.length <= 60 },
+              { label: '키워드 in 제목', value: primaryKeyword && seoTitle.toLowerCase().includes(primaryKeyword.toLowerCase()) ? '✓' : '—', ok: !!primaryKeyword && seoTitle.toLowerCase().includes(primaryKeyword.toLowerCase()) },
+              { label: 'Headings', value: cards.length > 0 ? '✓' : '—', ok: cards.length > 0 },
+              { label: '콘텐츠 섹션', value: cards.length >= 3 ? '✓' : `${cards.length}`, ok: cards.length >= 3 },
+            ].map(({ label, value, ok }) => (
+              <div key={label} className={cn('rounded-md p-3 border', ok ? 'border-green-500/30 bg-green-500/5' : 'border-border bg-muted')}>
+                <div className={`text-lg font-bold ${ok ? 'text-green-500' : 'text-muted-foreground'}`}>{value}</div>
+                <div className="text-[10px] text-muted-foreground">{label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Checklist (7 items) */}
+          <div className="space-y-2">
+            <h4 className="text-xs font-semibold text-muted-foreground">체크리스트</h4>
+            {[
+              { check: seoTitle.length > 0 && seoTitle.length <= 60, label: 'SEO 제목 60자 이내' },
+              { check: !!primaryKeyword && seoTitle.toLowerCase().includes(primaryKeyword.toLowerCase()), label: '주요 키워드가 제목에 포함' },
+              { check: cards.length >= 3, label: '본문 3개 섹션 이상' },
+              { check: cards.some(c => !!(c.content as Record<string, unknown>)?.url), label: '이미지 1개 이상' },
+              { check: secondaryKeywords.length >= 3, label: '보조 키워드 3개 이상' },
+              { check: totalContentLength >= 2000, label: `본문 글자 수 2000자 이상 (현재: ${totalContentLength.toLocaleString()}자)` },
+              { check: hasBaseArticle, label: '기본글 작성 완료' },
+            ].map(({ check, label }) => (
+              <div key={label} className="flex items-center gap-2 text-xs">
+                <span className={check ? 'text-green-500' : 'text-muted-foreground'}>{check ? '✅' : '⬜'}</span>
+                <span className={check ? 'text-foreground' : 'text-muted-foreground'}>{label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Back / Publish Ready */}
+          <div className="flex justify-between">
+            <Button size="sm" variant="outline" onClick={() => setCurrentStep(3)}>← AI 생성</Button>
+            <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white">✓ 발행 준비 완료</Button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Dialogs ── */}
       <PromptEditDialog
         open={showPromptDialog}
         onOpenChange={setShowPromptDialog}
@@ -555,7 +1083,6 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
         onAbort={abort}
       />
 
-      {/* Preview Dialog */}
       <BlogPreviewDialog
         open={showPreview}
         onOpenChange={setShowPreview}

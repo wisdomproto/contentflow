@@ -278,36 +278,30 @@ function WordpressPanelInner({ blogContent, content, project, hasBaseArticle, ch
               onClick={async () => {
                 setKeywordGenerating(true);
                 try {
-                  const articleText = baseArticle?.body_plain_text || baseArticle?.body || content.title || '';
-                  const prompt = `You are a Google SEO keyword researcher. Suggest optimal keywords for a blog post.
-
-${project.industry ? `Industry: ${project.industry}` : ''}
-${project.brand_name ? `Brand: ${project.brand_name}` : ''}
-Article title: "${content.title}"
-${articleText ? `Article content (first 500 chars): ${articleText.substring(0, 500)}` : ''}
-
-Return ONLY valid JSON (no explanation):
-{
-  "primaryKeyword": "주요 키워드 1개 (한국어, 검색량 높은 것)",
-  "secondaryKeywords": ["보조 키워드1", "보조 키워드2", "보조 키워드3", "보조 키워드4", "보조 키워드5"],
-  "searchIntent": "informational|commercial|transactional|navigational"
-}`;
-                  const fullText = await fetchAiGenerate(prompt, channelModels.textModel);
-                  const jsonMatch = fullText.match(/\{[\s\S]*\}/);
-                  if (jsonMatch) {
-                    const parsed = JSON.parse(jsonMatch[0]);
-                    if (parsed.primaryKeyword) setPrimaryKeyword(parsed.primaryKeyword);
-                    if (parsed.secondaryKeywords) setSecondaryKeywords(parsed.secondaryKeywords.join(', '));
-                    if (parsed.searchIntent) setSearchIntent(parsed.searchIntent);
-                    // Save to DB immediately after AI recommendation
+                  const res = await fetch('/api/keywords/recommend', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      title: content.title,
+                      baseArticle: baseArticle?.body_plain_text?.substring(0, 500),
+                      industry: project.industry,
+                      language: 'en', // WordPress = Google/English focus
+                    }),
+                  });
+                  const data = await res.json();
+                  if (data.keywords?.length) {
+                    // Auto-set top keyword as primary, next 5 as secondary
+                    const top = data.keywords[0];
+                    setPrimaryKeyword(top.keyword);
+                    const secondaries = data.keywords.slice(1, 6).map((k: any) => k.keyword);
+                    setSecondaryKeywords(secondaries.join(', '));
                     updateBlogContent(blogContent.id, {
-                      primary_keyword: parsed.primaryKeyword || null,
-                      secondary_keywords: parsed.secondaryKeywords || [],
-                      search_intent: parsed.searchIntent || null,
+                      primary_keyword: top.keyword,
+                      secondary_keywords: secondaries,
                     });
                   }
                 } catch (err) {
-                  console.error('Keyword generation error:', err);
+                  console.error('Keyword recommendation error:', err);
                 } finally {
                   setKeywordGenerating(false);
                 }
@@ -316,7 +310,7 @@ Return ONLY valid JSON (no explanation):
               {keywordGenerating ? '추천 중...' : '✨ AI 키워드 추천'}
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">기본글 내용과 업종을 기반으로 AI가 키워드를 추천합니다.</p>
+          <p className="text-xs text-muted-foreground">AI가 콘텐츠를 분석하고 Google 검색량을 조회하여 최적 키워드를 추천합니다.</p>
           <div>
             <label className="text-xs text-muted-foreground mb-1 block">주 키워드 (Primary)</label>
             <Input
