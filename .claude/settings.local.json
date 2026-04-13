@@ -191,7 +191,8 @@
       "Bash(node -e \"const fs=require\\('fs'\\); const h=fs.readFileSync\\('../marketing/연세새봄의원_마케팅전략 260323.html','utf-8'\\); const idx=h.indexOf\\('A-01'\\); console.log\\('A-01 at index:', idx\\); console.log\\(h.substring\\(idx-200, idx+200\\)\\);\")",
       "Bash(node scripts/generate-base-articles.mjs)",
       "Bash(node scripts/fix-article-tone.mjs)",
-      "Bash(kill %1)"
+      "Bash(kill %1)",
+      "Bash(node scripts/extract-html-text.mjs \"C:\\\\Users\\\\101024\\\\OneDrive\\\\1. projects \\(new\\)\\\\1. SB HC\\\\5. 성장앱\\\\6. 뼈연령 측정\\\\소아의_골_연령_판정.html\")"
     ]
   }
 }
