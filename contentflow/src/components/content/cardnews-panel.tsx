@@ -552,11 +552,11 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
   };
 
   return (
-    <div className="space-y-4">
-      {/* Template picker + properties */}
-      <div className="space-y-2">
+    <div className="flex gap-4 h-full">
+      {/* ══ Left sidebar: templates + properties ══ */}
+      <div className="w-56 shrink-0 space-y-3 overflow-y-auto border-r border-border pr-3">
         <h3 className="text-xs font-semibold text-muted-foreground">템플릿</h3>
-        <div className="flex gap-2 overflow-x-auto pb-2">
+        <div className="grid grid-cols-3 gap-1.5">
           {allTemplates.map(t => (
             <div key={t.id} className="relative shrink-0 group/tpl">
               <button
@@ -722,9 +722,12 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
             </div>
           );
         })()}
+
+      {!hasBaseArticle && <p className="text-xs text-muted-foreground">기본 글을 먼저 작성해 주세요.</p>}
       </div>
 
-      {/* Action buttons */}
+      {/* ══ Right main area: actions + cards ══ */}
+      <div className="flex-1 min-w-0 space-y-4 overflow-y-auto">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           {cards.length > 0 && <Badge variant="secondary" className="text-xs">{cards.length}장</Badge>}
@@ -760,37 +763,6 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
           )}
         </div>
       </div>
-
-      {/* Reference Image */}
-      <div className="flex items-center gap-3">
-        <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">참조 이미지</span>
-        {referenceImage ? (
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={referenceImage} alt="참조" className="w-12 h-12 object-cover rounded border border-border" />
-              <button onClick={() => setReferenceImage(null)} className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center">
-                <X size={10} />
-              </button>
-            </div>
-            <span className="text-[10px] text-muted-foreground">모든 이미지 생성 시 이 스타일을 참조</span>
-          </div>
-        ) : (
-          <div
-            onDrop={(e) => { e.preventDefault(); setIsDraggingRef(false); const f = e.dataTransfer.files[0]; if (f?.type.startsWith('image/')) uploadRefImage(f); }}
-            onDragOver={(e) => { e.preventDefault(); setIsDraggingRef(true); }}
-            onDragLeave={() => setIsDraggingRef(false)}
-            onClick={() => !isUploadingRef && refInputRef.current?.click()}
-            className={cn('flex-1 h-12 rounded-lg border-2 border-dashed flex items-center justify-center gap-2 cursor-pointer transition-colors', isDraggingRef ? 'border-primary bg-primary/10' : 'border-muted-foreground/20 hover:border-primary/50')}
-          >
-            {isUploadingRef ? <Loader2 size={14} className="animate-spin text-muted-foreground" /> : <Upload size={14} className="text-muted-foreground" />}
-            <span className="text-xs text-muted-foreground">{isUploadingRef ? '업로드 중...' : '이미지 드래그 또는 클릭'}</span>
-          </div>
-        )}
-        <input ref={refInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadRefImage(f); e.target.value = ''; }} />
-      </div>
-
-      {!hasBaseArticle && <p className="text-sm text-muted-foreground">기본 글을 먼저 작성해 주세요.</p>}
 
       {/* Caption & Hashtags — collapsible */}
       {hasBaseArticle && (
@@ -917,6 +889,7 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
       {/* Prompt dialog */}
       <PromptEditDialog open={showPromptDialog} onOpenChange={setShowPromptDialog} initialPrompt={generatedPrompt}
         isGenerating={isGeneratingPrompts} onGenerate={handleStartGeneration} onAbort={abortPrompts} />
+    </div>
     </div>
   );
 }
