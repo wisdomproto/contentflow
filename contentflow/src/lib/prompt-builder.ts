@@ -8,6 +8,8 @@ export interface PromptContext {
   topicHint?: string;
   seoTitle?: string;
   keywords?: { primary?: string; secondary?: string[] };
+  /** Blog card sections (from N Blog or WordPress) for channel derivation */
+  blogSections?: Array<{ title?: string; text?: string }>;
 }
 
 function buildBrandContext(project: Project): string[] {
@@ -269,7 +271,7 @@ export function buildBlogPrompt(ctx: PromptContext): string {
 }
 
 export function buildCardNewsPrompt(ctx: PromptContext): string {
-  const { project, content, baseArticle } = ctx;
+  const { project, content, baseArticle, blogSections } = ctx;
   const sections: string[] = [];
 
   sections.push('당신은 인스타그램 카드뉴스 전문 디자이너입니다.');
@@ -309,19 +311,27 @@ export function buildCardNewsPrompt(ctx: PromptContext): string {
   if (content.category) sections.push(`카테고리: ${content.category}`);
   if (content.tags?.length) sections.push(`태그: ${content.tags.join(', ')}`);
 
-  if (baseArticle?.body_plain_text) {
+  // Use blog sections if available (from N Blog or WordPress), otherwise fall back to base article
+  if (blogSections?.length) {
+    sections.push(`\n## 블로그 섹션 (각 섹션을 슬라이드로 변환)\n`);
+    blogSections.forEach((s, i) => {
+      sections.push(`### 섹션 ${i + 1}${s.title ? ': ' + s.title : ''}`);
+      if (s.text) sections.push(s.text.substring(0, 300));
+    });
+    sections.push('\n위 블로그 섹션을 기반으로 인스타그램 캐러셀 슬라이드를 만드세요. 각 섹션의 핵심 내용을 간결한 슬라이드로.');
+  } else if (baseArticle?.body_plain_text) {
     sections.push(`\n## 기본 글 (원문)\n${baseArticle.body_plain_text}`);
+    sections.push('\n위 기본 글을 인스타그램 캐러셀 슬라이드로 변환하세요. 시각적 임팩트와 가독성을 최우선으로.');
   } else if (baseArticle?.body) {
     sections.push(`\n## 기본 글 (원문 HTML)\n${baseArticle.body}`);
+    sections.push('\n위 기본 글을 인스타그램 캐러셀 슬라이드로 변환하세요. 시각적 임팩트와 가독성을 최우선으로.');
   }
-
-  sections.push('\n위 기본 글을 인스타그램 캐러셀 슬라이드로 변환하세요. 시각적 임팩트와 가독성을 최우선으로.');
 
   return sections.join('\n');
 }
 
 export function buildCardNewsImagePromptsPrompt(ctx: PromptContext): string {
-  const { project, content, baseArticle } = ctx;
+  const { project, content, baseArticle, blogSections } = ctx;
   const sections: string[] = [];
 
   sections.push('당신은 인스타그램 카드뉴스 콘텐츠 기획자입니다.');
@@ -379,13 +389,22 @@ export function buildCardNewsImagePromptsPrompt(ctx: PromptContext): string {
   if (content.category) sections.push(`카테고리: ${content.category}`);
   if (content.tags?.length) sections.push(`태그: ${content.tags.join(', ')}`);
 
-  if (baseArticle?.body_plain_text) {
+  if (blogSections?.length) {
+    sections.push(`\n## 블로그 섹션 (각 섹션을 1장의 슬라이드로)`);
+    blogSections.forEach((s, i) => {
+      sections.push(`### 섹션 ${i + 1}${s.title ? ': ' + s.title : ''}`);
+      if (s.text) sections.push(s.text.substring(0, 300));
+    });
+    sections.push('\n위 블로그 섹션 기반으로 각 슬라이드별 이미지 프롬프트를 만드세요.');
+  } else if (baseArticle?.body_plain_text) {
     sections.push(`\n## 기본 글 (원문)\n${baseArticle.body_plain_text}`);
+    sections.push('\n위 기본 글을 분석하여 각 슬라이드별 이미지 생성 프롬프트를 만들어 주세요.');
   } else if (baseArticle?.body) {
     sections.push(`\n## 기본 글 (원문 HTML)\n${baseArticle.body}`);
+    sections.push('\n위 기본 글을 분석하여 각 슬라이드별 이미지 생성 프롬프트를 만들어 주세요.');
   }
 
-  sections.push('\n위 기본 글을 분석하여 각 슬라이드별 이미지 생성 프롬프트를 만들어 주세요. 브랜드 아이덴티티와 일관성을 유지하세요.');
+  sections.push('브랜드 아이덴티티와 일관성을 유지하세요.');
 
   return sections.join('\n');
 }

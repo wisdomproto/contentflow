@@ -341,21 +341,26 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
   const isGenerating = isGeneratingPrompts || isGeneratingImages;
 
   const handleGenerate = () => {
-    const prompt = buildCardNewsImagePromptsPrompt({ project, content, baseArticle: baseArticle ?? undefined });
     const blogContents = getBlogContents(content.id);
-    let blogSectionsPrompt = '';
+    // Collect blog sections from N Blog or WordPress (whichever has cards)
+    let blogSections: Array<{ title?: string; text?: string }> = [];
     if (blogContents.length > 0) {
-      const blogCards = getBlogCards(blogContents[0].id);
-      if (blogCards.length > 0) {
-        const sections = blogCards.map((bc: BlogCard, i: number) => {
-          const c = bc.content as { text?: string };
-          const plain = (c.text || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-          return `섹션 ${i + 1}: ${plain}`;
-        }).join('\n\n');
-        blogSectionsPrompt = `\n\n## 블로그 섹션 (각 섹션을 1장의 카드뉴스로 요약)\n${sections}`;
+      // Try each blog content until we find one with cards
+      for (const bc of blogContents) {
+        const cards = getBlogCards(bc.id);
+        if (cards.length > 0) {
+          blogSections = cards.map((card: BlogCard) => {
+            const c = card.content as { heading?: string; text?: string };
+            const plain = (c.text || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+            return { title: c.heading || '', text: plain };
+          });
+          break;
+        }
       }
     }
-    setGeneratedPrompt(prompt + blogSectionsPrompt);
+
+    const prompt = buildCardNewsImagePromptsPrompt({ project, content, baseArticle: baseArticle ?? undefined, blogSections });
+    setGeneratedPrompt(prompt);
     setShowPromptDialog(true);
   };
 
