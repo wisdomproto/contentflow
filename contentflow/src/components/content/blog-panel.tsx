@@ -497,6 +497,62 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
     }
   };
 
+  // AI auto-pick: analyze content and select best keywords from pool
+  const handleAutoPickKeywords = async () => {
+    const pool = (savedKeywords as any[]).map((sk: any) => sk.keyword)
+    if (pool.length === 0) return
+    setRecommending(true)
+    setRecommendedKeywords([])
+    try {
+      const articleText = baseArticle?.body_plain_text?.substring(0, 500) || content.title
+      const prompt = `콘텐츠와 가장 연관 있는 키워드를 메인 키워드 풀에서 골라주세요.
+
+콘텐츠 제목: ${content.title}
+콘텐츠 내용: ${articleText}
+
+메인 키워드 풀: ${pool.join(', ')}
+
+아래 형식으로만 답변:
+{
+  "primary": "가장 연관 높은 키워드 1개 (풀에서 선택)",
+  "secondary": ["풀에서 연관 있는 키워드 2~3개"]
+}`
+      const fullText = await fetchAiGenerate(prompt, channelModels.textModel)
+      const cleaned = fullText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+      const match = cleaned.match(/\{[\s\S]*\}/)
+      if (match) {
+        const parsed = JSON.parse(match[0])
+        if (parsed.primary) {
+          handlePrimaryKeywordChange(parsed.primary)
+          // Set secondary keywords from pool picks
+          const secs = (parsed.secondary || []) as string[]
+          if (secs.length > 0) {
+            setSecondaryKeywords(secs)
+            saveKeywords(parsed.primary, secs)
+          }
+          // Also fetch Naver-derived secondaries from the primary
+          const res = await fetch('/api/naver/keywords', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keywords: [parsed.primary.replace(/\s+/g, '')] }),
+          })
+          const data = await res.json()
+          if (data.keywords?.length) {
+            const naverSecs = data.keywords
+              .filter((kw: any) => kw.keyword !== parsed.primary && !secs.includes(kw.keyword))
+              .map((kw: any) => ({ keyword: kw.keyword, naverVolume: kw.totalSearchVolume || 0, naverComp: kw.competition || '-' }))
+              .sort((a: any, b: any) => (b.naverVolume || 0) - (a.naverVolume || 0))
+            setRecommendedKeywords(naverSecs.slice(0, 20))
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Auto-pick error:', err)
+    } finally {
+      setRecommending(false)
+    }
+  }
+
   // Content length calculation for SEO check
   const totalContentLength = cards.reduce((acc, c) => {
     const text = (c.content as Record<string, unknown>)?.text;
@@ -539,7 +595,12 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
           {/* Main Keyword Pool */}
           {(savedKeywords as any[]).length > 0 ? (
             <div className="rounded-md border border-yellow-500/30 bg-yellow-500/5 p-3 space-y-2">
-              <div className="text-xs font-semibold flex items-center gap-1.5">🏆 메인 키워드 풀 <span className="text-muted-foreground font-normal">— 클릭하여 주요 키워드 선택</span></div>
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-semibold flex items-center gap-1.5">🏆 메인 키워드 풀 <span className="text-muted-foreground font-normal">— 클릭하여 수동 선택 또는</span></div>
+                <Button size="sm" variant="outline" className="h-6 text-[10px] gap-1" disabled={recommending || !hasBaseArticle} onClick={handleAutoPickKeywords}>
+                  {recommending ? <><Loader2 size={10} className="animate-spin" /> 분석 중...</> : '✨ AI 자동 추천'}
+                </Button>
+              </div>
               <div className="flex flex-wrap gap-1.5">
                 {(savedKeywords as any[]).map((sk: any) => (
                   <button

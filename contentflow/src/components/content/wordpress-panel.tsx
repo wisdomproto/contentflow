@@ -116,6 +116,52 @@ function WordpressPanelInner({ blogContent, content, project, hasBaseArticle, ch
   const [structureGenerating, setStructureGenerating] = useState(false);
   const [keywordGenerating, setKeywordGenerating] = useState(false);
 
+  // AI auto-pick keywords from pool based on content
+  const handleAutoPickKeywords = async () => {
+    const pool = (savedKeywords as any[]).map((sk: any) => sk.keyword)
+    if (pool.length === 0) return
+    setKeywordGenerating(true)
+    try {
+      const articleText = baseArticle?.body_plain_text?.substring(0, 500) || content.title
+      const prompt = `Pick the most relevant keywords from the pool for this content.
+
+Title: ${content.title}
+Content: ${articleText}
+Pool: ${pool.join(', ')}
+
+Return ONLY JSON: { "primary": "best keyword", "secondary": ["2nd", "3rd"] }`
+      const fullText = await fetchAiGenerate(prompt, channelModels.textModel)
+      const cleaned = fullText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+      const match = cleaned.match(/\{[\s\S]*\}/)
+      if (match) {
+        const parsed = JSON.parse(match[0])
+        if (parsed.primary) {
+          setPrimaryKeyword(parsed.primary)
+          const secs = (parsed.secondary || []) as string[]
+          setSecondaryKeywords(secs.join(', '))
+          updateBlogContent(blogContent.id, { primary_keyword: parsed.primary, secondary_keywords: secs })
+          // Fetch Google-derived secondaries
+          const res = await fetch('/api/google/keywords', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keywords: [parsed.primary] }),
+          })
+          const data = await res.json()
+          if (data.keywords?.length) {
+            const googleSecs = data.keywords
+              .filter((k: any) => k.keyword !== parsed.primary && (k.searchVolume || 0) > 0)
+              .sort((a: any, b: any) => (b.searchVolume || 0) - (a.searchVolume || 0))
+              .slice(0, 5).map((k: any) => k.keyword)
+            const allSecs = [...secs, ...googleSecs.filter((g: string) => !secs.includes(g))]
+            setSecondaryKeywords(allSecs.join(', '))
+            updateBlogContent(blogContent.id, { secondary_keywords: allSecs })
+          }
+        }
+      }
+    } catch (err) { console.error('Auto-pick error:', err) }
+    finally { setKeywordGenerating(false) }
+  }
+
   const handleMetaTitleChange = (value: string) => {
     setMetaTitle(value);
     updateBlogContent(blogContent.id, { seo_title: value || null });
@@ -277,7 +323,12 @@ function WordpressPanelInner({ blogContent, content, project, hasBaseArticle, ch
           {/* Main Keyword Pool */}
           {(savedKeywords as any[]).length > 0 ? (
             <div className="rounded-md border border-blue-500/30 bg-blue-500/5 p-3 space-y-2">
-              <div className="text-xs font-semibold flex items-center gap-1.5">🏆 메인 키워드 풀 <span className="text-muted-foreground font-normal">— 클릭하여 주요 키워드 선택 (Google 보조 키워드 자동 조회)</span></div>
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-semibold flex items-center gap-1.5">🏆 메인 키워드 풀 <span className="text-muted-foreground font-normal">— 수동 선택 또는</span></div>
+                <Button size="sm" variant="outline" className="h-6 text-[10px] gap-1" disabled={keywordGenerating} onClick={handleAutoPickKeywords}>
+                  {keywordGenerating ? <><Loader2 size={10} className="animate-spin" /> 분석 중...</> : '✨ AI 자동 추천'}
+                </Button>
+              </div>
               <div className="flex flex-wrap gap-1.5">
                 {(savedKeywords as any[]).map((sk: any) => (
                   <button
