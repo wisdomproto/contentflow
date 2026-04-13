@@ -783,12 +783,12 @@ Return ONLY valid JSON (no explanation) with this exact structure:
             <Button size="sm" variant="outline" onClick={() => setCurrentStep(3)}>← AI 생성</Button>
             {publishedUrl ? (
               <div className="flex items-center gap-2">
-                <span className="text-xs text-green-500 font-medium">✅ 발행 완료</span>
+                <span className="text-xs text-green-500 font-medium">✅ 발행 큐 등록 완료</span>
                 <a href={publishedUrl} target="_blank" rel="noreferrer" className="text-xs text-primary underline">{publishedUrl.substring(0, 40)}...</a>
               </div>
             ) : (
               <Button size="sm" className="bg-green-600 hover:bg-green-700" disabled={publishing || cards.length === 0} onClick={handlePublish}>
-                {publishing ? <><Loader2 size={12} className="animate-spin mr-1" /> 발행 중...</> : '🚀 WordPress 발행'}
+                {publishing ? <><Loader2 size={12} className="animate-spin mr-1" /> 발행 큐에 업로드 중...</> : '🚀 발행 큐에 추가'}
               </Button>
             )}
           </div>
@@ -877,11 +877,6 @@ export function WordpressPanel() {
         onAdd={() => addBlogContent(content.id)}
         onDelete={(id) => deleteBlogContent(id)}
         addLabel="새 WordPress 글 추가"
-        onAddToQueue={() => {
-          // Navigate inner panel to Step 4 (SEO/Publish)
-          // Note: step state is inside WordpressPanelInner, so this is a hint only
-          alert('Step 4 (SEO 검사) 탭에서 발행할 수 있습니다.')
-        }}
         renderContent={(blogContent) => (
           <WordpressPanelInner
             key={blogContent.id}
