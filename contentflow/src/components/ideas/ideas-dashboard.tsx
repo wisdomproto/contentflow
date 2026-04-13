@@ -263,29 +263,6 @@ Generate 30-50 keywords in ${langLabel} grouped by category. All keywords must b
           }
         }
 
-        // Google search volume via DataForSEO (all keywords in one request)
-        try {
-          const allKwList = groups.flatMap((g: any) => g.keywords.map((k: any) => k.keyword))
-          const googleRes = await fetch('/api/google/keywords', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ keywords: allKwList }),
-          })
-          const googleData = await googleRes.json()
-          if (googleData.keywords?.length) {
-            const googleMap = new Map<string, { vol: number; comp: string; cpc: number }>(
-              googleData.keywords.map((gk: any) => [gk.keyword, { vol: gk.searchVolume, comp: gk.competition, cpc: gk.cpc }])
-            )
-            groups = groups.map((g: any) => ({
-              ...g,
-              keywords: g.keywords.map((k: any) => {
-                const gd: any = googleMap.get(k.keyword) || googleMap.get(k.keyword.replace(/\s+/g, ''))
-                return gd ? { ...k, googleVolume: gd.vol, googleComp: gd.comp, googleCpc: gd.cpc } : k
-              }),
-            }))
-          }
-        } catch {}
-
         setKeywordGroups(groups)
       }
     } catch (err) {
@@ -806,7 +783,9 @@ Group by category. Return ONLY valid JSON:
                           <th className="text-center px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={e => toggleSort('competition', e.shiftKey)}>경쟁도{sortIcon('competition')}</th>
                         </>
                       )}
-                      <th className="text-center px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={e => toggleSort('google', e.shiftKey)}>Google{sortIcon('google')}</th>
+                      {tab !== 'naver-kw' && (
+                        <th className="text-center px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={e => toggleSort('google', e.shiftKey)}>Google{sortIcon('google')}</th>
+                      )}
                       <th className="text-center px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={e => toggleSort('difficulty', e.shiftKey)}>난이도{sortIcon('difficulty')}</th>
                       <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">액션</th>
                     </tr>
@@ -853,14 +832,16 @@ Group by category. Return ONLY valid JSON:
                             </td>
                           </>
                         )}
-                        <td className="px-4 py-2.5 text-center text-xs">
-                          {kw.googleVolume != null && kw.googleVolume > 0 ? (
-                            <div>
-                              <span className="font-medium">{kw.googleVolume.toLocaleString()}</span>
-                              <span className="text-muted-foreground text-[10px] ml-1">/ 월</span>
-                            </div>
-                          ) : <span className="text-muted-foreground">-</span>}
-                        </td>
+                        {tab !== 'naver-kw' && (
+                          <td className="px-4 py-2.5 text-center text-xs">
+                            {kw.googleVolume != null && kw.googleVolume > 0 ? (
+                              <div>
+                                <span className="font-medium">{kw.googleVolume.toLocaleString()}</span>
+                                <span className="text-muted-foreground text-[10px] ml-1">/ 월</span>
+                              </div>
+                            ) : <span className="text-muted-foreground">-</span>}
+                          </td>
+                        )}
                         <td className="px-4 py-2.5 text-center text-xs text-muted-foreground">{kw.difficulty || '-'}</td>
                         <td className="px-4 py-2.5 text-center">
                           <Button
