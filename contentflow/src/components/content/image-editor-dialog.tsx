@@ -174,11 +174,16 @@ export function ImageEditorDialog({ open, onOpenChange, src, onSave }: ImageEdit
         if (!drag) return
         const p = getRelPos(ev)
         setElements((prev) =>
-          prev.map((el) =>
-            el.id === drag.id
-              ? { ...el, x: p.x - drag.offsetX, y: p.y - drag.offsetY }
-              : el,
-          ),
+          prev.map((el) => {
+            if (el.id !== drag.id) return el
+            const dx = p.x - drag.offsetX - el.x
+            const dy = p.y - drag.offsetY - el.y
+            // Move both endpoints for lines/arrows
+            if ((el.type === 'line' || el.type === 'arrow') && el.x2 != null && el.y2 != null) {
+              return { ...el, x: el.x + dx, y: el.y + dy, x2: el.x2 + dx, y2: el.y2 + dy }
+            }
+            return { ...el, x: el.x + dx, y: el.y + dy }
+          }),
         )
       }
       const onUp = () => {
@@ -484,9 +489,12 @@ export function ImageEditorDialog({ open, onOpenChange, src, onSave }: ImageEdit
           {/* SVG overlay for lines, arrows, rects */}
           <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ overflow: 'visible' }}>
             <defs>
-              <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-                <polygon points="0 0, 10 3.5, 0 7" fill="currentColor" />
-              </marker>
+              {/* Dynamic arrowhead markers per element color */}
+              {elements.filter(el => el.type === 'arrow').map(el => (
+                <marker key={`ah-${el.id}`} id={`arrowhead-${el.id}`} markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+                  <polygon points="0 0, 10 3.5, 0 7" fill={el.color} />
+                </marker>
+              ))}
             </defs>
             {elements
               .filter((el) => el.type === 'line' || el.type === 'arrow' || el.type === 'rect')
@@ -514,8 +522,7 @@ export function ImageEditorDialog({ open, onOpenChange, src, onSave }: ImageEdit
                         stroke={el.color}
                         strokeWidth={el.strokeWidth || 3}
                         strokeLinecap="round"
-                        markerEnd={el.type === 'arrow' ? 'url(#arrowhead)' : undefined}
-                        style={{ color: el.color }}
+                        markerEnd={el.type === 'arrow' ? `url(#arrowhead-${el.id})` : undefined}
                       />
                       {isSelected && (
                         <line
