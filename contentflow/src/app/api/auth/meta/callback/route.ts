@@ -4,13 +4,14 @@ export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get('code')
   const error = req.nextUrl.searchParams.get('error')
 
+  const baseUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin
+
   if (error || !code) {
-    return NextResponse.redirect(new URL('/settings?meta_error=' + (error || 'no_code'), req.url))
+    return NextResponse.redirect(new URL('/settings?meta_error=' + (error || 'no_code'), baseUrl))
   }
 
   const appId = process.env.META_APP_ID!
   const appSecret = process.env.META_APP_SECRET!
-  const baseUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin
   const redirectUri = `${baseUrl}/api/auth/meta/callback`
 
   try {
@@ -100,8 +101,8 @@ export async function GET(req: NextRequest) {
 
     // Redirect back with token in URL (client will store it)
     const encoded = encodeURIComponent(JSON.stringify(connectionInfo))
-    return NextResponse.redirect(new URL(`/settings?meta_connected=${encoded}`, req.url))
+    return NextResponse.redirect(new URL(`/settings?meta_connected=${encoded}`, baseUrl))
   } catch (err) {
-    return NextResponse.redirect(new URL('/settings?meta_error=' + String(err), req.url))
+    return NextResponse.redirect(new URL('/settings?meta_error=' + String(err), baseUrl))
   }
 }
