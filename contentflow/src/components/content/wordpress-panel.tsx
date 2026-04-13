@@ -16,7 +16,7 @@ import { useCardImageGeneration } from '@/hooks/use-card-image-generation';
 import { useProjectStore } from '@/stores/project-store';
 import { buildBlogPrompt, buildBlogImagePromptForCard } from '@/lib/prompt-builder';
 import { GenerationButton } from './generation-button';
-import { Globe } from 'lucide-react';
+import { Globe, Loader2 } from 'lucide-react';
 import { generateId } from '@/lib/utils';
 import type { Content, Project, BlogContent, BlogCard } from '@/types/database';
 
@@ -82,6 +82,7 @@ function WordpressPanelInner({ blogContent, content, project, hasBaseArticle, ch
     deleteBlogCard,
     addBlogCard,
   } = useProjectStore();
+  const { savedKeywords } = useProjectStore();
 
   const baseArticle = getBaseArticle(content.id);
   const cards = getBlogCards(blogContent.id);
@@ -270,43 +271,60 @@ function WordpressPanelInner({ blogContent, content, project, hasBaseArticle, ch
         <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold flex items-center gap-2">🎯 타겟 키워드 설정</h3>
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-7 text-xs gap-1"
-              disabled={keywordGenerating}
-              onClick={async () => {
-                setKeywordGenerating(true);
-                try {
-                  // Use Google keyword API (same as G 키워드 분석 module)
-                  const res = await fetch('/api/google/keywords', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ keywords: [content.title, ...(content.tags || [])].filter(Boolean).slice(0, 5) }),
-                  });
-                  const data = await res.json();
-                  if (data.keywords?.length) {
-                    const sorted = data.keywords.sort((a: any, b: any) => (b.searchVolume || 0) - (a.searchVolume || 0));
-                    const top = sorted[0];
-                    setPrimaryKeyword(top.keyword);
-                    const secondaries = sorted.slice(1, 6).map((k: any) => k.keyword);
-                    setSecondaryKeywords(secondaries.join(', '));
-                    updateBlogContent(blogContent.id, {
-                      primary_keyword: top.keyword,
-                      secondary_keywords: secondaries,
-                    });
-                  }
-                } catch (err) {
-                  console.error('Keyword recommendation error:', err);
-                } finally {
-                  setKeywordGenerating(false);
-                }
-              }}
-            >
-              {keywordGenerating ? '추천 중...' : '✨ AI 키워드 추천'}
-            </Button>
+            {keywordGenerating && <span className="text-xs text-muted-foreground flex items-center gap-1"><Loader2 size={12} className="animate-spin" /> 보조 키워드 조회 중...</span>}
           </div>
-          <p className="text-xs text-muted-foreground">AI가 콘텐츠를 분석하고 Google 검색량을 조회하여 최적 키워드를 추천합니다.</p>
+
+          {/* Main Keyword Pool */}
+          {(savedKeywords as any[]).length > 0 ? (
+            <div className="rounded-md border border-blue-500/30 bg-blue-500/5 p-3 space-y-2">
+              <div className="text-xs font-semibold flex items-center gap-1.5">🏆 메인 키워드 풀 <span className="text-muted-foreground font-normal">— 클릭하여 주요 키워드 선택 (Google 보조 키워드 자동 조회)</span></div>
+              <div className="flex flex-wrap gap-1.5">
+                {(savedKeywords as any[]).map((sk: any) => (
+                  <button
+                    key={sk.keyword}
+                    disabled={keywordGenerating}
+                    onClick={async () => {
+                      setPrimaryKeyword(sk.keyword);
+                      updateBlogContent(blogContent.id, { primary_keyword: sk.keyword });
+                      // Fetch Google secondary keywords
+                      setKeywordGenerating(true);
+                      try {
+                        const res = await fetch('/api/google/keywords', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ keywords: [sk.keyword] }),
+                        });
+                        const data = await res.json();
+                        if (data.keywords?.length) {
+                          const secs = data.keywords
+                            .filter((k: any) => k.keyword !== sk.keyword && (k.searchVolume || 0) > 0)
+                            .sort((a: any, b: any) => (b.searchVolume || 0) - (a.searchVolume || 0))
+                            .slice(0, 5)
+                            .map((k: any) => k.keyword);
+                          setSecondaryKeywords(secs.join(', '));
+                          updateBlogContent(blogContent.id, { secondary_keywords: secs });
+                        }
+                      } catch {} finally { setKeywordGenerating(false); }
+                    }}
+                    className={cn(
+                      'text-xs px-2.5 py-1 rounded-md border transition-colors',
+                      primaryKeyword === sk.keyword
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-background border-border hover:border-primary/50 hover:bg-accent'
+                    )}
+                  >
+                    {sk.keyword}
+                    {sk.googleVolume > 0 && <span className="ml-1 text-[10px] opacity-60">{sk.googleVolume?.toLocaleString()}</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-md border border-dashed border-border p-3 text-center text-xs text-muted-foreground">
+              <p>메인 키워드가 없습니다</p>
+              <p className="mt-1">💡 키워드/아이디어 → G키워드 분석에서 키워드를 ☆ 고정하면 여기에 표시됩니다</p>
+            </div>
+          )}
           <div>
             <label className="text-xs text-muted-foreground mb-1 block">주 키워드 (Primary)</label>
             <Input

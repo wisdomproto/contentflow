@@ -470,53 +470,28 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
   };
 
   // AI keyword recommendation
-  const handleRecommendKeywords = async () => {
+  // When user selects a main keyword as primary, auto-fetch secondary keyword suggestions
+  const handleSelectMainKeyword = async (keyword: string) => {
+    handlePrimaryKeywordChange(keyword);
+    // Auto-generate secondary keywords from the selected primary
     setRecommending(true);
     setRecommendedKeywords([]);
     try {
-      // 1. AI extracts seed keywords from title + base article
-      const articleSnippet = baseArticle?.body_plain_text?.substring(0, 300) || '';
-      const seedPrompt = `콘텐츠 제목과 내용에서 네이버 검색에 사용할 시드 키워드 5개를 추출하세요.
-제목: ${content.title}
-내용: ${articleSnippet}
-업종: ${project.industry || ''}
-
-규칙: 1~2단어 한국어 키워드, 공백 없이. JSON 배열만 반환: ["키워드1","키워드2","키워드3","키워드4","키워드5"]`;
-
-      let seeds: string[] = [];
-      try {
-        const seedText = await fetchAiGenerate(seedPrompt, channelModels.textModel);
-        const cleaned = seedText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-        const parsed = JSON.parse(cleaned.match(/\[[\s\S]*\]/)?.[0] || '[]');
-        if (Array.isArray(parsed)) seeds = parsed;
-      } catch {}
-      // Fallback: use tags or split title
-      if (seeds.length === 0) {
-        seeds = content.tags?.slice(0, 3) || content.title.split(/[\s—·,]+/).filter(w => w.length >= 2).slice(0, 3);
+      const res = await fetch('/api/naver/keywords', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keywords: [keyword.replace(/\s+/g, '')] }),
+      });
+      const data = await res.json();
+      if (data.keywords?.length) {
+        const results = data.keywords
+          .filter((kw: any) => kw.keyword !== keyword)
+          .map((kw: any) => ({ keyword: kw.keyword, naverVolume: kw.totalSearchVolume || 0, naverComp: kw.competition || '-' }))
+          .sort((a: any, b: any) => (b.naverVolume || 0) - (a.naverVolume || 0));
+        setRecommendedKeywords(results.slice(0, 20));
       }
-
-      // 2. Call Naver API for each seed
-      let allResults: any[] = [];
-      for (const seed of seeds) {
-        const res = await fetch('/api/naver/keywords', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ keywords: [seed.replace(/\s+/g, '')] }),
-        });
-        const data = await res.json();
-        if (data.keywords?.length) {
-          for (const kw of data.keywords) {
-            if (!allResults.some(r => r.keyword === kw.keyword)) {
-              allResults.push({ keyword: kw.keyword, naverVolume: kw.totalSearchVolume || 0, naverComp: kw.competition || '-' });
-            }
-          }
-        }
-        await new Promise(r => setTimeout(r, 300));
-      }
-      allResults.sort((a: any, b: any) => (b.naverVolume || 0) - (a.naverVolume || 0));
-      setRecommendedKeywords(allResults.slice(0, 30));
     } catch (err) {
-      console.error('Keyword recommendation error:', err);
+      console.error('Secondary keyword fetch error:', err);
     } finally {
       setRecommending(false);
     }
@@ -558,16 +533,41 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
         <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold flex items-center gap-2">🎯 키워드 설정</h3>
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-7 text-xs gap-1"
-              disabled={recommending || !hasBaseArticle}
-              onClick={handleRecommendKeywords}
-            >
-              {recommending ? <><Loader2 size={12} className="animate-spin" /> 추천 중...</> : '✨ AI 키워드 추천'}
-            </Button>
+            {recommending && <span className="text-xs text-muted-foreground flex items-center gap-1"><Loader2 size={12} className="animate-spin" /> 보조 키워드 조회 중...</span>}
           </div>
+
+          {/* Main Keyword Pool */}
+          {(savedKeywords as any[]).length > 0 ? (
+            <div className="rounded-md border border-yellow-500/30 bg-yellow-500/5 p-3 space-y-2">
+              <div className="text-xs font-semibold flex items-center gap-1.5">🏆 메인 키워드 풀 <span className="text-muted-foreground font-normal">— 클릭하여 주요 키워드 선택</span></div>
+              <div className="flex flex-wrap gap-1.5">
+                {(savedKeywords as any[]).map((sk: any) => (
+                  <button
+                    key={sk.keyword}
+                    onClick={() => handleSelectMainKeyword(sk.keyword)}
+                    className={cn(
+                      'text-xs px-2.5 py-1 rounded-md border transition-colors',
+                      primaryKeyword === sk.keyword
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-background border-border hover:border-primary/50 hover:bg-accent'
+                    )}
+                  >
+                    {sk.keyword}
+                    {sk.naverMonthly > 0 && <span className="ml-1 text-[10px] opacity-60">{sk.naverMonthly?.toLocaleString()}</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-md border border-dashed border-border p-3 text-center text-xs text-muted-foreground">
+              <p>메인 키워드가 없습니다</p>
+              <p className="mt-1">💡 키워드/아이디어 → N키워드 분석에서 키워드를 ☆ 고정하면 여기에 표시됩니다</p>
+            </div>
+          )}
+
+          {!hasBaseArticle && (
+            <p className="text-sm text-muted-foreground">기본 글을 먼저 작성해 주세요.</p>
+          )}
 
           {!hasBaseArticle && (
             <p className="text-sm text-muted-foreground">기본 글을 먼저 작성해 주세요.</p>
@@ -643,7 +643,7 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
           {/* AI Keyword Recommendation Results */}
           {recommendedKeywords.length > 0 && (
             <div className="rounded-md border border-border overflow-hidden">
-              <div className="bg-muted px-3 py-1.5 text-xs font-semibold">AI 추천 키워드</div>
+              <div className="bg-muted px-3 py-1.5 text-xs font-semibold">📊 보조 키워드 후보 <span className="font-normal text-muted-foreground">— 주요 키워드 "{primaryKeyword}" 파생</span></div>
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-border bg-muted/50">
@@ -733,38 +733,7 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
             </div>
           )}
 
-          {/* Saved keywords from store */}
-          {(savedKeywords as any[]).length > 0 && (
-            <div className="rounded-md border border-border p-3 space-y-2">
-              <div className="text-xs font-semibold text-muted-foreground">📁 보관함 키워드</div>
-              <div className="flex flex-wrap gap-1.5">
-                {(savedKeywords as any[]).map((sk: any) => (
-                  <Badge
-                    key={sk.keyword}
-                    variant="outline"
-                    className="text-xs gap-1 pr-1 cursor-pointer hover:bg-accent"
-                  >
-                    <button onClick={() => handlePrimaryKeywordChange(sk.keyword)} className="hover:underline" title="주요 키워드로 설정">
-                      {sk.keyword}
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (!secondaryKeywords.includes(sk.keyword)) {
-                          const updated = [...secondaryKeywords, sk.keyword];
-                          setSecondaryKeywords(updated);
-                          saveKeywords(primaryKeyword, updated);
-                        }
-                      }}
-                      className="hover:text-primary ml-0.5 text-[10px]"
-                      title="보조 키워드 추가"
-                    >
-                      +
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Note: Saved keywords are now shown as "메인 키워드 풀" at the top of Step 1 */}
 
           {/* Naver keyword search */}
           {hasBaseArticle && (
