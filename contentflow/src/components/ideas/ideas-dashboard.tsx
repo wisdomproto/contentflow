@@ -180,7 +180,7 @@ Brand: ${project.brand_name || project.name}
 Description: ${project.brand_description || ''}
 Target audience: ${JSON.stringify(project.target_audience) || ''}
 USP: ${project.usp || ''}
-${seedKeyword ? `Seed keyword: ${seedKeyword}` : ''}
+${seedKeyword ? `Seed keywords: ${seedKeyword}` : ''}
 Existing content count: ${contents.filter(c => c.project_id === selectedProjectId).length}
 Language: ${langLabel}
 
@@ -300,20 +300,26 @@ Generate 30-50 keywords in ${langLabel} grouped by category. All keywords must b
     if (!project) return
     setGoldenLoading(true)
     try {
-      // 1. AI generates seed keywords from project info
-      const seedPrompt = `Based on this business, generate 8 seed keywords for Naver search volume research.
+      // 1. Get seed keywords: user-provided (comma-separated) or AI-generated
+      let seeds: string[] = []
+      if (seedKeyword.trim()) {
+        // User provided seeds directly — skip AI, go straight to Naver
+        seeds = seedKeyword.split(/[,，、\s]+/).map(s => s.trim()).filter(Boolean)
+      } else {
+        // AI generates seeds from project info
+        const seedPrompt = `Based on this business, generate 8 seed keywords for Naver search volume research.
 Business: ${project.name}
 Industry: ${project.industry || ''}
 Brand: ${project.brand_name || project.name}
 Description: ${project.brand_description || ''}
-${seedKeyword ? `Focus area: ${seedKeyword}` : ''}
 
 Return ONLY a JSON array of 8 Korean seed keywords (single words or short phrases, no spaces):
 ["키워드1","키워드2",...]`
-
-      const seedText = await fetchAiGenerate(seedPrompt, 'gemini-2.5-flash')
-      const seedMatch = seedText.match(/\[[\s\S]*?\]/)
-      const seeds: string[] = seedMatch ? JSON.parse(seedMatch[0]) : ['성장클리닉', '키성장', '성장호르몬', '성장판검사', '아이키']
+        const seedText = await fetchAiGenerate(seedPrompt, 'gemini-2.5-flash')
+        const seedMatch = seedText.match(/\[[\s\S]*?\]/)
+        try { seeds = seedMatch ? JSON.parse(seedMatch[0]) : []; } catch {}
+        if (seeds.length === 0) seeds = ['성장클리닉', '키성장', '성장호르몬', '성장판검사', '아이키']
+      }
 
       // 2. Call Naver API for each seed (with delay)
       const allResults = new Map<string, { keyword: string; vol: number; comp: string; pc: number; mob: number }>()
@@ -524,7 +530,7 @@ Respond in Korean. Return strategy:
   }
 
   const seedPlaceholder = selectedLang === 'ko'
-    ? '시드 키워드 입력 (선택사항, 예: 성장클리닉)'
+    ? '시드 키워드 (쉼표로 여러 개, 예: 성장클리닉, 키성장, 성조숙증)'
     : selectedLang === 'en'
     ? 'Enter seed keyword (optional, e.g. growth clinic)'
     : selectedLang === 'ja'
