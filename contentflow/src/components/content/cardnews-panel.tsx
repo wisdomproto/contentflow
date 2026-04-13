@@ -554,9 +554,9 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
   return (
     <div className="flex gap-4 h-full">
       {/* ══ Left sidebar: templates + properties ══ */}
-      <div className="w-72 shrink-0 space-y-3 overflow-y-auto border-r border-border pr-3">
+      <div className="w-80 xl:w-96 shrink-0 space-y-3 overflow-y-auto border-r border-border pr-3">
         <h3 className="text-xs font-semibold text-muted-foreground">템플릿</h3>
-        <div className="grid grid-cols-4 gap-1.5">
+        <div className="grid grid-cols-4 xl:grid-cols-5 gap-1.5">
           {allTemplates.map(t => (
             <div key={t.id} className="relative shrink-0 group/tpl">
               <button
