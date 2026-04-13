@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Trash2, Plus, ChevronDown, Loader2, Type, Upload, Download, Bold, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
+import { Trash2, Plus, ChevronDown, Loader2, Type, Upload, Download, Bold, AlignLeft, AlignCenter, AlignRight, AlignJustify } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import type { InstagramCard } from '@/types/database';
@@ -18,7 +18,7 @@ export interface TextBlock {
   fontSize: number;
   color: string;
   fontWeight: 'normal' | 'bold';
-  textAlign: 'left' | 'center' | 'right';
+  textAlign: 'left' | 'center' | 'right' | 'justify';
   width: number;   // % of card width
   height?: number;  // % of card height (auto if undefined)
   hidden?: boolean; // hide this block from canvas
@@ -423,10 +423,10 @@ function TextBlockEditor({ block, onChange, onDelete }: {
           S
         </button>
         {/* Align */}
-        {(['left', 'center', 'right'] as const).map(a => (
+        {(['left', 'center', 'right', 'justify'] as const).map(a => (
           <button key={a} onClick={() => onChange({ textAlign: a })}
             className={cn('h-5 w-5 flex items-center justify-center rounded border text-[10px]', block.textAlign === a ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:bg-muted')}>
-            {a === 'left' ? <AlignLeft size={10} /> : a === 'center' ? <AlignCenter size={10} /> : <AlignRight size={10} />}
+            {a === 'left' ? <AlignLeft size={10} /> : a === 'center' ? <AlignCenter size={10} /> : a === 'right' ? <AlignRight size={10} /> : <AlignJustify size={10} />}
           </button>
         ))}
         {/* Width */}

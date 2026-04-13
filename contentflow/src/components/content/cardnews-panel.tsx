@@ -697,7 +697,7 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
                           }}
                           className="w-4 h-4 rounded border border-border cursor-pointer p-0" />
                         <div className="flex gap-0.5">
-                          {(['left', 'center', 'right'] as const).map(a => (
+                          {(['left', 'center', 'right', 'justify'] as const).map(a => (
                             <button key={a}
                               onClick={() => {
                                 for (const card of cards) {
@@ -708,7 +708,7 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
                               }}
                               className={cn('w-4 h-4 flex items-center justify-center rounded border text-[8px]',
                                 block.textAlign === a ? 'border-primary bg-primary/10 text-primary' : 'border-border')}>
-                              {a === 'left' ? '←' : a === 'center' ? '↔' : '→'}
+                              {a === 'left' ? '←' : a === 'center' ? '↔' : a === 'right' ? '→' : '≡'}
                             </button>
                           ))}
                         </div>
