@@ -311,6 +311,13 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
             if (!body && title.length > 30) {
               body = title;
             }
+            // Truncate body to ~80 chars if AI generated too long
+            if (body.length > 100) {
+              const truncated = body.substring(0, 80);
+              const lastPeriod = truncated.lastIndexOf('.');
+              const lastSpace = truncated.lastIndexOf(' ');
+              body = lastPeriod > 40 ? truncated.substring(0, lastPeriod + 1) : truncated.substring(0, lastSpace > 40 ? lastSpace : 80) + '...';
+            }
             const footer = slide.footer || '';
             const combined = [header, title, body, footer].filter(Boolean).join('\n');
 
