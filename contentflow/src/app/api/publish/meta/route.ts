@@ -1,12 +1,30 @@
 import { NextRequest } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
 const GRAPH_URL = 'https://graph.facebook.com/v21.0'
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+)
 
 export async function POST(req: NextRequest) {
-  const { platform, accessToken, pageId, caption, imageUrl, scheduledAt } = await req.json()
+  const { platform, accessToken, pageId, caption, imageUrl, scheduledAt, projectId, contentId, title, language } = await req.json()
 
   if (!accessToken || !pageId) {
     return Response.json({ error: 'Meta access token and page ID required' }, { status: 400 })
+  }
+
+  async function saveRecord(channel: string, postId: string) {
+    if (projectId) {
+      await supabase.from('publish_records').insert({
+        project_id: projectId, content_id: contentId || null,
+        channel, status: scheduledAt ? 'scheduled' : 'published',
+        title: title || caption?.substring(0, 100) || '', url: '',
+        language: language || 'ko', external_id: postId,
+        published_at: scheduledAt || new Date().toISOString(),
+        scheduled_at: scheduledAt || null,
+      })
+    }
   }
 
   try {
@@ -26,6 +44,7 @@ export async function POST(req: NextRequest) {
       })
       const result = await publishRes.json()
       if (result.error) return Response.json({ error: result.error.message }, { status: 400 })
+      await saveRecord('instagram', result.id)
       return Response.json({ success: true, postId: result.id })
     }
 
@@ -42,6 +61,7 @@ export async function POST(req: NextRequest) {
       })
       const result = await res.json()
       if (result.error) return Response.json({ error: result.error.message }, { status: 400 })
+      await saveRecord('facebook', result.id)
       return Response.json({ success: true, postId: result.id })
     }
 
@@ -66,6 +86,7 @@ export async function POST(req: NextRequest) {
       })
       const result = await publishRes.json()
       if (result.error) return Response.json({ error: result.error.message }, { status: 400 })
+      await saveRecord('threads', result.id)
       return Response.json({ success: true, postId: result.id })
     }
 
