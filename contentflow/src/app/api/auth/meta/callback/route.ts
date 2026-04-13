@@ -10,7 +10,8 @@ export async function GET(req: NextRequest) {
 
   const appId = process.env.META_APP_ID!
   const appSecret = process.env.META_APP_SECRET!
-  const redirectUri = `${req.nextUrl.origin}/api/auth/meta/callback`
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin
+  const redirectUri = `${baseUrl}/api/auth/meta/callback`
 
   try {
     // Exchange code for short-lived token

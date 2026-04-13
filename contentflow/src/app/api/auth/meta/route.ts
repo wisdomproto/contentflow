@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(req: NextRequest) {
   const appId = process.env.META_APP_ID
-  const redirectUri = `${req.nextUrl.origin}/api/auth/meta/callback`
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin
+  const redirectUri = `${baseUrl}/api/auth/meta/callback`
 
   // Required scopes for Instagram, Facebook Pages, and Threads
   const scopes = [
