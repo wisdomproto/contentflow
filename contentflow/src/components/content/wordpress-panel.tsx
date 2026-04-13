@@ -278,22 +278,18 @@ function WordpressPanelInner({ blogContent, content, project, hasBaseArticle, ch
               onClick={async () => {
                 setKeywordGenerating(true);
                 try {
-                  const res = await fetch('/api/keywords/recommend', {
+                  // Use Google keyword API (same as G 키워드 분석 module)
+                  const res = await fetch('/api/google/keywords', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      title: content.title,
-                      baseArticle: baseArticle?.body_plain_text?.substring(0, 500),
-                      industry: project.industry,
-                      language: 'en', // WordPress = Google/English focus
-                    }),
+                    body: JSON.stringify({ keywords: [content.title, ...(content.tags || [])].filter(Boolean).slice(0, 5) }),
                   });
                   const data = await res.json();
                   if (data.keywords?.length) {
-                    // Auto-set top keyword as primary, next 5 as secondary
-                    const top = data.keywords[0];
+                    const sorted = data.keywords.sort((a: any, b: any) => (b.searchVolume || 0) - (a.searchVolume || 0));
+                    const top = sorted[0];
                     setPrimaryKeyword(top.keyword);
-                    const secondaries = data.keywords.slice(1, 6).map((k: any) => k.keyword);
+                    const secondaries = sorted.slice(1, 6).map((k: any) => k.keyword);
                     setSecondaryKeywords(secondaries.join(', '));
                     updateBlogContent(blogContent.id, {
                       primary_keyword: top.keyword,

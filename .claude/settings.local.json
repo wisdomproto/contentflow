@@ -192,7 +192,12 @@
       "Bash(node scripts/generate-base-articles.mjs)",
       "Bash(node scripts/fix-article-tone.mjs)",
       "Bash(kill %1)",
-      "Bash(node scripts/extract-html-text.mjs \"C:\\\\Users\\\\101024\\\\OneDrive\\\\1. projects \\(new\\)\\\\1. SB HC\\\\5. 성장앱\\\\6. 뼈연령 측정\\\\소아의_골_연령_판정.html\")"
+      "Bash(node scripts/extract-html-text.mjs \"C:\\\\Users\\\\101024\\\\OneDrive\\\\1. projects \\(new\\)\\\\1. SB HC\\\\5. 성장앱\\\\6. 뼈연령 측정\\\\소아의_골_연령_판정.html\")",
+      "Bash(node -e \"fetch\\('http://localhost:3000/api/keywords/recommend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify\\({title:'성장호르몬',language:'ko'}\\)}\\).then\\(r=>r.json\\(\\)\\).then\\(d=>console.log\\('Result:',d.keywords?.length\\)\\).catch\\(e=>console.error\\(e\\)\\);\")",
+      "Bash(node -e \"fetch\\('http://localhost:3000/api/keywords/recommend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify\\({title:'성장호르몬',language:'ko'}\\)}\\).then\\(r=>r.json\\(\\)\\).then\\(d=>console.log\\('Result:',d.keywords?.length\\)\\);\")",
+      "Bash(disown sleep:*)",
+      "Bash(node -e \" fetch\\('http://localhost:3000/api/keywords/recommend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify\\({ title: '성장호르몬', industry: '성장클리닉', language: 'ko' }\\) }\\).then\\(r => r.json\\(\\)\\).then\\(d => { console.log\\('Keywords:', d.keywords?.length\\); d.keywords?.slice\\(0, 5\\).forEach\\(k => console.log\\(' ', k.keyword, '| naver:', k.naverVolume\\)\\); }\\); \")",
+      "Bash(node -e \"fetch\\('http://localhost:3000/api/keywords/recommend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify\\({title:'성장호르몬',language:'ko'}\\)}\\).then\\(r=>r.json\\(\\)\\).then\\(d=>console.log\\('R:',d.keywords?.length\\)\\);\")"
     ]
   }
 }

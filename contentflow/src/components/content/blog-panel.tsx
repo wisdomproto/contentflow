@@ -474,44 +474,28 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
     setRecommending(true);
     setRecommendedKeywords([]);
     try {
-      const res = await fetch('/api/keywords/recommend', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: content.title,
-          baseArticle: baseArticle?.body_plain_text || baseArticle?.body || '',
-          industry: project.industry || '',
-          language: 'ko',
-        }),
-      });
-      if (res.ok) {
+      // Use content title + tags as seed keywords for Naver API (same as keyword analysis module)
+      const seeds = [content.title, ...(content.tags || [])].filter(Boolean).slice(0, 5);
+      let allResults: any[] = [];
+      for (const seed of seeds) {
+        const res = await fetch('/api/naver/keywords', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ keywords: [seed] }),
+        });
         const data = await res.json();
-        setRecommendedKeywords(data.keywords ?? data ?? []);
-      } else {
-        // Fallback: use AI generation
-        const articleText = baseArticle?.body_plain_text || baseArticle?.body || content.title || '';
-        const prompt = `You are a Naver SEO keyword researcher. Suggest optimal keywords for a blog post.
-
-${project.industry ? `Industry: ${project.industry}` : ''}
-${project.brand_name ? `Brand: ${project.brand_name}` : ''}
-Article title: "${content.title}"
-${articleText ? `Article content (first 500 chars): ${articleText.substring(0, 500)}` : ''}
-
-Return ONLY valid JSON array (no explanation):
-[
-  { "keyword": "키워드1", "naverVolume": 5000, "naverComp": "중" },
-  { "keyword": "키워드2", "naverVolume": 3000, "naverComp": "낮음" },
-  { "keyword": "키워드3", "naverVolume": 2000, "naverComp": "높음" },
-  { "keyword": "키워드4", "naverVolume": 1500, "naverComp": "중" },
-  { "keyword": "키워드5", "naverVolume": 1000, "naverComp": "낮음" }
-]`;
-        const fullText = await fetchAiGenerate(prompt, channelModels.textModel);
-        const arrMatch = fullText.match(/\[[\s\S]*\]/);
-        if (arrMatch) {
-          const parsed = JSON.parse(arrMatch[0]);
-          setRecommendedKeywords(parsed);
+        if (data.keywords?.length) {
+          for (const kw of data.keywords) {
+            if (!allResults.some(r => r.keyword === kw.keyword)) {
+              allResults.push({ keyword: kw.keyword, naverVolume: kw.totalSearchVolume || 0, naverComp: kw.competition || '-' });
+            }
+          }
         }
+        await new Promise(r => setTimeout(r, 300));
       }
+      // Sort by volume desc
+      allResults.sort((a: any, b: any) => (b.naverVolume || 0) - (a.naverVolume || 0));
+      setRecommendedKeywords(allResults.slice(0, 30));
     } catch (err) {
       console.error('Keyword recommendation error:', err);
     } finally {

@@ -51,14 +51,29 @@ Return ONLY a JSON array: ["keyword1","keyword2",...]`;
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.5, maxOutputTokens: 1000 },
+          generationConfig: { temperature: 0.5, maxOutputTokens: 2000 },
         }),
       }
     );
     const geminiData = await geminiRes.json();
-    const aiText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
-    const match = aiText.match(/\[[\s\S]*?\]/);
-    const candidates: string[] = match ? JSON.parse(match[0]) : [];
+    const parts = geminiData.candidates?.[0]?.content?.parts || [];
+    // Gemini 2.5 Flash "thinking" model: concatenate all text parts
+    let aiText = '';
+    for (const p of parts) {
+      if (p.text) aiText += p.text;
+    }
+    // Strip markdown code blocks and parse JSON array
+    aiText = aiText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    let candidates: string[] = [];
+    try {
+      candidates = JSON.parse(aiText);
+    } catch {
+      const match = aiText.match(/\[[\s\S]*\]/);
+      if (match) {
+        try { candidates = JSON.parse(match[0]); } catch {}
+      }
+    }
+    if (!Array.isArray(candidates)) candidates = [];
 
     if (candidates.length === 0) {
       return NextResponse.json({ keywords: [] });
@@ -101,9 +116,7 @@ Return ONLY a JSON array: ["keyword1","keyword2",...]`;
               for (const nk of (data.keywordList || [])) {
                 const vol = (typeof nk.monthlyPcQcCnt === 'number' ? nk.monthlyPcQcCnt : 0)
                   + (typeof nk.monthlyMobileQcCnt === 'number' ? nk.monthlyMobileQcCnt : 0);
-                // Only include if it matches one of our candidates (or is the candidate itself)
-                const matchedCandidate = candidates.find(c => c.replace(/\s+/g, '') === nk.relKeyword.replace(/\s+/g, ''));
-                if (matchedCandidate || candidates.some(c => nk.relKeyword.includes(c.replace(/\s+/g, '')))) {
+                if (vol > 0) {
                   const existing = results.find(r => r.keyword === nk.relKeyword);
                   if (!existing) {
                     results.push({ keyword: nk.relKeyword, naverVolume: vol, naverComp: nk.compIdx });
@@ -152,8 +165,12 @@ Return ONLY a JSON array: ["keyword1","keyword2",...]`;
       } catch {}
     }
 
-    // 3. Sort by total volume (naver + google)
+    // 3. Sort: AI candidates first (by volume), then Naver-discovered (by volume)
+    const candidateSet = new Set(candidates.map(c => c.replace(/\s+/g, '')));
     results.sort((a, b) => {
+      const aIsCandidate = candidateSet.has(a.keyword.replace(/\s+/g, '')) ? 1 : 0;
+      const bIsCandidate = candidateSet.has(b.keyword.replace(/\s+/g, '')) ? 1 : 0;
+      if (aIsCandidate !== bIsCandidate) return bIsCandidate - aIsCandidate;
       const aVol = (a.naverVolume || 0) + (a.googleVolume || 0);
       const bVol = (b.naverVolume || 0) + (b.googleVolume || 0);
       return bVol - aVol;
