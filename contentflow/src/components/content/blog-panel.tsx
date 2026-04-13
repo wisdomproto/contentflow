@@ -474,14 +474,34 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
     setRecommending(true);
     setRecommendedKeywords([]);
     try {
-      // Use content title + tags as seed keywords for Naver API (same as keyword analysis module)
-      const seeds = [content.title, ...(content.tags || [])].filter(Boolean).slice(0, 5);
+      // 1. AI extracts seed keywords from title + base article
+      const articleSnippet = baseArticle?.body_plain_text?.substring(0, 300) || '';
+      const seedPrompt = `콘텐츠 제목과 내용에서 네이버 검색에 사용할 시드 키워드 5개를 추출하세요.
+제목: ${content.title}
+내용: ${articleSnippet}
+업종: ${project.industry || ''}
+
+규칙: 1~2단어 한국어 키워드, 공백 없이. JSON 배열만 반환: ["키워드1","키워드2","키워드3","키워드4","키워드5"]`;
+
+      let seeds: string[] = [];
+      try {
+        const seedText = await fetchAiGenerate(seedPrompt, channelModels.textModel);
+        const cleaned = seedText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        const parsed = JSON.parse(cleaned.match(/\[[\s\S]*\]/)?.[0] || '[]');
+        if (Array.isArray(parsed)) seeds = parsed;
+      } catch {}
+      // Fallback: use tags or split title
+      if (seeds.length === 0) {
+        seeds = content.tags?.slice(0, 3) || content.title.split(/[\s—·,]+/).filter(w => w.length >= 2).slice(0, 3);
+      }
+
+      // 2. Call Naver API for each seed
       let allResults: any[] = [];
       for (const seed of seeds) {
         const res = await fetch('/api/naver/keywords', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ keywords: [seed] }),
+          body: JSON.stringify({ keywords: [seed.replace(/\s+/g, '')] }),
         });
         const data = await res.json();
         if (data.keywords?.length) {
@@ -493,7 +513,6 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
         }
         await new Promise(r => setTimeout(r, 300));
       }
-      // Sort by volume desc
       allResults.sort((a: any, b: any) => (b.naverVolume || 0) - (a.naverVolume || 0));
       setRecommendedKeywords(allResults.slice(0, 30));
     } catch (err) {
