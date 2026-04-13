@@ -170,12 +170,13 @@ export function ImageEditorDialog({ open, onOpenChange, src, onSave }: ImageEdit
       draggingRef.current = { id: elId, offsetX: pos.x - el.x, offsetY: pos.y - el.y }
 
       const onMove = (ev: PointerEvent) => {
-        if (!draggingRef.current) return
+        const drag = draggingRef.current
+        if (!drag) return
         const p = getRelPos(ev)
         setElements((prev) =>
           prev.map((el) =>
-            el.id === draggingRef.current!.id
-              ? { ...el, x: p.x - draggingRef.current!.offsetX, y: p.y - draggingRef.current!.offsetY }
+            el.id === drag.id
+              ? { ...el, x: p.x - drag.offsetX, y: p.y - drag.offsetY }
               : el,
           ),
         )
@@ -242,23 +243,21 @@ export function ImageEditorDialog({ open, onOpenChange, src, onSave }: ImageEdit
       setElements((prev) => [...prev, newEl])
 
       const onMove = (ev: PointerEvent) => {
-        if (!drawingRef.current) return
+        const draw = drawingRef.current
+        if (!draw) return
         const p = getRelPos(ev)
         setElements((prev) =>
           prev.map((el) => {
-            if (el.id !== drawingRef.current!.id) return el
+            if (el.id !== draw.id) return el
             if (el.type === 'line' || el.type === 'arrow') {
               return { ...el, x2: p.x, y2: p.y }
             }
-            // rect: keep top-left, adjust width/height
-            const sx = drawingRef.current!.startX
-            const sy = drawingRef.current!.startY
             return {
               ...el,
-              x: Math.min(sx, p.x),
-              y: Math.min(sy, p.y),
-              rectWidth: Math.abs(p.x - sx),
-              rectHeight: Math.abs(p.y - sy),
+              x: Math.min(draw.startX, p.x),
+              y: Math.min(draw.startY, p.y),
+              rectWidth: Math.abs(p.x - draw.startX),
+              rectHeight: Math.abs(p.y - draw.startY),
             }
           }),
         )
