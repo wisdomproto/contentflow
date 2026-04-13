@@ -5,7 +5,7 @@ import { SidebarNavItem } from './sidebar-nav-item'
 
 const navGroups = [
   {
-    label: '콘텐츠',
+    label: '오가닉 마케팅',
     items: [
       { href: '/ideas', icon: '💡', label: '키워드 / 아이디어' },
       { href: '/content', icon: '📝', label: '콘텐츠 생성' },
@@ -19,7 +19,7 @@ const navGroups = [
     ],
   },
   {
-    label: '광고',
+    label: '유료 마케팅',
     items: [
       { href: '/ads', icon: '📢', label: '광고 관리' },
     ],
