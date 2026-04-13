@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ImageCardWidget } from './image-card-widget';
+import { ImageEditorDialog } from './image-editor-dialog';
 import { ImageStyleSelector } from './image-style-selector';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -119,6 +120,7 @@ function SectionImageArea({
 }) {
   const [showPrompt, setShowPrompt] = useState(!content.url);
   const [imageHistory, setImageHistory] = useState<string[]>([]);
+  const [showEditor, setShowEditor] = useState(false);
 
   return (
     <div className="p-4 space-y-3">
@@ -130,6 +132,7 @@ function SectionImageArea({
         isGenerating={isGenerating}
         onRegenerate={onGenerateImage}
         onAbort={onAbortImage}
+        onEdit={content.url ? () => setShowEditor(true) : undefined}
         onDelete={() => {
           if (content.url) setImageHistory(prev => [content.url!, ...prev].slice(0, 10));
           onUpdate({ url: '' });
@@ -191,6 +194,19 @@ function SectionImageArea({
           </div>
         )}
       </div>
+
+      {/* Image Editor */}
+      {content.url && (
+        <ImageEditorDialog
+          open={showEditor}
+          onOpenChange={setShowEditor}
+          src={content.url}
+          onSave={(dataUrl) => {
+            if (content.url) setImageHistory(prev => [content.url!, ...prev].slice(0, 10));
+            onUpdate({ url: dataUrl });
+          }}
+        />
+      )}
     </div>
   );
 }

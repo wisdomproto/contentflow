@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Trash2, RefreshCw, Download, Upload, Loader2, ZoomIn, ChevronLeft, ChevronRight, Wand2, X } from 'lucide-react';
+import { Trash2, RefreshCw, Download, Upload, Loader2, ZoomIn, Pencil, ChevronLeft, ChevronRight, Wand2, X } from 'lucide-react';
 import { ImageLightbox } from './image-lightbox';
 import { cn } from '@/lib/utils';
 
@@ -28,6 +28,8 @@ export interface ImageCardWidgetProps {
   isGenerating?: boolean;
   /** Placeholder when no image */
   placeholder?: string;
+  /** Called when edit button is clicked */
+  onEdit?: () => void;
   /** Hide bottom action buttons (for inline/compact usage) */
   hideBottomActions?: boolean;
   className?: string;
@@ -43,6 +45,7 @@ export function ImageCardWidget({
   onDelete,
   onUpload,
   onRestore,
+  onEdit,
   isGenerating = false,
   placeholder = '이미지가 없습니다',
   hideBottomActions = false,
@@ -129,6 +132,11 @@ export function ImageCardWidget({
               <Button variant="ghost" size="sm" onClick={() => setShowLightbox(true)} className="h-6 w-6 p-0 bg-black/40 hover:bg-black/60 text-white">
                 <ZoomIn size={12} />
               </Button>
+              {onEdit && (
+                <Button variant="ghost" size="sm" onClick={onEdit} className="h-6 w-6 p-0 bg-black/40 hover:bg-blue-600/80 text-white" title="이미지 편집">
+                  <Pencil size={12} />
+                </Button>
+              )}
               {onRegenerate && (
                 <Button variant="ghost" size="sm" onClick={onRegenerate} disabled={isGenerating} className="h-6 w-6 p-0 bg-black/40 hover:bg-black/60 text-white">
                   <RefreshCw size={12} className={isGenerating ? 'animate-spin' : ''} />
