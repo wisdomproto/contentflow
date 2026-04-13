@@ -306,7 +306,11 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
           const newCards: InstagramCard[] = parsed.slides.map((slide, i) => {
             const header = slide.header || '';
             const title = slide.title || slide.headline || '';
-            const body = slide.body || slide.text_overlay || '';
+            let body = slide.body || slide.text_overlay || '';
+            // Fallback: if body is empty but title is long, split it
+            if (!body && title.length > 30) {
+              body = title;
+            }
             const footer = slide.footer || '';
             const combined = [header, title, body, footer].filter(Boolean).join('\n');
 
