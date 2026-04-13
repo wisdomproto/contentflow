@@ -447,7 +447,8 @@ export function buildBlogImagePromptForCard(
   project: Project,
   cards: BlogCard[],
   cardIndex: number,
-  imageStyle: string
+  imageStyle: string,
+  imageInstruction?: string,
 ): string {
   const currentCard = cards[cardIndex];
   const alt = (currentCard?.content as { alt?: string })?.alt ?? '';
@@ -464,8 +465,13 @@ export function buildBlogImagePromptForCard(
     parts.push(project.blog_image_style_prompt);
   }
 
-  parts.push('High quality, suitable for a professional blog post. No text in the image.');
-  parts.push('Korean context: any text shown must be in Korean (한글). People should be East Asian / Korean appearance.');
+  // User custom instruction (overrides defaults if provided)
+  if (imageInstruction?.trim()) {
+    parts.push(imageInstruction.trim());
+  } else {
+    parts.push('High quality, suitable for a professional blog post. No text in the image.');
+    parts.push('Korean context: People should be East Asian / Korean appearance.');
+  }
 
   return parts.join('\n');
 }

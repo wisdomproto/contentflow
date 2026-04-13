@@ -135,8 +135,8 @@ interface ProjectState {
   getImportedStrategy: (projectId: string) => ImportedStrategy | null;
 
   // Channel model helpers
-  getChannelModels: (projectId: string, channel: string) => { textModel: string; imageModel: string; aspectRatio: string; imageStyle: string };
-  setChannelModels: (projectId: string, channel: string, models: { textModel?: string; imageModel?: string; aspectRatio?: string; imageStyle?: string }) => void;
+  getChannelModels: (projectId: string, channel: string) => { textModel: string; imageModel: string; aspectRatio: string; imageStyle: string; imageInstruction: string };
+  setChannelModels: (projectId: string, channel: string, models: { textModel?: string; imageModel?: string; aspectRatio?: string; imageStyle?: string; imageInstruction?: string }) => void;
 
   // UI state
   openProjectSettings: (projectId: string) => void;
@@ -1555,6 +1555,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       imageModel: channelSettings.imageModel ?? (settings.image_model as string) ?? DEFAULT_IMAGE_MODEL,
       aspectRatio: channelSettings.aspectRatio ?? defaultAspectRatios[channel] ?? '1:1',
       imageStyle: channelSettings.imageStyle ?? '',
+      imageInstruction: channelSettings.imageInstruction ?? '',
     };
   },
   setChannelModels: (projectId, channel, models) => {

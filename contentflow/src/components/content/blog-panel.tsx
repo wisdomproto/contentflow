@@ -107,7 +107,7 @@ interface BlogPanelInnerProps {
   content: Content;
   project: Project;
   hasBaseArticle: boolean;
-  channelModels: { textModel: string; imageModel: string; aspectRatio: string; imageStyle: string };
+  channelModels: { textModel: string; imageModel: string; aspectRatio: string; imageStyle: string; imageInstruction: string };
   maxRetries: number;
 }
 
@@ -373,7 +373,7 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
       const style = cardContent.image_style || channelModels.imageStyle || '';
       if (cardContent.image_prompt) return style ? `${style}.\n${cardContent.image_prompt}` : cardContent.image_prompt;
       const idx = cards.findIndex((c) => c.id === card.id);
-      return buildBlogImagePromptForCard(project, cards, idx, style);
+      return buildBlogImagePromptForCard(project, cards, idx, style, channelModels.imageInstruction);
     },
     getExistingImage: (card: BlogCard) => (card.content as Record<string, unknown>)?.url as string || null,
     saveResult: (cardId: string, dataUrl: string, prompt: string) => {
@@ -1156,6 +1156,8 @@ export function BlogPanel() {
             onAspectRatioChange={(r) => setChannelModels(project.id, 'blog', { aspectRatio: r })}
             imageStyle={channelModels.imageStyle}
             onImageStyleChange={(s) => setChannelModels(project.id, 'blog', { imageStyle: s })}
+            imageInstruction={channelModels.imageInstruction}
+            onImageInstructionChange={(i) => setChannelModels(project.id, 'blog', { imageInstruction: i })}
             defaultAspectRatio="16:9"
           />
         </div>

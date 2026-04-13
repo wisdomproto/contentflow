@@ -1,7 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { Cpu, ImageIcon, RectangleHorizontal, Palette } from 'lucide-react';
+import { Cpu, ImageIcon, RectangleHorizontal, Palette, MessageSquare, ChevronDown, ChevronRight } from 'lucide-react';
 import { TEXT_MODELS, IMAGE_MODELS } from '@/lib/ai-models';
 import { ASPECT_RATIO_PRESETS, ImageStyleSelector } from './image-style-selector';
 
@@ -18,6 +19,9 @@ interface ChannelModelSelectorProps {
   onImageStyleChange?: (style: string) => void;
   showImageSettings?: boolean;
   defaultAspectRatio?: string;
+  // Image instruction
+  imageInstruction?: string;
+  onImageInstructionChange?: (instruction: string) => void;
 }
 
 export function ChannelModelSelector({
@@ -32,11 +36,14 @@ export function ChannelModelSelector({
   onImageStyleChange,
   showImageSettings = true,
   defaultAspectRatio = '1:1',
+  imageInstruction,
+  onImageInstructionChange,
 }: ChannelModelSelectorProps) {
   const hasImageSettings = showImageSettings && showImageModel;
+  const [showInstruction, setShowInstruction] = useState(false);
 
   return (
-    <div>
+    <div className="space-y-2">
       {/* All settings in one row */}
       <div className="flex items-center gap-2 flex-wrap">
         <div className="flex items-center gap-1.5">
@@ -95,6 +102,29 @@ export function ChannelModelSelector({
         </>
       )}
       </div>
+
+      {/* Image instruction */}
+      {hasImageSettings && onImageInstructionChange && (
+        <div>
+          <button
+            onClick={() => setShowInstruction(!showInstruction)}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {showInstruction ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+            <MessageSquare size={12} />
+            <span>이미지 생성 지시사항</span>
+            {imageInstruction && <span className="text-primary ml-1">●</span>}
+          </button>
+          {showInstruction && (
+            <textarea
+              value={imageInstruction || ''}
+              onChange={e => onImageInstructionChange(e.target.value)}
+              placeholder="예: 텍스트 넣지 마, 동양인으로, 밝은 톤, 일러스트 스타일..."
+              className="mt-1.5 w-full h-16 bg-muted border border-border rounded-md p-2 text-xs resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 }
