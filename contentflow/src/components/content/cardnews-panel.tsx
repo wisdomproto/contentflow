@@ -216,7 +216,24 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
     if (activeTemplateId === id) setActiveTemplateId(null);
   };
 
-  const allTemplates = [...CARD_TEMPLATES, ...savedTemplates];
+  const [hiddenTemplates, setHiddenTemplates] = useState<string[]>(() => {
+    try { const s = localStorage.getItem('cf-hidden-templates'); return s ? JSON.parse(s) : []; } catch { return []; }
+  });
+  const deleteTemplate = (id: string) => {
+    if (id.startsWith('custom-')) {
+      deleteSavedTemplate(id);
+    } else {
+      // Hide built-in template
+      setHiddenTemplates(prev => {
+        const next = [...prev, id];
+        localStorage.setItem('cf-hidden-templates', JSON.stringify(next));
+        return next;
+      });
+      if (activeTemplateId === id) setActiveTemplateId(null);
+    }
+  };
+
+  const allTemplates = [...CARD_TEMPLATES, ...savedTemplates].filter(t => !hiddenTemplates.includes(t.id));
   const [isCaptionOpen, setIsCaptionOpen] = useState(false);
   const [isSlideTextOpen, setIsSlideTextOpen] = useState(false);
 
@@ -541,7 +558,7 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
         <h3 className="text-xs font-semibold text-muted-foreground">템플릿</h3>
         <div className="flex gap-2 overflow-x-auto pb-2">
           {allTemplates.map(t => (
-            <div key={t.id} className="relative shrink-0">
+            <div key={t.id} className="relative shrink-0 group/tpl">
               <button
                 onClick={() => {
                   applyTemplate(t);
@@ -563,12 +580,12 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
                 </div>
                 <p className="text-[8px] text-center py-0.5 bg-muted/50 truncate px-1">{t.name}</p>
               </button>
-              {t.id.startsWith('custom-') && (
-                <button onClick={() => deleteSavedTemplate(t.id)}
-                  className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-[8px] z-10 hover:bg-destructive/80">
-                  <X size={8} />
-                </button>
-              )}
+              <button
+                onClick={(e) => { e.stopPropagation(); deleteTemplate(t.id); }}
+                className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-[8px] z-10 opacity-0 group-hover/tpl:opacity-100 transition-opacity"
+              >
+                <X size={8} />
+              </button>
             </div>
           ))}
         </div>
