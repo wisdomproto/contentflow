@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Plus, FileText, MoreHorizontal, Trash2, Pencil, GripVertical, Check, Filter } from 'lucide-react'
+import { Plus, FileText, MoreHorizontal, Trash2, Pencil, GripVertical, Check, Filter, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { useProjectStore } from '@/stores/project-store'
 import { CreateContentDialog } from '@/components/project/create-content-dialog'
 import { Button } from '@/components/ui/button'
@@ -140,6 +140,7 @@ function SortableContentItem({
 
 export function ContentListPanel() {
   const [createOpen, setCreateOpen] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
   const [catFilter, setCatFilter] = useState<string | null>(null)
   const {
     contents, selectedProjectId, selectedContentId,
@@ -176,7 +177,17 @@ export function ContentListPanel() {
 
   return (
     <>
-      <aside className="w-64 border-r border-border flex flex-col h-full bg-background shrink-0">
+      <aside className={cn('border-r border-border flex flex-col h-full bg-background shrink-0 transition-all duration-200', collapsed ? 'w-10' : 'w-64')}>
+        {/* Collapsed state */}
+        {collapsed ? (
+          <div className="flex flex-col items-center pt-2 gap-2">
+            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setCollapsed(false)} title="패널 열기">
+              <PanelLeftOpen size={14} />
+            </Button>
+            <div className="text-[9px] text-muted-foreground [writing-mode:vertical-rl]">{projectContents.length}개</div>
+          </div>
+        ) : (
+        <>
         {/* Header */}
         <div className="p-3 border-b border-border">
           <div className="flex items-center justify-between mb-2">
@@ -187,6 +198,9 @@ export function ContentListPanel() {
               )}
               <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setCreateOpen(true)} title="새 콘텐츠">
                 <Plus size={14} />
+              </Button>
+              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setCollapsed(true)} title="패널 접기">
+                <PanelLeftClose size={14} />
               </Button>
             </div>
           </div>
@@ -239,6 +253,8 @@ export function ContentListPanel() {
             </DndContext>
           )}
         </div>
+        </>
+        )}
       </aside>
 
       <CreateContentDialog open={createOpen} onOpenChange={setCreateOpen} projectId={selectedProjectId ?? ''} />
