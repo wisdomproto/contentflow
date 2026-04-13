@@ -115,6 +115,8 @@ function WordpressPanelInner({ blogContent, content, project, hasBaseArticle, ch
   const [urlSlug, setUrlSlug] = useState(blogContent.url_slug ?? '');
   const [structureGenerating, setStructureGenerating] = useState(false);
   const [keywordGenerating, setKeywordGenerating] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
 
   // AI auto-pick keywords from pool based on content
   const handleAutoPickKeywords = async () => {
@@ -160,6 +162,57 @@ Return ONLY JSON: { "primary": "best keyword", "secondary": ["2nd", "3rd"] }`
       }
     } catch (err) { console.error('Auto-pick error:', err) }
     finally { setKeywordGenerating(false) }
+  }
+
+  // WordPress publish
+  const handlePublish = async () => {
+    const credsRaw = typeof window !== 'undefined' ? localStorage.getItem(`wp_credentials_${project.id}`) : null
+    if (!credsRaw) { alert('WordPress 연결 설정을 먼저 해주세요. (프로젝트 설정 > 채널 연결)'); return }
+    let creds: { siteUrl: string; username: string; appPassword: string }
+    try { creds = JSON.parse(credsRaw) } catch { alert('WordPress 자격증명이 올바르지 않습니다.'); return }
+
+    // Build HTML body from cards
+    const htmlParts = cards.map(card => {
+      const c = card.content as Record<string, unknown>
+      const heading = c?.heading ? `<h2>${c.heading}</h2>` : ''
+      const text = (c?.text as string) || ''
+      const imgUrl = c?.url as string
+      const alt = (c?.alt as string) || ''
+      const img = imgUrl ? `<img src="${imgUrl}" alt="${alt}" />` : ''
+      return `${heading}\n${img}\n${text}`
+    }).join('\n\n')
+
+    if (!htmlParts.trim()) { alert('발행할 콘텐츠가 없습니다. AI 생성을 먼저 해주세요.'); return }
+
+    setPublishing(true)
+    try {
+      const res = await fetch('/api/publish/wordpress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: metaTitle || content.title,
+          content: htmlParts,
+          status: 'publish',
+          siteUrl: creds.siteUrl,
+          username: creds.username,
+          applicationPassword: creds.appPassword,
+          projectId: project.id,
+          contentId: content.id,
+          language: 'ko',
+        }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setPublishedUrl(data.url)
+        alert(`발행 완료! ${data.url}`)
+      } else {
+        alert(`발행 실패: ${data.error}`)
+      }
+    } catch (err) {
+      alert(`발행 오류: ${err}`)
+    } finally {
+      setPublishing(false)
+    }
   }
 
   const handleMetaTitleChange = (value: string) => {
@@ -726,9 +779,18 @@ Return ONLY valid JSON (no explanation) with this exact structure:
             <p className="text-[10px] text-muted-foreground">발행 시 Article/FAQ/MedicalEntity Schema를 자동으로 추가합니다.</p>
           </div>
 
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <Button size="sm" variant="outline" onClick={() => setCurrentStep(3)}>← AI 생성</Button>
-            <Button size="sm" className="bg-green-600 hover:bg-green-700">✓ 발행 준비 완료</Button>
+            {publishedUrl ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-green-500 font-medium">✅ 발행 완료</span>
+                <a href={publishedUrl} target="_blank" rel="noreferrer" className="text-xs text-primary underline">{publishedUrl.substring(0, 40)}...</a>
+              </div>
+            ) : (
+              <Button size="sm" className="bg-green-600 hover:bg-green-700" disabled={publishing || cards.length === 0} onClick={handlePublish}>
+                {publishing ? <><Loader2 size={12} className="animate-spin mr-1" /> 발행 중...</> : '🚀 WordPress 발행'}
+              </Button>
+            )}
           </div>
         </div>
       )}
@@ -815,7 +877,11 @@ export function WordpressPanel() {
         onAdd={() => addBlogContent(content.id)}
         onDelete={(id) => deleteBlogContent(id)}
         addLabel="새 WordPress 글 추가"
-        onAddToQueue={(id, channel) => alert(`${channel}에 발행 큐 추가 (ID: ${id})`)}
+        onAddToQueue={() => {
+          // Navigate inner panel to Step 4 (SEO/Publish)
+          // Note: step state is inside WordpressPanelInner, so this is a hint only
+          alert('Step 4 (SEO 검사) 탭에서 발행할 수 있습니다.')
+        }}
         renderContent={(blogContent) => (
           <WordpressPanelInner
             key={blogContent.id}
