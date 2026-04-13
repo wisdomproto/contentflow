@@ -345,7 +345,7 @@ export function buildCardNewsImagePromptsPrompt(ctx: PromptContext): string {
     {
       "header": "카테고리/라벨 (5~10자)",
       "title": "메인 제목 (10~15자)",
-      "body": "본문 설명 (30~50자)",
+      "body": "보조 설명 (20~40자, 짧게!)",
       "footer": "CTA 또는 출처 (10~20자)",
       "image_prompt": "English image generation prompt"
     }
@@ -361,9 +361,9 @@ export function buildCardNewsImagePromptsPrompt(ctx: PromptContext): string {
   sections.push('\n슬라이드 텍스트 규칙 (4-zone 구조):');
   sections.push('- header: 상단 라벨/카테고리. 5~10자. 예: "건강 상식", "STEP 1", "알고 계셨나요?"');
   sections.push('- title: 메인 제목. 15~25자. 해당 슬라이드의 핵심 메시지를 완전한 문장으로.');
-  sections.push('- body: 본문 설명. 50~100자. 이미지 없이 텍스트만 읽어도 내용이 완전히 이해되도록 구체적으로 작성. 수치, 이유, 방법 등 핵심 정보를 빠짐없이 포함. 너무 축약하지 말 것.');
+  sections.push('- body: 보조 설명. 20~40자 (최대 50자). 짧고 간결하게! 카드뉴스는 한눈에 읽혀야 합니다. 긴 문장 금지.');
   sections.push('- footer: 하단 텍스트. 10~20자. CTA, 출처, 페이지 번호 등.');
-  sections.push('- ⚠️ 매우 중요: body 필드는 절대 비워두지 마세요! 모든 슬라이드에 반드시 body를 50~100자로 작성하세요. title만 있고 body가 빈 슬라이드는 허용되지 않습니다.');
+  sections.push('- ⚠️ 매우 중요: body는 비워두지 마세요. 단, 20~40자로 짧게! 50자를 절대 넘기지 마세요.');
   sections.push('- 전체 슬라이드의 텍스트(title+body)만 순서대로 읽었을 때, 원문의 핵심 내용을 모두 파악할 수 있어야 합니다. 키워드 나열이 아닌 설명형 문장으로 작성하세요.');
   sections.push('- 첫 슬라이드: header=카테고리, title=주목 타이틀, body=글 전체를 요약하는 부제목, footer=브랜드/날짜');
   sections.push('- 마지막 슬라이드: header 생략, title=핵심 요약, body=실천 방법 또는 정리, footer=CTA(팔로우/저장)');
