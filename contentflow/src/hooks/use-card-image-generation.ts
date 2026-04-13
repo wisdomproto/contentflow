@@ -126,6 +126,10 @@ export function useCardImageGeneration(config: CardImageConfig): UseCardImageGen
           failed.push(i + 1);
         }
         setBatchProgress({ current: i + 1, total });
+        // Delay between generations to avoid rate limiting
+        if (i < targets.length - 1) {
+          await new Promise(r => setTimeout(r, 3000));
+        }
       }
       if (failed.length > 0) {
         alert(`이미지 생성 완료 (${total - failed.length}/${total} 성공)\n실패한 씬: ${failed.join(', ')}번`);
