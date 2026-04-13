@@ -165,37 +165,26 @@ Return ONLY JSON: { "primary": "best keyword", "secondary": ["2nd", "3rd"] }`
   }
 
   // WordPress publish
-  const handlePublish = async () => {
-    const credsRaw = typeof window !== 'undefined' ? localStorage.getItem(`wp_credentials_${project.id}`) : null
-    if (!credsRaw) { alert('WordPress 연결 설정을 먼저 해주세요. (프로젝트 설정 > 채널 연결)'); return }
-    let creds: { siteUrl: string; username: string; appPassword: string }
-    try { creds = JSON.parse(credsRaw) } catch { alert('WordPress 자격증명이 올바르지 않습니다.'); return }
-
-    // Build HTML body from cards
-    const htmlParts = cards.map(card => {
-      const c = card.content as Record<string, unknown>
-      const heading = c?.heading ? `<h2>${c.heading}</h2>` : ''
-      const text = (c?.text as string) || ''
-      const imgUrl = c?.url as string
-      const alt = (c?.alt as string) || ''
-      const img = imgUrl ? `<img src="${imgUrl}" alt="${alt}" />` : ''
-      return `${heading}\n${img}\n${text}`
-    }).join('\n\n')
-
-    if (!htmlParts.trim()) { alert('발행할 콘텐츠가 없습니다. AI 생성을 먼저 해주세요.'); return }
+  const handleAddToQueue = async () => {
+    if (cards.length === 0) { alert('발행할 콘텐츠가 없습니다. AI 생성을 먼저 해주세요.'); return }
 
     setPublishing(true)
     try {
+      // Build HTML for metadata preview
+      const htmlParts = cards.map(card => {
+        const c = card.content as Record<string, unknown>
+        const heading = c?.heading ? `<h2>${c.heading}</h2>` : ''
+        const text = (c?.text as string) || ''
+        return `${heading}\n${text}`
+      }).join('\n\n')
+
       const res = await fetch('/api/publish/wordpress', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          mode: 'queue',
           title: metaTitle || content.title,
           content: htmlParts,
-          status: 'publish',
-          siteUrl: creds.siteUrl,
-          username: creds.username,
-          applicationPassword: creds.appPassword,
           projectId: project.id,
           contentId: content.id,
           language: 'ko',
@@ -203,8 +192,8 @@ Return ONLY JSON: { "primary": "best keyword", "secondary": ["2nd", "3rd"] }`
       })
       const data = await res.json()
       if (data.success) {
-        setPublishedUrl(data.url)
-        alert(`발행 완료! ${data.url}`)
+        setPublishedUrl('queued')
+        alert('발행 큐에 추가되었습니다. 발행 메뉴에서 확인하세요.')
       } else {
         alert(`발행 실패: ${data.error}`)
       }
@@ -782,13 +771,10 @@ Return ONLY valid JSON (no explanation) with this exact structure:
           <div className="flex justify-between items-center">
             <Button size="sm" variant="outline" onClick={() => setCurrentStep(3)}>← AI 생성</Button>
             {publishedUrl ? (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-green-500 font-medium">✅ 발행 큐 등록 완료</span>
-                <a href={publishedUrl} target="_blank" rel="noreferrer" className="text-xs text-primary underline">{publishedUrl.substring(0, 40)}...</a>
-              </div>
+              <span className="text-xs text-green-500 font-medium">✅ 발행 큐에 등록됨 — 발행 메뉴에서 확인</span>
             ) : (
-              <Button size="sm" className="bg-green-600 hover:bg-green-700" disabled={publishing || cards.length === 0} onClick={handlePublish}>
-                {publishing ? <><Loader2 size={12} className="animate-spin mr-1" /> 발행 큐에 업로드 중...</> : '🚀 발행 큐에 추가'}
+              <Button size="sm" className="bg-green-600 hover:bg-green-700" disabled={publishing || cards.length === 0} onClick={handleAddToQueue}>
+                {publishing ? <><Loader2 size={12} className="animate-spin mr-1" /> 발행 큐에 등록 중...</> : '🚀 발행 큐에 추가'}
               </Button>
             )}
           </div>

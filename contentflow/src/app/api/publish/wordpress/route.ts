@@ -7,24 +7,38 @@ const supabase = createClient(
 )
 
 export async function POST(req: NextRequest) {
-  const { title, content, status, categories, tags, siteUrl, username, applicationPassword, scheduledAt, projectId, contentId, language } = await req.json()
+  const { mode, title, content, status, categories, tags, siteUrl, username, applicationPassword, scheduledAt, projectId, contentId, language, recordId } = await req.json()
 
+  // Mode: 'queue' = save to publish_records only, 'publish' = actually publish to WP
+  if (mode === 'queue') {
+    if (!projectId || !contentId) {
+      return Response.json({ error: 'projectId and contentId required' }, { status: 400 })
+    }
+    const { data, error } = await supabase.from('publish_records').insert({
+      project_id: projectId,
+      content_id: contentId,
+      channel: 'wordpress',
+      status: 'scheduled',
+      language: language || 'ko',
+      scheduled_at: scheduledAt || null,
+      metadata: { title, siteUrl, content: content?.substring(0, 500) },
+    }).select().single()
+
+    if (error) return Response.json({ error: error.message }, { status: 500 })
+    return Response.json({ success: true, recordId: data.id, status: 'scheduled' })
+  }
+
+  // Mode: 'publish' (default) — actually publish to WordPress
   if (!siteUrl || !username || !applicationPassword) {
     return Response.json({ error: 'WordPress credentials required' }, { status: 400 })
   }
 
   const wpApiUrl = `${siteUrl.replace(/\/$/, '')}/wp-json/wp/v2/posts`
 
-  // Clean content: remove markdown code block wrappers and extract pure HTML
   let cleanContent = content || ''
-  // Remove ```html ... ``` wrapper
   cleanContent = cleanContent.replace(/^```html\s*\n?/i, '').replace(/\n?```\s*$/i, '')
-  // Remove full HTML document wrapper if present (extract body content only)
   const bodyMatch = cleanContent.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
-  if (bodyMatch) {
-    cleanContent = bodyMatch[1].trim()
-  }
-  // Remove <!DOCTYPE>, <html>, <head> tags if still present
+  if (bodyMatch) cleanContent = bodyMatch[1].trim()
   cleanContent = cleanContent.replace(/<!DOCTYPE[^>]*>/gi, '')
   cleanContent = cleanContent.replace(/<\/?html[^>]*>/gi, '')
   cleanContent = cleanContent.replace(/<head>[\s\S]*?<\/head>/gi, '')
@@ -38,10 +52,7 @@ export async function POST(req: NextRequest) {
     categories,
     tags,
   }
-
-  if (scheduledAt) {
-    postData.date = scheduledAt
-  }
+  if (scheduledAt) postData.date = scheduledAt
 
   try {
     const response = await fetch(wpApiUrl, {
@@ -56,30 +67,42 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       const error = await response.text()
+      // Update record status to failed if we have a recordId
+      if (recordId) {
+        await supabase.from('publish_records').update({ status: 'failed', error_message: error }).eq('id', recordId)
+      }
       return Response.json({ error: `WordPress API error: ${error}` }, { status: response.status })
     }
 
     const post = await response.json()
 
-    // Save publish record to Supabase
-    if (projectId) {
+    // Update existing record or create new one
+    if (recordId) {
+      await supabase.from('publish_records').update({
+        status: 'published',
+        published_at: new Date().toISOString(),
+        published_url: post.link || '',
+        platform_post_id: String(post.id),
+      }).eq('id', recordId)
+    } else if (projectId && contentId) {
       await supabase.from('publish_records').insert({
         project_id: projectId,
-        content_id: contentId || null,
+        content_id: contentId,
         channel: 'wordpress',
-        status: post.status === 'future' ? 'scheduled' : 'published',
-        title: title || post.title?.rendered || '',
-        url: post.link || '',
+        status: 'published',
         language: language || 'ko',
-        external_id: String(post.id),
-        published_at: post.status === 'future' ? scheduledAt : new Date().toISOString(),
-        scheduled_at: scheduledAt || null,
+        published_at: new Date().toISOString(),
+        published_url: post.link || '',
+        platform_post_id: String(post.id),
         metadata: { siteUrl, postId: post.id },
       })
     }
 
     return Response.json({ success: true, postId: post.id, url: post.link, status: post.status })
   } catch (error) {
+    if (recordId) {
+      await supabase.from('publish_records').update({ status: 'failed', error_message: String(error) }).eq('id', recordId)
+    }
     return Response.json({ error: String(error) }, { status: 500 })
   }
 }

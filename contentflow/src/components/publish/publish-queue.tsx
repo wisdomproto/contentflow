@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import { useProjectStore } from '@/stores/project-store'
 import { createClient } from '@/lib/supabase/client'
-import { CalendarDays, List } from 'lucide-react'
+import { CalendarDays, List, Loader2, Rocket, Trash2 } from 'lucide-react'
 
 const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
@@ -60,16 +61,74 @@ export function PublishQueue() {
   const [calYear, setCalYear] = useState(new Date().getFullYear())
   const [calMonth, setCalMonth] = useState(new Date().getMonth() + 1)
 
-  useEffect(() => {
+  const [publishingId, setPublishingId] = useState<string | null>(null)
+
+  const loadRecords = () => {
     if (!selectedProjectId) { setRecords([]); setLoading(false); return }
     const supabase = createClient()
     supabase.from('publish_records').select('*').eq('project_id', selectedProjectId)
       .order('created_at', { ascending: false })
-      .then(({ data }) => {
-        setRecords(data || [])
-        setLoading(false)
+      .then(({ data }) => { setRecords(data || []); setLoading(false) })
+  }
+
+  useEffect(() => { loadRecords() }, [selectedProjectId])
+
+  const handlePublishNow = async (record: any) => {
+    if (record.channel !== 'wordpress') { alert('현재 WordPress 발행만 지원합니다.'); return }
+    const credsRaw = localStorage.getItem(`wp_credentials_${selectedProjectId}`)
+    if (!credsRaw) { alert('WordPress 연결 설정을 먼저 해주세요.'); return }
+    const creds = JSON.parse(credsRaw)
+
+    // Get blog cards for this content
+    const supabase = createClient()
+    const { data: blogContents } = await supabase.from('blog_contents').select('id').eq('content_id', record.content_id)
+    let htmlBody = record.metadata?.content || ''
+    if (blogContents?.length) {
+      const { data: cards } = await supabase.from('blog_cards').select('*').eq('blog_content_id', blogContents[0].id).order('sort_order')
+      if (cards?.length) {
+        htmlBody = cards.map((card: any) => {
+          const c = card.content || {}
+          const heading = c.heading ? `<h2>${c.heading}</h2>` : ''
+          const text = c.text || ''
+          const img = c.url ? `<img src="${c.url}" alt="${c.alt || ''}" />` : ''
+          return `${heading}\n${img}\n${text}`
+        }).join('\n\n')
+      }
+    }
+
+    setPublishingId(record.id)
+    try {
+      const res = await fetch('/api/publish/wordpress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'publish',
+          title: record.metadata?.title || 'Untitled',
+          content: htmlBody,
+          siteUrl: creds.siteUrl,
+          username: creds.username,
+          applicationPassword: creds.appPassword,
+          projectId: selectedProjectId,
+          contentId: record.content_id,
+          recordId: record.id,
+        }),
       })
-  }, [selectedProjectId])
+      const data = await res.json()
+      if (data.success) {
+        alert(`발행 완료! ${data.url}`)
+        loadRecords()
+      } else {
+        alert(`발행 실패: ${data.error}`)
+      }
+    } catch (err) { alert(`오류: ${err}`) }
+    finally { setPublishingId(null) }
+  }
+
+  const handleDeleteRecord = async (id: string) => {
+    const supabase = createClient()
+    await supabase.from('publish_records').delete().eq('id', id)
+    setRecords(prev => prev.filter(r => r.id !== id))
+  }
 
   const filteredRecords = records.filter(r => {
     if (statusFilter !== 'all' && r.status !== statusFilter) return false
@@ -199,6 +258,16 @@ export function PublishQueue() {
                 <span className={cn('px-2 py-0.5 rounded text-xs shrink-0', STATUS_COLORS[record.status])}>
                   {STATUS_LABELS[record.status] || record.status}
                 </span>
+
+                {/* Actions */}
+                {record.status === 'scheduled' && (
+                  <Button size="sm" className="h-7 text-xs gap-1 bg-green-600 hover:bg-green-700 shrink-0" disabled={publishingId === record.id} onClick={() => handlePublishNow(record)}>
+                    {publishingId === record.id ? <><Loader2 size={10} className="animate-spin" /> 발행 중</> : <><Rocket size={10} /> 발행</>}
+                  </Button>
+                )}
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0 shrink-0 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteRecord(record.id)}>
+                  <Trash2 size={12} />
+                </Button>
               </div>
             ))
           )}
