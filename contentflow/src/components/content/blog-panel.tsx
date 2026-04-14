@@ -347,10 +347,10 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
           }));
 
           // Apply mobile formatting before saving
-          const formattedCards = newCards.map(card => ({
-            ...card,
-            content: { ...card.content, text: card.content.text ? formatForMobile(card.content.text) : '' },
-          }));
+          const formattedCards = newCards.map(card => {
+            const c = card.content as Record<string, string>;
+            return { ...card, content: { ...c, text: c.text ? formatForMobile(c.text) : '' } };
+          });
           setBlogCardsForContent(blogContent.id, formattedCards);
 
           // SEO 점수 체크 후 자동 재생성

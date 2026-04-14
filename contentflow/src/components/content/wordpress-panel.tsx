@@ -281,10 +281,10 @@ Return ONLY JSON: { "primary": "best keyword", "secondary": ["2nd", "3rd"] }`
         });
 
         // Apply mobile formatting before saving
-        const formattedCards = newCards.map(card => ({
-          ...card,
-          content: { ...card.content, text: card.content.text ? formatForMobile(card.content.text) : '' },
-        }));
+        const formattedCards = newCards.map(card => {
+          const c = card.content as Record<string, string>;
+          return { ...card, content: { ...c, text: c.text ? formatForMobile(c.text) : '' } };
+        });
         setBlogCardsForContent(blogContent.id, formattedCards);
       } catch {
         alert('WordPress 섹션 파싱 실패. 다시 시도해 주세요.');
