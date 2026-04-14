@@ -43,7 +43,7 @@ function BaseArticlePanelInner({ content, project }: BaseArticlePanelInnerProps)
     if (!url) { setTranslatedHtml(null); return; }
 
     setLoadingTranslation(true);
-    fetch(url).then(r => r.text()).then(html => {
+    fetch(`/api/storage/proxy?url=${encodeURIComponent(url)}`).then(r => r.text()).then(html => {
       setTranslatedHtml(html);
     }).catch(() => setTranslatedHtml(null)).finally(() => setLoadingTranslation(false));
   }, [selectedLanguage, baseArticle]);
@@ -306,21 +306,11 @@ function BaseArticlePanelInner({ content, project }: BaseArticlePanelInnerProps)
             {loadingTranslation && <Loader2 size={12} className="animate-spin text-muted-foreground" />}
             {!translatedHtml && !loadingTranslation && <span className="text-muted-foreground">번역되지 않음 — 상단 &quot;AI 번역&quot; 버튼을 눌러주세요</span>}
           </div>
-          {(() => {
-            const translations = (baseArticle?.factcheck_report as Record<string, unknown>)?.translations as Record<string, string> | undefined;
-            const url = translations?.[selectedLanguage];
-            if (translatedHtml) {
-              return <div className="prose prose-sm dark:prose-invert max-w-none px-4 py-3" dangerouslySetInnerHTML={{ __html: translatedHtml }} />;
-            }
-            if (url && !loadingTranslation) {
-              // Fallback: iframe if fetch failed (CORS)
-              return <iframe src={url} className="w-full min-h-[400px] border-0" title="Translation" />;
-            }
-            if (!loadingTranslation) {
-              return <div className="px-4 py-8 text-center text-sm text-muted-foreground">아직 번역본이 없습니다</div>;
-            }
-            return null;
-          })()}
+          {translatedHtml ? (
+            <div className="prose prose-sm dark:prose-invert max-w-none px-4 py-3" dangerouslySetInnerHTML={{ __html: translatedHtml }} />
+          ) : !loadingTranslation && (
+            <div className="px-4 py-8 text-center text-sm text-muted-foreground">아직 번역본이 없습니다</div>
+          )}
         </div>
       )}
       {selectedLanguage === 'ko' && (
