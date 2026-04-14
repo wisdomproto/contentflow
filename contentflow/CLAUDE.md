@@ -50,7 +50,8 @@ node scripts/fix-article-tone.mjs        # 기본글 톤 수정
 - **카드뉴스 템플릿**: 저장/원래대로/새 템플릿/이름 편집, 폰트 선택(6종 한글), hidden 블록 지원
 - **이미지 WebP**: 클라이언트 Canvas API 변환 (R2 업로드 전), 다운로드도 .webp
 - **발행 큐**: 전 채널 DB 저장(publish_records), 콘텐츠 검증 경고, 예약 시간+빠른 예약, 채널별 추천 시간, 미리보기
-- **Supabase 디바운스**: instagram_cards 쓰기를 단일 타이머로 순차 flush
+- **다국어 번역**: AI 번역 → R2 저장(text/html) → 기본글 패널에서 언어 탭으로 표시. LanguageSelector 컴포넌트
+- **Supabase 디바운스**: 전 테이블 공통 `debouncedWrite()` — blog_cards, instagram_cards, threads_cards, youtube_cards, blog_contents 순차 flush
 
 ## 핵심 설계 결정
 - **Inside-Out 마이그레이션**: IndexedDB → Supabase (31개 컴포넌트 무수정)
