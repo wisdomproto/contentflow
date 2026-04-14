@@ -9,35 +9,35 @@ import type { ImportedStrategy } from '@/types/analytics';
 import { generateId } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 
-// Debounced Supabase write for instagram_cards
-// All pending card updates share ONE timer → flush sequentially (not 7 parallel requests)
-const _cardPendingUpdates = new Map<string, Record<string, unknown>>();
-let _cardFlushTimer: ReturnType<typeof setTimeout> | null = null;
+// ═══ Generic debounced Supabase write (shared by ALL card tables) ═══
+// Key: "table:id", Value: merged updates
+const _pendingWrites = new Map<string, Record<string, unknown>>();
+let _flushTimer: ReturnType<typeof setTimeout> | null = null;
 
-async function _flushAllCardWrites() {
-  _cardFlushTimer = null;
-  const entries = Array.from(_cardPendingUpdates.entries());
-  _cardPendingUpdates.clear();
+async function _flushAllWrites() {
+  _flushTimer = null;
+  const entries = Array.from(_pendingWrites.entries());
+  _pendingWrites.clear();
   if (entries.length === 0) return;
 
   const supabase = createClient();
-  for (const [cardId, updates] of entries) {
+  for (const [key, updates] of entries) {
+    const [table, id] = key.split(':', 2);
     for (let attempt = 0; attempt < 2; attempt++) {
-      const { error } = await supabase.from('instagram_cards')
-        .update(updates).eq('id', cardId);
+      const { error } = await supabase.from(table).update(updates).eq('id', id);
       if (!error) break;
       if (attempt === 0) await new Promise(r => setTimeout(r, 500));
-      // Silent fail after 2 attempts — local state already updated
     }
   }
 }
 
-function debouncedCardWrite(cardId: string, updates: Record<string, unknown>) {
-  const pending = _cardPendingUpdates.get(cardId) || {};
-  _cardPendingUpdates.set(cardId, { ...pending, ...updates });
+function debouncedWrite(table: string, id: string, updates: Record<string, unknown>, delayMs = 800) {
+  const key = `${table}:${id}`;
+  const pending = _pendingWrites.get(key) || {};
+  _pendingWrites.set(key, { ...pending, ...updates });
 
-  if (_cardFlushTimer) clearTimeout(_cardFlushTimer);
-  _cardFlushTimer = setTimeout(_flushAllCardWrites, 800);
+  if (_flushTimer) clearTimeout(_flushTimer);
+  _flushTimer = setTimeout(_flushAllWrites, delayMs);
 }
 
 interface ProjectState {
@@ -902,19 +902,14 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     return id;
   },
 
-  updateBlogContent: async (blogContentId, updates) => {
-    const supabase = createClient()
+  updateBlogContent: (blogContentId, updates) => {
     const updatedData = { ...updates, updated_at: new Date().toISOString() }
-    const { error } = await supabase.from('blog_contents').update(updatedData as unknown as Record<string, unknown>).eq('id', blogContentId)
-    if (error) { console.error('updateBlogContent error:', error.message); return }
-
     set((state) => ({
       blogContents: state.blogContents.map((bc) =>
-        bc.id === blogContentId
-          ? { ...bc, ...updatedData }
-          : bc
+        bc.id === blogContentId ? { ...bc, ...updatedData } : bc
       ),
     }));
+    debouncedWrite('blog_contents', blogContentId, updatedData as unknown as Record<string, unknown>);
   },
 
   deleteBlogContent: async (blogContentId) => {
@@ -984,19 +979,16 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     set((state) => ({ blogCards: [...state.blogCards, newCard] }));
   },
 
-  updateBlogCard: async (cardId, updates) => {
-    const supabase = createClient()
+  updateBlogCard: (cardId, updates) => {
     const updatedData = { ...updates, updated_at: new Date().toISOString() }
-    const { error } = await supabase.from('blog_cards').update(updatedData as unknown as Record<string, unknown>).eq('id', cardId)
-    if (error) { console.error('updateBlogCard error:', error.message); return }
-
+    // Local state — instant
     set((state) => ({
       blogCards: state.blogCards.map((card) =>
-        card.id === cardId
-          ? { ...card, ...updatedData }
-          : card
+        card.id === cardId ? { ...card, ...updatedData } : card
       ),
     }));
+    // Supabase — debounced
+    debouncedWrite('blog_cards', cardId, updatedData as unknown as Record<string, unknown>);
   },
 
   deleteBlogCard: async (cardId) => {
@@ -1138,7 +1130,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     }));
 
     // 2. Supabase write — debounced 500ms
-    debouncedCardWrite(cardId, updatedData as unknown as Record<string, unknown>);
+    debouncedWrite('instagram_cards', cardId, updatedData as unknown as Record<string, unknown>);
   },
 
   deleteInstagramCard: async (cardId) => {
@@ -1263,19 +1255,14 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     set((state) => ({ threadsCards: [...state.threadsCards, newCard] }));
   },
 
-  updateThreadsCard: async (cardId, updates) => {
-    const supabase = createClient()
+  updateThreadsCard: (cardId, updates) => {
     const updatedData = { ...updates, updated_at: new Date().toISOString() }
-    const { error } = await supabase.from('threads_cards').update(updatedData as unknown as Record<string, unknown>).eq('id', cardId)
-    if (error) { console.error('updateThreadsCard error:', error.message); return }
-
     set((state) => ({
       threadsCards: state.threadsCards.map((card) =>
-        card.id === cardId
-          ? { ...card, ...updatedData }
-          : card
+        card.id === cardId ? { ...card, ...updatedData } : card
       ),
     }));
+    debouncedWrite('threads_cards', cardId, updatedData as unknown as Record<string, unknown>);
   },
 
   deleteThreadsCard: async (cardId) => {
@@ -1410,19 +1397,14 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     set((state) => ({ youtubeCards: [...state.youtubeCards, newCard] }));
   },
 
-  updateYoutubeCard: async (cardId, updates) => {
-    const supabase = createClient()
+  updateYoutubeCard: (cardId, updates) => {
     const updatedData = { ...updates, updated_at: new Date().toISOString() }
-    const { error } = await supabase.from('youtube_cards').update(updatedData as unknown as Record<string, unknown>).eq('id', cardId)
-    if (error) { console.error('updateYoutubeCard error:', error.message); return }
-
     set((state) => ({
       youtubeCards: state.youtubeCards.map((card) =>
-        card.id === cardId
-          ? { ...card, ...updatedData }
-          : card
+        card.id === cardId ? { ...card, ...updatedData } : card
       ),
     }));
+    debouncedWrite('youtube_cards', cardId, updatedData as unknown as Record<string, unknown>);
   },
 
   deleteYoutubeCard: async (cardId) => {

@@ -234,8 +234,8 @@ function SectionImageArea({
               compact
             />
             <Textarea
-              value={content.image_prompt ?? ''}
-              onChange={(e) => onUpdate({ image_prompt: e.target.value })}
+              defaultValue={content.image_prompt ?? ''}
+              onBlur={(e) => onUpdate({ image_prompt: e.target.value })}
               placeholder="이미지 생성 프롬프트 (영어 권장)..."
               className="h-20 resize-none overflow-y-auto text-xs"
             />
@@ -243,8 +243,8 @@ function SectionImageArea({
               <div>
                 <Label className="text-xs text-muted-foreground">Alt 텍스트</Label>
                 <Input
-                  value={content.alt ?? ''}
-                  onChange={(e) => onUpdate({ alt: e.target.value })}
+                  defaultValue={content.alt ?? ''}
+                  onBlur={(e) => onUpdate({ alt: e.target.value })}
                   placeholder="이미지 설명"
                   className="h-8 text-xs mt-1"
                 />
@@ -252,8 +252,8 @@ function SectionImageArea({
               <div>
                 <Label className="text-xs text-muted-foreground">캡션</Label>
                 <Input
-                  value={content.caption ?? ''}
-                  onChange={(e) => onUpdate({ caption: e.target.value })}
+                  defaultValue={content.caption ?? ''}
+                  onBlur={(e) => onUpdate({ caption: e.target.value })}
                   placeholder="이미지 캡션"
                   className="h-8 text-xs mt-1"
                 />

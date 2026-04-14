@@ -117,8 +117,8 @@ export function ChannelModelSelector({
           </button>
           {showInstruction && (
             <textarea
-              value={imageInstruction || ''}
-              onChange={e => onImageInstructionChange(e.target.value)}
+              defaultValue={imageInstruction || ''}
+              onBlur={e => onImageInstructionChange(e.target.value)}
               placeholder="예: 텍스트 넣지 마, 동양인으로, 밝은 톤, 일러스트 스타일..."
               className="mt-1.5 w-full h-16 bg-muted border border-border rounded-md p-2 text-xs resize-none focus:outline-none focus:ring-1 focus:ring-primary"
             />

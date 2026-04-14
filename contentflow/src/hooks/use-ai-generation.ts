@@ -40,14 +40,7 @@ export function useAiGeneration({ onChunk, onComplete, onError }: UseAiGeneratio
         const decoder = new TextDecoder();
         let buffer = '';
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
-
+        const processLines = (lines: string[]) => {
           for (const line of lines) {
             const trimmed = line.trim();
             if (!trimmed.startsWith('data: ')) continue;
@@ -56,7 +49,7 @@ export function useAiGeneration({ onChunk, onComplete, onError }: UseAiGeneratio
             if (payload === '[DONE]') {
               onComplete?.(accumulatedRef.current);
               setIsGenerating(false);
-              return;
+              return true; // done
             }
 
             try {
@@ -64,7 +57,7 @@ export function useAiGeneration({ onChunk, onComplete, onError }: UseAiGeneratio
               if (parsed.error) {
                 onError?.(parsed.error);
                 setIsGenerating(false);
-                return;
+                return true; // done
               }
               if (parsed.text) {
                 accumulatedRef.current += parsed.text;
@@ -74,9 +67,27 @@ export function useAiGeneration({ onChunk, onComplete, onError }: UseAiGeneratio
               // skip malformed JSON
             }
           }
+          return false;
+        };
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            // Process remaining buffer
+            if (buffer.trim()) {
+              if (processLines([buffer])) return;
+            }
+            break;
+          }
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          if (processLines(lines)) return;
         }
 
-        // If stream ended without [DONE]
+        // Stream ended without [DONE]
         if (accumulatedRef.current) {
           onComplete?.(accumulatedRef.current);
         }

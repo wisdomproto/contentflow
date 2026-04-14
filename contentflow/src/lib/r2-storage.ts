@@ -8,7 +8,7 @@ const ALLOWED_TYPES: Record<StorageCategory, RegExp[]> = {
   references: [/^image\//, /^application\/pdf$/, /^application\/msword$/, /^application\/vnd\.openxmlformats-/, /^text\/(plain|markdown)$/],
   bgm: [/^audio\/(mpeg|wav|ogg|mp4|aac|flac)$/],
   videos: [/^video\/(mp4|webm)$/],
-  content: [/^application\/json$/],
+  content: [/^application\/json$/, /^text\/(html|plain)$/],
 };
 
 const MAX_FILE_SIZES: Record<StorageCategory, number> = {

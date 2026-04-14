@@ -480,6 +480,7 @@ export function buildBlogImagePromptForCard(
 
   const parts: string[] = [];
   parts.push(`${style}.`);
+  parts.push('IMPORTANT: Do NOT include any text, letters, words, numbers, or typography in the image. The image must be purely visual with zero text elements.');
 
   if (alt) {
     parts.push(alt);
@@ -489,9 +490,37 @@ export function buildBlogImagePromptForCard(
     parts.push(project.blog_image_style_prompt);
   }
 
-  // User custom instruction (overrides defaults if provided)
+  // User custom instruction — translate Korean keywords to English for better image model understanding
   if (imageInstruction?.trim()) {
-    parts.push(imageInstruction.trim());
+    // Common Korean→English image instruction mappings
+    let translated = imageInstruction.trim();
+    const krToEn: [RegExp, string][] = [
+      [/사실적|실사|포토/g, 'photorealistic'],
+      [/일러스트|그림체/g, 'illustration style'],
+      [/3[dD]|3D 렌더/g, '3D render'],
+      [/수채화/g, 'watercolor painting'],
+      [/미니멀|심플/g, 'minimal, clean'],
+      [/밝[은고]|밝게/g, 'bright, well-lit'],
+      [/어두[운워]|어둡게/g, 'dark, moody'],
+      [/따뜻[한하]/g, 'warm tones'],
+      [/차가[운워]/g, 'cool tones'],
+      [/아이|어린이|아동/g, 'child, kid'],
+      [/부모|엄마|아빠/g, 'parent, mother/father'],
+      [/병원|클리닉/g, 'medical clinic'],
+      [/성장|키 크/g, 'growth, growing taller'],
+      [/한국[인적]|동양[인적]/g, 'Korean / East Asian'],
+      [/텍스트 없이|글자 없이/g, 'no text in image'],
+      [/배경 흰색|흰 배경/g, 'white background'],
+      [/자연[스광]/g, 'natural lighting'],
+      [/고품질|고화질/g, 'high quality, high resolution'],
+    ];
+    for (const [kr, en] of krToEn) {
+      if (kr.test(translated)) {
+        translated = translated.replace(kr, en);
+      }
+    }
+    parts.push(translated);
+    parts.push('Korean context: People should be East Asian / Korean appearance.');
   } else {
     parts.push('High quality, suitable for a professional blog post. No text in the image.');
     parts.push('Korean context: People should be East Asian / Korean appearance.');

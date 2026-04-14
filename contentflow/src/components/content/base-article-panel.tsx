@@ -13,8 +13,9 @@ import { ChannelModelSelector } from './channel-model-selector';
 import { buildBaseArticlePrompt, buildPartialRegenerationPrompt, buildTopicSuggestionPrompt } from '@/lib/prompt-builder';
 import { countWords } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
-import { Lightbulb, Search, Loader2, X, Pencil, Check } from 'lucide-react';
+import { Lightbulb, Search, Loader2, X, Pencil, Check, Globe } from 'lucide-react';
 import { GenerationButton } from './generation-button';
+import { useUIStore } from '@/stores/ui-store';
 import type { Content, Project } from '@/types/database';
 
 interface BaseArticlePanelInnerProps {
@@ -27,6 +28,25 @@ function BaseArticlePanelInner({ content, project }: BaseArticlePanelInnerProps)
   const { createOrUpdateBaseArticle, getBaseArticle, updateContent, getChannelModels, setChannelModels } = useProjectStore();
   const baseArticle = getBaseArticle(content.id);
   const channelModels = getChannelModels(project.id, 'base-article');
+  const { selectedLanguage } = useUIStore();
+  const [translatedHtml, setTranslatedHtml] = useState<string | null>(null);
+  const [loadingTranslation, setLoadingTranslation] = useState(false);
+
+  // Load translated content from R2 when language changes
+  useEffect(() => {
+    if (selectedLanguage === 'ko' || !baseArticle) {
+      setTranslatedHtml(null);
+      return;
+    }
+    const translations = (baseArticle.factcheck_report as Record<string, unknown>)?.translations as Record<string, string> | undefined;
+    const url = translations?.[selectedLanguage];
+    if (!url) { setTranslatedHtml(null); return; }
+
+    setLoadingTranslation(true);
+    fetch(url).then(r => r.text()).then(html => {
+      setTranslatedHtml(html);
+    }).catch(() => setTranslatedHtml(null)).finally(() => setLoadingTranslation(false));
+  }, [selectedLanguage, baseArticle]);
 
   const [wordCount, setWordCount] = useState(baseArticle?.word_count ?? 0);
   const [showPromptDialog, setShowPromptDialog] = useState(false);
@@ -277,14 +297,31 @@ function BaseArticlePanelInner({ content, project }: BaseArticlePanelInnerProps)
         </p>
       )}
 
-      {/* Editor */}
-      <BaseArticleEditor
-        ref={editorRef}
-        initialContent={baseArticle?.body}
-        onUpdate={handleEditorUpdate}
-        onPartialRegenerate={handlePartialRegenerate}
-        projectId={project.id}
-      />
+      {/* Editor — show translation overlay when non-ko language selected */}
+      {selectedLanguage !== 'ko' && (
+        <div className="rounded-lg border border-border bg-background">
+          <div className="flex items-center gap-2 px-4 py-2 bg-muted/50 border-b border-border text-xs">
+            <Globe size={12} className="text-primary" />
+            <span className="font-medium">{selectedLanguage.toUpperCase()} 번역본</span>
+            {loadingTranslation && <Loader2 size={12} className="animate-spin text-muted-foreground" />}
+            {!translatedHtml && !loadingTranslation && <span className="text-muted-foreground">번역되지 않음 — 상단 &quot;AI 번역&quot; 버튼을 눌러주세요</span>}
+          </div>
+          {translatedHtml ? (
+            <div className="prose prose-sm dark:prose-invert max-w-none px-4 py-3" dangerouslySetInnerHTML={{ __html: translatedHtml }} />
+          ) : !loadingTranslation && (
+            <div className="px-4 py-8 text-center text-sm text-muted-foreground">아직 번역본이 없습니다</div>
+          )}
+        </div>
+      )}
+      {selectedLanguage === 'ko' && (
+        <BaseArticleEditor
+          ref={editorRef}
+          initialContent={baseArticle?.body}
+          onUpdate={handleEditorUpdate}
+          onPartialRegenerate={handlePartialRegenerate}
+          projectId={project.id}
+        />
+      )}
 
       {/* Prompt Dialog */}
       <PromptEditDialog

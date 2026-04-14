@@ -298,10 +298,9 @@ Return ONLY JSON: { "primary": "best keyword", "secondary": ["2nd", "3rd"] }`
   // Image generation
   const { isGeneratingImage, generatingCardId, imageProgress, generateCardImage, generateAllImages: generateAllCardImages, abort: abortImageGeneration } = useCardImageGeneration({
     getPrompt: (card: BlogCard) => {
-      const cardContent = card.content as { image_prompt?: string; image_style?: string };
-      const style = cardContent.image_style || channelModels.imageStyle || '';
-      if (cardContent.image_prompt) return style ? `${style}.\n${cardContent.image_prompt}` : cardContent.image_prompt;
       const idx = cards.findIndex((c) => c.id === card.id);
+      // Always use buildBlogImagePromptForCard to include imageInstruction
+      const style = (card.content as Record<string, string>)?.image_style || channelModels.imageStyle || '';
       return buildBlogImagePromptForCard(project, cards, idx, style, channelModels.imageInstruction);
     },
     getExistingImage: (card: BlogCard) => (card.content as Record<string, unknown>)?.url as string || null,
