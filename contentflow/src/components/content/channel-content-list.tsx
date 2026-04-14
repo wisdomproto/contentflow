@@ -22,6 +22,7 @@ interface ChannelContentListProps<T> {
   onDelete: (itemId: string) => void;
   onAddToQueue?: (itemId: string, channel: string) => void;
   publishChannels?: Array<{ id: string; label: string; icon: string }>;
+  accentColor?: string; // tailwind color class e.g. 'bg-blue-600 hover:bg-blue-700'
   addLabel: string;
   renderContent: (item: T) => React.ReactNode;
 }
@@ -35,6 +36,7 @@ export function ChannelContentList<T>({
   onDelete,
   onAddToQueue,
   publishChannels,
+  accentColor,
   addLabel,
   renderContent,
 }: ChannelContentListProps<T>) {
@@ -161,8 +163,8 @@ export function ChannelContentList<T>({
                 <div className="ml-auto shrink-0" onClick={(e) => e.stopPropagation()}>
                   {publishChannels && publishChannels.length > 1 ? (
                     <DropdownMenu>
-                      <DropdownMenuTrigger className="h-6 px-2 text-[10px] gap-1 inline-flex items-center rounded-md border border-border hover:bg-accent">
-                        <Send size={10} /> 발행 ▼
+                      <DropdownMenuTrigger className={cn("h-6 px-2 text-[10px] gap-1 inline-flex items-center rounded-md text-white", accentColor || 'bg-gray-600 hover:bg-gray-700')}>
+                        <Send size={10} /> 발행큐 추가 ▼
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
                         {publishChannels.map(ch => (
@@ -170,20 +172,18 @@ export function ChannelContentList<T>({
                             <span>{ch.icon}</span> {ch.label}
                           </DropdownMenuItem>
                         ))}
-                        <DropdownMenuItem onClick={() => { publishChannels.forEach(ch => onAddToQueue(id, ch.id)); }} className="text-xs gap-2 font-medium">
-                          🚀 전체 발행
+                        <DropdownMenuItem onClick={async () => { for (const ch of publishChannels) await onAddToQueue(id, ch.id); }} className="text-xs gap-2 font-medium">
+                          🚀 전체 큐 추가
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
+                    <button
                       onClick={() => onAddToQueue(id, publishChannels?.[0]?.id || 'default')}
-                      className="h-6 text-[10px] gap-1"
+                      className={cn("h-6 px-2 text-[10px] gap-1 inline-flex items-center rounded-md text-white", accentColor || 'bg-gray-600 hover:bg-gray-700')}
                     >
-                      <Send size={10} /> 발행 큐
-                    </Button>
+                      <Send size={10} /> 발행큐 추가
+                    </button>
                   )}
                 </div>
               )}

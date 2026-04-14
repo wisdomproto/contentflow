@@ -18,6 +18,34 @@ export interface UploadResult {
 }
 
 /**
+ * Convert a PNG/JPEG base64 to WebP Blob via Canvas API (client-side, ~60-80% smaller).
+ * Falls back to original blob if Canvas WebP is unsupported.
+ */
+export async function convertToWebpBlob(base64: string, srcMime: string): Promise<{ blob: Blob; mimeType: string }> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) { resolve({ blob: base64ToBlob(base64, srcMime), mimeType: srcMime }); return; }
+      ctx.drawImage(img, 0, 0);
+      canvas.toBlob(
+        (b) => {
+          if (b && b.type === 'image/webp') resolve({ blob: b, mimeType: 'image/webp' });
+          else resolve({ blob: base64ToBlob(base64, srcMime), mimeType: srcMime });
+        },
+        'image/webp',
+        0.85
+      );
+    };
+    img.onerror = () => resolve({ blob: base64ToBlob(base64, srcMime), mimeType: srcMime });
+    img.src = `data:${srcMime};base64,${base64}`;
+  });
+}
+
+/**
  * Convert base64 (data URL or raw) to Blob.
  * Exported for testing.
  */

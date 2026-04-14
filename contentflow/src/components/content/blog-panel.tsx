@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { BlogCardItem, AddCardButton } from './blog-card-item';
+import { BlogCardItem, AddCardButton, formatForMobile } from './blog-card-item';
 import { ChannelModelSelector } from './channel-model-selector';
 import { ChannelContentList } from './channel-content-list';
 import { PromptEditDialog } from './prompt-edit-dialog';
@@ -142,6 +142,23 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
 
   // ── Workflow step state ──
   const [currentStep, setCurrentStep] = useState<WorkflowStep>(1);
+  const [viewMode, setViewMode] = useState<'pc' | 'mobile'>('pc');
+  const [editorKey, setEditorKey] = useState(0);
+  // Global style — persisted in seo_details.globalStyle
+  const savedStyle = (blogContent.seo_details as Record<string, unknown>)?.globalStyle as Record<string, unknown> | undefined;
+  const [globalAlign, setGlobalAlign] = useState<'left' | 'center' | 'right' | 'justify'>((savedStyle?.align as string as 'left') || 'left');
+  const [headingBold, setHeadingBold] = useState(savedStyle?.headingBold !== undefined ? !!savedStyle.headingBold : true);
+  const [bodyBold, setBodyBold] = useState(!!savedStyle?.bodyBold);
+  const [headingFont, setHeadingFont] = useState((savedStyle?.headingFont as string) || 'Noto Sans KR');
+  const [bodyFont, setBodyFont] = useState((savedStyle?.bodyFont as string) || 'Noto Sans KR');
+  const [headingSize, setHeadingSize] = useState((savedStyle?.headingSize as number) || 22);
+  const [bodySize, setBodySize] = useState((savedStyle?.bodySize as number) || 16);
+
+  const saveGlobalStyle = (updates: Record<string, unknown>) => {
+    const current = { align: globalAlign, headingBold, bodyBold, headingFont, bodyFont, headingSize, bodySize, ...updates };
+    const existing = (blogContent.seo_details as Record<string, unknown>) || {};
+    updateBlogContent(blogContent.id, { seo_details: { ...existing, globalStyle: current } });
+  };
 
   // Auto-jump to Step 3 when cards exist from DB
   useEffect(() => {
@@ -329,7 +346,12 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
             updated_at: now,
           }));
 
-          setBlogCardsForContent(blogContent.id, newCards);
+          // Apply mobile formatting before saving
+          const formattedCards = newCards.map(card => ({
+            ...card,
+            content: { ...card.content, text: card.content.text ? formatForMobile(card.content.text) : '' },
+          }));
+          setBlogCardsForContent(blogContent.id, formattedCards);
 
           // SEO 점수 체크 후 자동 재생성
           const currentKw = aiPrimaryKw || primaryKeyword;
@@ -418,6 +440,16 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
 
   const handleCardUpdate = (cardId: string, newContent: Record<string, unknown>) => {
     updateBlogCard(cardId, { content: newContent });
+  };
+
+  const applyMobileFormatAll = () => {
+    for (const card of cards) {
+      const c = card.content as Record<string, string>;
+      if (c.text) {
+        updateBlogCard(card.id, { content: { ...c, text: formatForMobile(c.text) } });
+      }
+    }
+    setEditorKey(k => k + 1);
   };
 
   const handleCardDelete = (cardId: string) => {
@@ -1024,12 +1056,77 @@ Return ONLY valid JSON (no explanation) with this exact structure:
             </div>
           )}
 
-          {/* Card List */}
+          {/* Card List with PC/Mobile toggle */}
           {cards.length > 0 && (
-            <div className="space-y-4">
+            <div>
+              <div className="flex items-center gap-3 mb-3 flex-wrap">
+                {/* Alignment */}
+                <div className="flex items-center gap-0.5">
+                  <span className="text-[10px] text-muted-foreground mr-1">정렬:</span>
+                  {(['left', 'center', 'right', 'justify'] as const).map(a => (
+                    <button key={a} onClick={() => { setGlobalAlign(a); saveGlobalStyle({ align: a }); }}
+                      className={cn('w-6 h-6 flex items-center justify-center rounded border text-[10px]',
+                        globalAlign === a ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground')}>
+                      {a === 'left' ? '←' : a === 'center' ? '↔' : a === 'right' ? '→' : '≡'}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-muted-foreground">제목:</span>
+                  <select value={headingFont} onChange={(e) => { setHeadingFont(e.target.value); saveGlobalStyle({ headingFont: e.target.value }); }}
+                    className="h-6 text-[9px] bg-muted border border-border rounded px-1">
+                    <option value="Noto Sans KR">고딕</option>
+                    <option value="Noto Serif KR">명조</option>
+                    <option value="Black Han Sans">블랙한산스</option>
+                    <option value="Jua">주아</option>
+                    <option value="Do Hyeon">도현</option>
+                  </select>
+                  <button onClick={() => { const v = !headingBold; setHeadingBold(v); saveGlobalStyle({ headingBold: v }); }}
+                    className={cn('px-1.5 py-0.5 rounded text-[10px] font-bold border', headingBold ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground')}>
+                    B
+                  </button>
+                  <input type="number" min={14} max={48} value={headingSize}
+                    onChange={(e) => { const v = Math.max(14, Math.min(48, Number(e.target.value) || 24)); setHeadingSize(v); saveGlobalStyle({ headingSize: v }); }}
+                    className="w-10 h-6 text-[9px] text-center bg-muted border border-border rounded" title="제목 크기(px)" />
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-muted-foreground">본문:</span>
+                  <select value={bodyFont} onChange={(e) => { setBodyFont(e.target.value); saveGlobalStyle({ bodyFont: e.target.value }); }}
+                    className="h-6 text-[9px] bg-muted border border-border rounded px-1">
+                    <option value="Noto Sans KR">고딕</option>
+                    <option value="Noto Serif KR">명조</option>
+                    <option value="Black Han Sans">블랙한산스</option>
+                    <option value="Jua">주아</option>
+                    <option value="Do Hyeon">도현</option>
+                  </select>
+                  <button onClick={() => { const v = !bodyBold; setBodyBold(v); saveGlobalStyle({ bodyBold: v }); }}
+                    className={cn('px-1.5 py-0.5 rounded text-[10px] font-bold border', bodyBold ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground')}>
+                    B
+                  </button>
+                  <input type="number" min={12} max={24} value={bodySize}
+                    onChange={(e) => { const v = Math.max(12, Math.min(24, Number(e.target.value) || 16)); setBodySize(v); saveGlobalStyle({ bodySize: v }); }}
+                    className="w-10 h-6 text-[9px] text-center bg-muted border border-border rounded" title="본문 크기(px)" />
+                </div>
+                <button onClick={applyMobileFormatAll}
+                  className="px-2 py-1 rounded text-[10px] bg-muted text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors" title="전체 모바일 정리">
+                  📱 모바일 정리
+                </button>
+                <div className="flex items-center gap-1 ml-auto">
+                  <span className="text-[10px] text-muted-foreground mr-1">뷰:</span>
+                  <button onClick={() => setViewMode('pc')}
+                    className={cn('px-2 py-1 rounded text-[10px]', viewMode === 'pc' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground')}>
+                    🖥 PC
+                  </button>
+                  <button onClick={() => setViewMode('mobile')}
+                    className={cn('px-2 py-1 rounded text-[10px]', viewMode === 'mobile' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground')}>
+                    📱 모바일
+                  </button>
+                </div>
+              </div>
+              <div className={cn('space-y-4 mx-auto transition-all', viewMode === 'mobile' ? 'max-w-sm border border-border rounded-xl p-3 bg-background shadow-inner' : '')}>
               {cards.map((card, i) => (
                 <BlogCardItem
-                  key={card.id}
+                  key={`${card.id}-${editorKey}`}
                   card={card}
                   index={i}
                   onUpdate={handleCardUpdate}
@@ -1038,8 +1135,10 @@ Return ONLY valid JSON (no explanation) with this exact structure:
                   onAbortImage={abortImageGeneration}
                   isGeneratingImage={isGeneratingImage}
                   generatingCardId={generatingCardId}
+                  globalStyle={{ align: globalAlign, headingBold, bodyBold, headingFont, bodyFont, headingSize, bodySize }}
                 />
               ))}
+              </div>
             </div>
           )}
 
@@ -1129,7 +1228,7 @@ Return ONLY valid JSON (no explanation) with this exact structure:
 // ─── Outer: 다중 블로그 콘텐츠 리스트 ────────────────────────────
 
 export function BlogPanel() {
-  const { selectedContentId, contents, selectedProjectId, projects, getBaseArticle, getBlogContents, addBlogContent, updateBlogContent, deleteBlogContent, getChannelModels, setChannelModels } = useProjectStore();
+  const { selectedContentId, contents, selectedProjectId, projects, getBaseArticle, getBlogContents, getBlogCards, addBlogContent, updateBlogContent, deleteBlogContent, addToPublishQueue, getChannelModels, setChannelModels } = useProjectStore();
   const content = contents.find((c) => c.id === selectedContentId);
   const project = projects.find((p) => p.id === selectedProjectId);
   const [seoRetryLimit, setSeoRetryLimit] = useState(3);
@@ -1184,7 +1283,18 @@ export function BlogPanel() {
         onAdd={() => addBlogContent(content.id)}
         onDelete={(id) => deleteBlogContent(id)}
         addLabel="새 블로그 글 추가"
-        onAddToQueue={(id, channel) => alert(`${channel}에 발행 큐 추가 (ID: ${id})`)}
+        onAddToQueue={async (id, channel) => {
+          const bc = blogContents.find(b => b.id === id);
+          const cards = bc ? getBlogCards(bc.id) : [];
+          const warnings: string[] = [];
+          if (!cards.length) warnings.push('본문이 비어있습니다');
+          if (cards.length && !cards.some(c => c.body?.trim())) warnings.push('본문 내용이 없습니다');
+          if (warnings.length && !confirm(`⚠️ ${warnings.join(', ')}\n\n그래도 발행큐에 추가하시겠습니까?`)) return;
+          const ok = await addToPublishQueue(channel, content.id, { blogContentId: id });
+          if (ok) alert(`✅ ${channel} 발행큐에 추가되었습니다`);
+          else alert('발행큐 추가 실패');
+        }}
+        accentColor="bg-indigo-600 hover:bg-indigo-700"
         renderContent={(blogContent) => (
           <BlogPanelInner
             key={blogContent.id}

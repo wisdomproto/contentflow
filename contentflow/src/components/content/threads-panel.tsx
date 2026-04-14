@@ -215,7 +215,7 @@ function ThreadsPanelInner({ threadsContent, content, project, hasBaseArticle, c
 // ─── Outer: multi threads content list ────────────────────────────
 
 export function ThreadsPanel() {
-  const { selectedContentId, contents, selectedProjectId, projects, getBaseArticle, getThreadsContents, addThreadsContent, updateThreadsContent, deleteThreadsContent, getChannelModels, setChannelModels } = useProjectStore();
+  const { selectedContentId, contents, selectedProjectId, projects, getBaseArticle, getThreadsContents, getThreadsCards, addThreadsContent, updateThreadsContent, deleteThreadsContent, addToPublishQueue, getChannelModels, setChannelModels } = useProjectStore();
   const content = contents.find((c) => c.id === selectedContentId);
   const project = projects.find((p) => p.id === selectedProjectId);
   if (!content || !project) return null;
@@ -250,8 +250,18 @@ export function ThreadsPanel() {
         onAdd={() => addThreadsContent(content.id)}
         onDelete={(id) => deleteThreadsContent(id)}
         addLabel="새 스레드 추가"
-        onAddToQueue={(id, channel) => alert(`${channel}에 발행 큐 추가 (ID: ${id})`)}
+        onAddToQueue={async (id, channel) => {
+          const cards = getThreadsCards(id);
+          const warnings: string[] = [];
+          if (!cards.length) warnings.push('스레드가 비어있습니다');
+          if (cards.length && !cards.some(c => c.body?.trim())) warnings.push('본문 내용이 없습니다');
+          if (warnings.length && !confirm(`⚠️ ${warnings.join(', ')}\n\n그래도 발행큐에 추가하시겠습니까?`)) return;
+          const ok = await addToPublishQueue(channel, content.id, { threadsContentId: id });
+          if (ok) alert(`✅ ${channel} 발행큐에 추가되었습니다`);
+          else alert('발행큐 추가 실패');
+        }}
         publishChannels={[{ id: 'threads', label: 'Threads', icon: '💬' }, { id: 'facebook', label: 'Facebook', icon: '👤' }]}
+        accentColor="bg-indigo-600 hover:bg-indigo-700"
         renderContent={(threadsContent) => (
           <ThreadsPanelInner
             key={threadsContent.id}

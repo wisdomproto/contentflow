@@ -9,6 +9,37 @@ import type { ImportedStrategy } from '@/types/analytics';
 import { generateId } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 
+// Debounced Supabase write for instagram_cards
+// All pending card updates share ONE timer → flush sequentially (not 7 parallel requests)
+const _cardPendingUpdates = new Map<string, Record<string, unknown>>();
+let _cardFlushTimer: ReturnType<typeof setTimeout> | null = null;
+
+async function _flushAllCardWrites() {
+  _cardFlushTimer = null;
+  const entries = Array.from(_cardPendingUpdates.entries());
+  _cardPendingUpdates.clear();
+  if (entries.length === 0) return;
+
+  const supabase = createClient();
+  for (const [cardId, updates] of entries) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const { error } = await supabase.from('instagram_cards')
+        .update(updates).eq('id', cardId);
+      if (!error) break;
+      if (attempt === 0) await new Promise(r => setTimeout(r, 500));
+      // Silent fail after 2 attempts — local state already updated
+    }
+  }
+}
+
+function debouncedCardWrite(cardId: string, updates: Record<string, unknown>) {
+  const pending = _cardPendingUpdates.get(cardId) || {};
+  _cardPendingUpdates.set(cardId, { ...pending, ...updates });
+
+  if (_cardFlushTimer) clearTimeout(_cardFlushTimer);
+  _cardFlushTimer = setTimeout(_flushAllCardWrites, 800);
+}
+
 interface ProjectState {
   projects: Project[];
   selectedProjectId: string | null;
@@ -137,6 +168,9 @@ interface ProjectState {
   // Channel model helpers
   getChannelModels: (projectId: string, channel: string) => { textModel: string; imageModel: string; aspectRatio: string; imageStyle: string; imageInstruction: string };
   setChannelModels: (projectId: string, channel: string, models: { textModel?: string; imageModel?: string; aspectRatio?: string; imageStyle?: string; imageInstruction?: string }) => void;
+
+  // Publish queue
+  addToPublishQueue: (channel: string, contentId: string, metadata?: Record<string, unknown>) => Promise<boolean>;
 
   // UI state
   openProjectSettings: (projectId: string) => void;
@@ -1091,12 +1125,10 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     set((state) => ({ instagramCards: [...state.instagramCards, newCard] }));
   },
 
-  updateInstagramCard: async (cardId, updates) => {
-    const supabase = createClient()
+  updateInstagramCard: (cardId, updates) => {
     const updatedData = { ...updates, updated_at: new Date().toISOString() }
-    const { error } = await supabase.from('instagram_cards').update(updatedData as unknown as Record<string, unknown>).eq('id', cardId)
-    if (error) { console.error('updateInstagramCard error:', error.message); return }
 
+    // 1. Local state update — instant
     set((state) => ({
       instagramCards: state.instagramCards.map((card) =>
         card.id === cardId
@@ -1104,6 +1136,9 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
           : card
       ),
     }));
+
+    // 2. Supabase write — debounced 500ms
+    debouncedCardWrite(cardId, updatedData as unknown as Record<string, unknown>);
   },
 
   deleteInstagramCard: async (cardId) => {
@@ -1566,6 +1601,24 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     channels[channel] = { ...channels[channel], ...models };
     settings.channels = channels;
     get().updateProject(projectId, { ai_model_settings: settings });
+  },
+
+  // Publish queue
+  addToPublishQueue: async (channel, contentId, metadata = {}) => {
+    const projectId = get().selectedProjectId;
+    if (!projectId) return false;
+    const content = get().contents.find(c => c.id === contentId);
+    const supabase = createClient();
+    const { error } = await supabase.from('publish_records').insert({
+      project_id: projectId,
+      content_id: contentId,
+      channel,
+      status: 'scheduled',
+      language: 'ko',
+      metadata: { title: content?.title || '', ...metadata },
+    });
+    if (error) { console.error('addToPublishQueue error:', error.message); return false; }
+    return true;
   },
 
   // UI state

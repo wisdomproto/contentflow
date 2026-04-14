@@ -378,7 +378,7 @@ export function ImageEditorDialog({ open, onOpenChange, src, onSave }: ImageEdit
       ctx.restore()
     }
 
-    onSave(canvas.toDataURL('image/png'))
+    onSave(canvas.toDataURL('image/webp', 0.85))
     onOpenChange(false)
   }, [src, elements, onSave, onOpenChange])
 

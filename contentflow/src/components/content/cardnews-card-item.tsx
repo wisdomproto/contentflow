@@ -17,6 +17,7 @@ export interface TextBlock {
   y: number;       // % from top (0-100)
   fontSize: number;
   color: string;
+  fontFamily?: string; // e.g. 'Noto Sans KR', 'Noto Serif KR'
   fontWeight: 'normal' | 'bold';
   textAlign: 'left' | 'center' | 'right' | 'justify';
   width: number;   // % of card width
@@ -343,6 +344,7 @@ function CardCanvas({ canvasData, selectedBlockId, onSelectBlock, onUpdateCanvas
               style={{
                 fontSize: `${block.fontSize}px`,
                 color: block.color,
+                fontFamily: block.fontFamily ? `"${block.fontFamily}", sans-serif` : undefined,
                 fontWeight: block.fontWeight,
                 textAlign: block.textAlign,
                 textShadow: block.shadow ? '0 1px 4px rgba(0,0,0,0.7), 0 0 8px rgba(0,0,0,0.3)' : undefined,
@@ -542,7 +544,7 @@ export function CardNewsCardItem({ card, index, onUpdate, onDelete, onGenerateIm
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `card_${index + 1}.png`;
+                a.download = `card_${index + 1}.webp`;
                 a.click();
                 URL.revokeObjectURL(url);
               } catch { window.open(canvasData.imageUrl!, '_blank'); }

@@ -224,9 +224,13 @@ export function buildBlogPrompt(ctx: PromptContext): string {
   sections.push('- 독자의 질문에 답변하는 구조로 작성 (Q&A 형식 1개 이상 포함 권장).');
   sections.push('- 마지막 섹션에 "결론" 또는 "요약" 또는 "정리" 제목을 포함하세요.');
   sections.push('');
-  sections.push('### 모바일 가독성 (10점 배점)');
-  sections.push('- 문장 하나당 60자 이내로 작성.');
-  sections.push('- 단락 500자 이내.');
+  sections.push('### 모바일 가독성 최우선 (10점 배점)');
+  sections.push('- 문장 하나당 50~60자 이내로 작성.');
+  sections.push('- 한 단락은 3~4줄(200~300자) 이내. 절대 500자 초과 금지.');
+  sections.push('- 단락과 단락 사이에 빈 줄을 넣어 시각적 호흡 공간 확보.');
+  sections.push('- 리스트(ul/ol)를 적극 활용 — 나열 정보는 문장보다 리스트가 우선.');
+  sections.push('- 중요 정보는 <strong> 처리하여 스캔 가독성 향상.');
+  sections.push('- 첫 150자 안에 핵심 메시지를 제시 (도입부에서 바로 답을 줄 것).');
   sections.push('');
   sections.push('### 볼드 처리 규칙');
   sections.push('- 핵심 키워드, 중요 수치, 핵심 결론만 <strong> 태그. 섹션당 1~3개만.');

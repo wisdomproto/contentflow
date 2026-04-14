@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { useImageGeneration, type ImageGenerationProgress } from './use-image-generation';
-import { base64ToBlob } from './use-r2-upload';
+import { convertToWebpBlob } from './use-r2-upload';
 import type { AspectRatio } from '@/lib/ai/types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -69,7 +69,9 @@ export function useCardImageGeneration(config: CardImageConfig): UseCardImageGen
           cfg.imageModel
         );
         if (results[0]) {
-          const blob = base64ToBlob(results[0].base64, results[0].mimeType);
+          // Convert to WebP on client (Canvas API) before uploading
+          const { blob, mimeType } = await convertToWebpBlob(results[0].base64, results[0].mimeType);
+          const ext = mimeType.split('/')[1] || 'webp';
           let savedUrl: string;
           try {
             const presignRes = await fetch('/api/storage/presign', {
@@ -78,8 +80,8 @@ export function useCardImageGeneration(config: CardImageConfig): UseCardImageGen
               body: JSON.stringify({
                 projectId: cfg.projectId,
                 category: 'images',
-                fileName: `${cardId}.${results[0].mimeType.split('/')[1] || 'png'}`,
-                contentType: results[0].mimeType,
+                fileName: `${cardId}.${ext}`,
+                contentType: mimeType,
                 contentId: cardId,
               }),
             });
@@ -88,7 +90,7 @@ export function useCardImageGeneration(config: CardImageConfig): UseCardImageGen
               const uploadRes = await fetch(presignedUrl, {
                 method: 'PUT',
                 body: blob,
-                headers: { 'Content-Type': results[0].mimeType },
+                headers: { 'Content-Type': mimeType },
               });
               savedUrl = uploadRes.ok ? publicUrl : `data:${results[0].mimeType};base64,${results[0].base64}`;
             } else {

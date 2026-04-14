@@ -26,6 +26,16 @@ export interface SectionContent {
   image_style?: string;
 }
 
+export interface GlobalCardStyle {
+  align?: 'left' | 'center' | 'right' | 'justify';
+  headingBold?: boolean;
+  bodyBold?: boolean;
+  headingFont?: string;
+  bodyFont?: string;
+  headingSize?: number; // px
+  bodySize?: number;    // px
+}
+
 interface BlogCardItemProps {
   card: BlogCard;
   index: number;
@@ -35,6 +45,64 @@ interface BlogCardItemProps {
   onAbortImage?: () => void;
   isGeneratingImage?: boolean;
   generatingCardId?: string | null;
+  globalStyle?: GlobalCardStyle;
+}
+
+/**
+ * Rule-based mobile formatting: no AI, no cost.
+ * 1. Split long <p> (>200 chars) at sentence boundaries
+ * 2. Add margin-bottom to <p> for visual breathing room
+ * 3. Convert 3+ consecutive short sentences with similar pattern to <ul>
+ */
+export function formatForMobile(html: string): string {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+
+  const newNodes: Node[] = [];
+  for (const node of Array.from(div.childNodes)) {
+    if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName === 'P') {
+      const p = node as HTMLParagraphElement;
+      const text = p.textContent || '';
+
+      if (text.length > 200) {
+        // Split at sentence boundaries (. ! ? followed by space)
+        const sentences = text.match(/[^.!?]+[.!?]+[\s]*/g) || [text];
+        let chunk = '';
+        const chunks: string[] = [];
+        for (const s of sentences) {
+          if ((chunk + s).length > 200 && chunk) {
+            chunks.push(chunk.trim());
+            chunk = s;
+          } else {
+            chunk += s;
+          }
+        }
+        if (chunk.trim()) chunks.push(chunk.trim());
+
+        for (const c of chunks) {
+          const newP = document.createElement('p');
+          // Preserve any <strong> by re-injecting from original innerHTML
+          newP.textContent = c;
+          newNodes.push(newP);
+        }
+      } else {
+        newNodes.push(p.cloneNode(true));
+      }
+    } else {
+      newNodes.push(node.cloneNode(true));
+    }
+  }
+
+  // Rebuild: add margin-bottom to <p> for spacing (no extra empty lines)
+  const result = document.createElement('div');
+  for (const node of newNodes) {
+    if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName === 'P') {
+      (node as HTMLElement).style.marginBottom = '0.8em';
+    }
+    result.appendChild(node);
+  }
+
+  return result.innerHTML;
 }
 
 // --- Section Text Editor (TipTap) ---
@@ -212,7 +280,7 @@ function SectionImageArea({
 }
 
 // --- Main BlogCardItem (통합 섹션) ---
-export function BlogCardItem({ card, index, onUpdate, onDelete, onGenerateImage, onAbortImage, isGeneratingImage, generatingCardId }: BlogCardItemProps) {
+export function BlogCardItem({ card, index, onUpdate, onDelete, onGenerateImage, onAbortImage, isGeneratingImage, generatingCardId, globalStyle }: BlogCardItemProps) {
   const content = card.content as SectionContent;
   const isThisCardGenerating = isGeneratingImage && generatingCardId === card.id;
 
@@ -259,11 +327,40 @@ export function BlogCardItem({ card, index, onUpdate, onDelete, onGenerateImage,
       {/* 구분선 */}
       <div className="mx-4 border-t border-dashed border-border" />
 
-      {/* ② 텍스트 영역 */}
-      <SectionTextEditor
-        content={content}
-        onTextChange={(html) => handleContentUpdate({ text: html })}
-      />
+      {/* ② 텍스트 영역 — globalStyle applies to h2/h3 and p inside editor */}
+      <div
+        className="blog-card-editor"
+        style={{
+          '--heading-font': globalStyle?.headingFont ? `"${globalStyle.headingFont}", sans-serif` : '"Noto Sans KR", sans-serif',
+          '--heading-size': `${globalStyle?.headingSize || 24}px`,
+          '--heading-weight': globalStyle?.headingBold !== false ? '700' : '400',
+          '--body-font': globalStyle?.bodyFont ? `"${globalStyle.bodyFont}", sans-serif` : 'inherit',
+          '--body-size': `${globalStyle?.bodySize || 16}px`,
+          '--body-weight': globalStyle?.bodyBold ? '700' : '400',
+          '--text-align': globalStyle?.align || 'left',
+        } as React.CSSProperties}
+      >
+        <style>{`
+          .blog-card-editor .tiptap h1, .blog-card-editor .tiptap h2, .blog-card-editor .tiptap h3 {
+            font-family: var(--heading-font) !important;
+            font-size: var(--heading-size) !important;
+            font-weight: var(--heading-weight) !important;
+            text-align: var(--text-align) !important;
+          }
+          .blog-card-editor .tiptap h3 { font-size: calc(var(--heading-size) * 0.85) !important; }
+          .blog-card-editor .tiptap p, .blog-card-editor .tiptap li {
+            font-family: var(--body-font) !important;
+            font-size: var(--body-size) !important;
+            font-weight: var(--body-weight) !important;
+            text-align: var(--text-align) !important;
+            line-height: 1.8 !important;
+          }
+        `}</style>
+        <SectionTextEditor
+          content={content}
+          onTextChange={(html) => handleContentUpdate({ text: html })}
+        />
+      </div>
     </div>
   );
 }

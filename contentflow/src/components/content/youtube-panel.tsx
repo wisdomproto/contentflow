@@ -519,7 +519,7 @@ function YoutubePanelInner({ youtubeContent, content, project, hasBaseArticle, c
 // ─── Outer: multi youtube content list ────────────────────────────
 
 export function YoutubePanel() {
-  const { selectedContentId, contents, selectedProjectId, projects, getBaseArticle, getYoutubeContents, addYoutubeContent, updateYoutubeContent, deleteYoutubeContent, getChannelModels, setChannelModels } = useProjectStore();
+  const { selectedContentId, contents, selectedProjectId, projects, getBaseArticle, getYoutubeContents, getYoutubeCards, addYoutubeContent, updateYoutubeContent, deleteYoutubeContent, addToPublishQueue, getChannelModels, setChannelModels } = useProjectStore();
   const content = contents.find((c) => c.id === selectedContentId);
   const project = projects.find((p) => p.id === selectedProjectId);
   if (!content || !project) return null;
@@ -554,7 +554,17 @@ export function YoutubePanel() {
         onAdd={() => addYoutubeContent(content.id)}
         onDelete={(id) => deleteYoutubeContent(id)}
         addLabel="새 유튜브 대본 추가"
-        onAddToQueue={(id, channel) => alert(`${channel}에 발행 큐 추가 (ID: ${id})`)}
+        onAddToQueue={async (id, channel) => {
+          const cards = getYoutubeCards(id);
+          const warnings: string[] = [];
+          if (!cards.length) warnings.push('대본이 비어있습니다');
+          if (cards.length && !cards.some(c => c.script?.trim())) warnings.push('스크립트 내용이 없습니다');
+          if (warnings.length && !confirm(`⚠️ ${warnings.join(', ')}\n\n그래도 발행큐에 추가하시겠습니까?`)) return;
+          const ok = await addToPublishQueue(channel, content.id, { youtubeContentId: id });
+          if (ok) alert(`✅ ${channel} 발행큐에 추가되었습니다`);
+          else alert('발행큐 추가 실패');
+        }}
+        accentColor="bg-indigo-600 hover:bg-indigo-700"
         renderContent={(youtubeContent) => (
           <YoutubePanelInner
             key={youtubeContent.id}

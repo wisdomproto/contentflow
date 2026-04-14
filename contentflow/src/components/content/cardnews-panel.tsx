@@ -10,7 +10,7 @@ import { ChannelContentList } from './channel-content-list';
 import { PromptEditDialog } from './prompt-edit-dialog';
 import { useAiGeneration } from '@/hooks/use-ai-generation';
 import { useCardImageGeneration } from '@/hooks/use-card-image-generation';
-import { base64ToBlob } from '@/hooks/use-r2-upload';
+import { base64ToBlob, convertToWebpBlob } from '@/hooks/use-r2-upload';
 import { useProjectStore } from '@/stores/project-store';
 import { buildCardNewsImagePromptsPrompt } from '@/lib/prompt-builder';
 
@@ -91,14 +91,15 @@ async function runBatchImageGeneration(
 
       let savedUrl = `data:${data.mimeType};base64,${data.image}`;
       try {
-        const blob = base64ToBlob(data.image, data.mimeType);
+        const { blob, mimeType: webpMime } = await convertToWebpBlob(data.image, data.mimeType);
+        const ext = webpMime.split('/')[1] || 'webp';
         const presignRes = await fetch('/api/storage/presign', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ projectId, category: 'images', fileName: `${card.id}.${data.mimeType?.split('/')[1] || 'png'}`, contentType: data.mimeType, contentId: card.id }),
+          body: JSON.stringify({ projectId, category: 'images', fileName: `${card.id}.${ext}`, contentType: webpMime, contentId: card.id }),
         });
         if (presignRes.ok) {
           const { presignedUrl, publicUrl } = await presignRes.json();
-          const uploadRes = await fetch(presignedUrl, { method: 'PUT', body: blob, headers: { 'Content-Type': data.mimeType } });
+          const uploadRes = await fetch(presignedUrl, { method: 'PUT', body: blob, headers: { 'Content-Type': webpMime } });
           if (uploadRes.ok) savedUrl = publicUrl;
         }
       } catch { /* R2 fail → keep data URL */ }
@@ -182,29 +183,78 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
   const [isTemplatePropsOpen, setIsTemplatePropsOpen] = useState(false);
+  // Working template = local draft of template properties (edits don't touch cards until Save/Reset)
+  const [workingTplData, setWorkingTplData] = useState<CardCanvasData | null>(null);
   const [savedTemplates, setSavedTemplates] = useState<CardTemplate[]>(() => {
     try { const s = localStorage.getItem('cf-saved-templates'); return s ? JSON.parse(s) : []; } catch { return []; }
   });
 
-  const saveCurrentAsTemplate = () => {
-    const firstCard = cards[0];
-    if (!firstCard) return;
-    const data = parseCanvasData(firstCard.text_style, firstCard.background_image_url);
-    const name = prompt('템플릿 이름을 입력하세요:');
-    if (!name?.trim()) return;
+  const createNewTemplate = () => {
     const tpl: CardTemplate = {
       id: `custom-${Date.now()}`,
-      name: name.trim(),
-      bgColor: data.bgColor,
-      imageY: data.imageY,
-      preview: { bg: data.bgColor, textColor: data.textBlocks[0]?.color || '#ffffff' },
-      textBlocks: data.textBlocks.map(({ text, ...rest }) => rest),
+      name: `새 템플릿 ${savedTemplates.length + 1}`,
+      bgColor: '#ffffff',
+      imageY: 50,
+      preview: { bg: '#ffffff', textColor: '#1a1a1a' },
+      textBlocks: [
+        { id: 'header', x: 10, y: 3, fontSize: 10, color: '#888888', fontWeight: 'normal', textAlign: 'center', width: 80 },
+        { id: 'title', x: 10, y: 15, fontSize: 20, color: '#1a1a1a', fontWeight: 'bold', textAlign: 'center', width: 80 },
+        { id: 'body', x: 10, y: 80, fontSize: 8, color: '#444444', fontWeight: 'normal', textAlign: 'center', width: 80 },
+        { id: 'footer', x: 10, y: 92, fontSize: 10, color: '#999999', fontWeight: 'normal', textAlign: 'center', width: 80 },
+      ],
     };
     setSavedTemplates(prev => {
       const next = [...prev, tpl];
       localStorage.setItem('cf-saved-templates', JSON.stringify(next));
       return next;
     });
+    setActiveTemplateId(tpl.id);
+    applyTemplate(tpl);
+  };
+
+  const renameTemplate = (id: string, newName: string) => {
+    if (!id.startsWith('custom-') || !newName.trim()) return;
+    setSavedTemplates(prev => {
+      const next = prev.map(t => t.id === id ? { ...t, name: newName.trim() } : t);
+      localStorage.setItem('cf-saved-templates', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const updateCurrentTemplate = () => {
+    if (!activeTemplateId || !workingTplData) return;
+    const data = workingTplData;
+    const updatedBlocks = data.textBlocks.map(({ text, ...rest }) => rest);
+
+    if (activeTemplateId.startsWith('custom-')) {
+      // Update saved (custom) template
+      setSavedTemplates(prev => {
+        const next = prev.map(t => t.id === activeTemplateId
+          ? { ...t, bgColor: data.bgColor, imageY: data.imageY, preview: { bg: data.bgColor, textColor: data.textBlocks[0]?.color || '#ffffff' }, textBlocks: updatedBlocks }
+          : t);
+        localStorage.setItem('cf-saved-templates', JSON.stringify(next));
+        return next;
+      });
+    } else {
+      // Built-in template: save as override in custom templates
+      const existing = allTemplates.find(t => t.id === activeTemplateId);
+      if (!existing) return;
+      const overrideTpl: CardTemplate = {
+        ...existing,
+        id: `custom-${activeTemplateId}`,
+        name: `${existing.name} (수정)`,
+        bgColor: data.bgColor,
+        imageY: data.imageY,
+        preview: { bg: data.bgColor, textColor: data.textBlocks[0]?.color || '#ffffff' },
+        textBlocks: updatedBlocks,
+      };
+      setSavedTemplates(prev => {
+        const next = [...prev, overrideTpl];
+        localStorage.setItem('cf-saved-templates', JSON.stringify(next));
+        return next;
+      });
+      setActiveTemplateId(overrideTpl.id);
+    }
   };
 
   const deleteSavedTemplate = (id: string) => {
@@ -444,7 +494,18 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
   const handleAddSlide = () => { addInstagramCard(igContent.id, cards.length); };
 
   // ── Template ──
+  // Initialize working template data from a CardTemplate
+  const initWorkingData = (template: CardTemplate): CardCanvasData => ({
+    bgColor: template.bgColor,
+    imageUrl: '',
+    imageY: template.imageY,
+    textBlocks: template.textBlocks.map(tb => ({ ...tb, text: '' })),
+  });
+
   const applyTemplate = (template: CardTemplate) => {
+    // Sync working data
+    setWorkingTplData(initWorkingData(template));
+    // Apply template defaults to ALL cards
     for (const card of cards) {
       const existing = parseCanvasData(card.text_style, card.background_image_url);
       const newBlocks: TextBlock[] = template.textBlocks.map(tb => {
@@ -464,6 +525,22 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
     }
   };
 
+  // Apply current workingTplData to ALL cards
+  const applyWorkingToAllCards = () => {
+    if (!workingTplData) return;
+    for (const card of cards) {
+      const existing = parseCanvasData(card.text_style, card.background_image_url);
+      const newBlocks: TextBlock[] = workingTplData.textBlocks.map(tb => {
+        const existingBlock = existing.textBlocks.find(b => b.id === tb.id);
+        return { ...tb, text: existingBlock?.text ?? '' };
+      });
+      updateInstagramCard(card.id, {
+        text_style: { ...workingTplData, imageUrl: existing.imageUrl, textBlocks: newBlocks } as unknown as Record<string, unknown>,
+        background_color: workingTplData.bgColor,
+      });
+    }
+  };
+
   // ── Download ──
   const handleDownloadAllImages = async () => {
     if (cards.length === 0) return;
@@ -475,7 +552,7 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `cardnews_${String(i + 1).padStart(2, '0')}.png`;
+        link.download = `cardnews_${String(i + 1).padStart(2, '0')}.webp`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -495,18 +572,16 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
 
       const drawTextBlocks = () => {
         for (const block of data.textBlocks) {
-          if (!block.text) continue;
+          if (!block.text || block.hidden) continue;
           const x = (block.x / 100) * W;
           const y = (block.y / 100) * H;
           const maxW = (block.width / 100) * W;
           const fs = block.fontSize * (W / 300);
           ctx.fillStyle = block.color;
-          ctx.font = `${block.fontWeight} ${fs}px "Noto Sans KR", sans-serif`;
+          ctx.font = `${block.fontWeight} ${fs}px "${block.fontFamily || 'Noto Sans KR'}", sans-serif`;
           ctx.textAlign = block.textAlign as CanvasTextAlign;
           ctx.textBaseline = 'top';
           const tx = block.textAlign === 'center' ? x + maxW / 2 : block.textAlign === 'right' ? x + maxW : x;
-          ctx.shadowColor = 'rgba(0,0,0,0.4)';
-          ctx.shadowBlur = fs * 0.1;
           const lines: string[] = [];
           let cur = '';
           for (const ch of block.text) {
@@ -516,7 +591,6 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
           }
           if (cur) lines.push(cur);
           lines.forEach((line, li) => ctx.fillText(line, tx, y + li * fs * 1.4));
-          ctx.shadowColor = 'transparent';
         }
       };
 
@@ -534,13 +608,13 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
           const drawY = yCenter - imgH / 2;
           ctx.drawImage(img, 0, drawY, W, imgH);
           drawTextBlocks();
-          canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png');
+          canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/webp', 0.85);
         };
-        img.onerror = () => { drawTextBlocks(); canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png'); };
+        img.onerror = () => { drawTextBlocks(); canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/webp', 0.85); };
         img.src = data.imageUrl;
       } else {
         drawTextBlocks();
-        canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png');
+        canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/webp', 0.85);
       }
     });
   };
@@ -566,7 +640,13 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
     <div className="flex gap-4 h-full">
       {/* ══ Left sidebar: templates + properties ══ */}
       <div className="w-80 xl:w-96 shrink-0 space-y-3 overflow-y-auto border-r border-border pr-3">
-        <h3 className="text-xs font-semibold text-muted-foreground">템플릿</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-semibold text-muted-foreground">템플릿</h3>
+          <button onClick={createNewTemplate}
+            className="text-[10px] text-muted-foreground hover:text-primary transition-colors">
+            + 새 템플릿
+          </button>
+        </div>
         <div className="grid grid-cols-4 xl:grid-cols-5 gap-1.5">
           {allTemplates.map(t => (
             <div key={t.id} className="relative shrink-0 group/tpl">
@@ -601,15 +681,16 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
           ))}
         </div>
 
-        {/* Template properties panel — collapsible */}
-        {activeTemplateId && (() => {
+        {/* Template properties panel — edits LOCAL working data, not cards */}
+        {activeTemplateId && workingTplData && (() => {
           const tpl = allTemplates.find(t => t.id === activeTemplateId);
           if (!tpl) return null;
-          // Read current style from first card (or default)
-          const firstCard = cards[0];
-          const currentData = firstCard ? parseCanvasData(firstCard.text_style, firstCard.background_image_url) : defaultCanvasData();
 
-          const updateAllCards = (updates: Partial<CardCanvasData>) => {
+          // Update working template data (local only, no card writes)
+          // Update working data + apply to ALL cards live
+          const updateWorking = (updates: Partial<CardCanvasData>) => {
+            setWorkingTplData(prev => prev ? { ...prev, ...updates } : prev);
+            // Apply to all cards immediately
             for (const card of cards) {
               const existing = parseCanvasData(card.text_style, card.background_image_url);
               const next = { ...existing, ...updates };
@@ -619,12 +700,46 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
               });
             }
           };
+          const updateWorkingBlock = (blockId: string, blockUpdates: Partial<TextBlock>) => {
+            setWorkingTplData(prev => {
+              if (!prev) return prev;
+              return { ...prev, textBlocks: prev.textBlocks.map(b => b.id === blockId ? { ...b, ...blockUpdates } : b) };
+            });
+            // Apply to all cards immediately
+            for (const card of cards) {
+              const data = parseCanvasData(card.text_style, card.background_image_url);
+              const newBlocks = data.textBlocks.map(b => b.id === blockId ? { ...b, ...blockUpdates } : b);
+              updateInstagramCard(card.id, { text_style: { ...data, textBlocks: newBlocks } as unknown as Record<string, unknown> });
+            }
+          };
+
+          // Save: persist working data as template
+          const handleSave = () => {
+            updateCurrentTemplate();
+          };
+          // Reset: reload saved template defaults + apply to all cards
+          const handleReset = () => {
+            applyTemplate(tpl);
+          };
 
           return (
             <div className="rounded-lg border border-border bg-muted/30 overflow-hidden">
               <button onClick={() => setIsTemplatePropsOpen(!isTemplatePropsOpen)}
                 className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-muted/50 transition-colors">
-                <span className="text-[10px] font-semibold">{tpl.name} 속성</span>
+                <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                  {activeTemplateId?.startsWith('custom-') ? (
+                    <input
+                      type="text"
+                      defaultValue={tpl.name}
+                      onBlur={(e) => renameTemplate(activeTemplateId, e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                      className="text-[10px] font-semibold bg-transparent border-b border-transparent hover:border-muted-foreground/30 focus:border-primary focus:outline-none w-24"
+                    />
+                  ) : (
+                    <span className="text-[10px] font-semibold">{tpl.name}</span>
+                  )}
+                  <span className="text-[9px] text-muted-foreground">속성</span>
+                </div>
                 <ChevronDown size={12} className={cn('text-muted-foreground transition-transform', isTemplatePropsOpen && 'rotate-180')} />
               </button>
               {isTemplatePropsOpen && (
@@ -632,14 +747,14 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
                   {/* Background color */}
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground w-14 shrink-0">배경색</span>
-                    <input type="color" value={currentData.bgColor}
-                      onChange={(e) => updateAllCards({ bgColor: e.target.value })}
+                    <input type="color" value={workingTplData.bgColor}
+                      onChange={(e) => updateWorking({ bgColor: e.target.value })}
                       className="w-6 h-6 rounded border border-border cursor-pointer p-0" />
                     <div className="flex gap-1">
                       {['#ffffff', '#f5f5f5', '#18181b', '#111111', '#0A0A0F', '#7C3AED', '#000000'].map(c => (
-                        <button key={c} onClick={() => updateAllCards({ bgColor: c })}
+                        <button key={c} onClick={() => updateWorking({ bgColor: c })}
                           className={cn('w-5 h-5 rounded-full border transition-transform hover:scale-110',
-                            currentData.bgColor === c ? 'ring-2 ring-primary' : 'border-border'
+                            workingTplData.bgColor === c ? 'ring-2 ring-primary' : 'border-border'
                           )}
                           style={{ backgroundColor: c }} />
                       ))}
@@ -649,70 +764,47 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
                   {/* Image position */}
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground w-14 shrink-0">이미지 위치</span>
-                    <input type="range" min={0} max={100} step={10} value={currentData.imageY}
-                      onChange={(e) => updateAllCards({ imageY: Number(e.target.value) })}
+                    <input type="range" min={0} max={100} step={10} value={workingTplData.imageY}
+                      onChange={(e) => updateWorking({ imageY: Number(e.target.value) })}
                       className="flex-1 h-1 accent-primary" />
-                    <span className="w-8 text-right">{currentData.imageY}%</span>
-                    <span className="text-muted-foreground text-[9px]">{currentData.imageUrl ? '있음' : '없음 (생성/붙여넣기)'}</span>
+                    <span className="w-8 text-right">{workingTplData.imageY}%</span>
                   </div>
 
                   {/* Text blocks quick edit */}
                   <div className="space-y-1.5">
                     <span className="text-muted-foreground">텍스트 블록</span>
-                    {currentData.textBlocks.map(block => (
+                    {workingTplData.textBlocks.map(block => (
                       <div key={block.id} className={cn('flex items-center gap-1.5 pl-2', block.hidden && 'opacity-40')}>
-                        {/* Show/Hide toggle */}
-                        <button onClick={() => {
-                          for (const card of cards) {
-                            const data = parseCanvasData(card.text_style, card.background_image_url);
-                            const newBlocks = data.textBlocks.map(b => b.id === block.id ? { ...b, hidden: !b.hidden } : b);
-                            updateInstagramCard(card.id, { text_style: { ...data, textBlocks: newBlocks } as unknown as Record<string, unknown> });
-                          }
-                        }} className="shrink-0 w-4 h-4 flex items-center justify-center text-muted-foreground hover:text-foreground" title={block.hidden ? '보이기' : '숨기기'}>
+                        <button onClick={() => updateWorkingBlock(block.id, { hidden: !block.hidden })}
+                          className="shrink-0 w-4 h-4 flex items-center justify-center text-muted-foreground hover:text-foreground" title={block.hidden ? '보이기' : '숨기기'}>
                           {block.hidden ? <EyeOff size={10} /> : <Eye size={10} />}
                         </button>
                         <span className="w-10 text-muted-foreground truncate">{block.id}</span>
                         <span className="text-muted-foreground">y:</span>
                         <input type="number" min={0} max={100} step={5} value={block.y}
-                          onChange={(e) => {
-                            const newY = Math.max(0, Math.min(100, parseInt(e.target.value) || 0));
-                            for (const card of cards) {
-                              const data = parseCanvasData(card.text_style, card.background_image_url);
-                              const newBlocks = data.textBlocks.map(b => b.id === block.id ? { ...b, y: newY } : b);
-                              updateInstagramCard(card.id, { text_style: { ...data, textBlocks: newBlocks } as unknown as Record<string, unknown> });
-                            }
-                          }}
+                          onChange={(e) => updateWorkingBlock(block.id, { y: Math.max(0, Math.min(100, parseInt(e.target.value) || 0)) })}
                           className="w-10 h-5 text-center bg-transparent border border-border rounded" />
                         <span className="text-muted-foreground">크기:</span>
                         <input type="number" min={8} max={72} value={block.fontSize}
-                          onChange={(e) => {
-                            const fs = Math.max(8, Math.min(72, parseInt(e.target.value) || 14));
-                            for (const card of cards) {
-                              const data = parseCanvasData(card.text_style, card.background_image_url);
-                              const newBlocks = data.textBlocks.map(b => b.id === block.id ? { ...b, fontSize: fs } : b);
-                              updateInstagramCard(card.id, { text_style: { ...data, textBlocks: newBlocks } as unknown as Record<string, unknown> });
-                            }
-                          }}
+                          onChange={(e) => updateWorkingBlock(block.id, { fontSize: Math.max(8, Math.min(72, parseInt(e.target.value) || 14)) })}
                           className="w-10 h-5 text-center bg-transparent border border-border rounded" />
+                        <select value={block.fontFamily || 'Noto Sans KR'}
+                          onChange={(e) => updateWorkingBlock(block.id, { fontFamily: e.target.value })}
+                          className="w-16 h-5 text-[9px] bg-transparent border border-border rounded truncate">
+                          <option value="Noto Sans KR">고딕</option>
+                          <option value="Noto Serif KR">명조</option>
+                          <option value="Black Han Sans">블랙한산스</option>
+                          <option value="Jua">주아</option>
+                          <option value="Do Hyeon">도현</option>
+                          <option value="Gaegu">개구</option>
+                        </select>
                         <input type="color" value={block.color}
-                          onChange={(e) => {
-                            for (const card of cards) {
-                              const data = parseCanvasData(card.text_style, card.background_image_url);
-                              const newBlocks = data.textBlocks.map(b => b.id === block.id ? { ...b, color: e.target.value } : b);
-                              updateInstagramCard(card.id, { text_style: { ...data, textBlocks: newBlocks } as unknown as Record<string, unknown> });
-                            }
-                          }}
+                          onChange={(e) => updateWorkingBlock(block.id, { color: e.target.value })}
                           className="w-4 h-4 rounded border border-border cursor-pointer p-0" />
                         <div className="flex gap-0.5">
                           {(['left', 'center', 'right', 'justify'] as const).map(a => (
                             <button key={a}
-                              onClick={() => {
-                                for (const card of cards) {
-                                  const data = parseCanvasData(card.text_style, card.background_image_url);
-                                  const newBlocks = data.textBlocks.map(b => b.id === block.id ? { ...b, textAlign: a } : b);
-                                  updateInstagramCard(card.id, { text_style: { ...data, textBlocks: newBlocks } as unknown as Record<string, unknown> });
-                                }
-                              }}
+                              onClick={() => updateWorkingBlock(block.id, { textAlign: a })}
                               className={cn('w-4 h-4 flex items-center justify-center rounded border text-[8px]',
                                 block.textAlign === a ? 'border-primary bg-primary/10 text-primary' : 'border-border')}>
                               {a === 'left' ? '←' : a === 'center' ? '↔' : a === 'right' ? '→' : '≡'}
@@ -723,11 +815,17 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
                     ))}
                   </div>
 
-                  {/* Save as template */}
-                  <button onClick={saveCurrentAsTemplate}
-                    className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded border border-dashed border-muted-foreground/30 hover:border-primary hover:text-primary transition-colors">
-                    <Save size={10} /> 현재 설정을 템플릿으로 저장
-                  </button>
+                  {/* Save (template + apply all) / Reset (revert all to saved template) */}
+                  <div className="flex gap-1.5">
+                    <button onClick={handleSave}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-[10px] font-medium">
+                      <Save size={10} /> 저장 (전체 적용)
+                    </button>
+                    <button onClick={handleReset}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded border border-border hover:bg-muted transition-colors text-[10px]">
+                      <RefreshCw size={10} /> 원래대로
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -880,11 +978,12 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
                       <img src={data.imageUrl} alt="" className="w-full h-auto" />
                     </div>
                   )}
-                  {data.textBlocks.map(block => (
+                  {data.textBlocks.filter(b => !b.hidden && b.text).map(block => (
                     <div key={block.id} className="absolute" style={{ left: `${block.x}%`, top: `${block.y}%`, width: `${block.width}%` }}>
                       <p className="whitespace-pre-line break-words" style={{
                         fontSize: `${block.fontSize * 3}px`, color: block.color, fontWeight: block.fontWeight,
-                        textAlign: block.textAlign, textShadow: data.imageUrl ? '0 2px 8px rgba(0,0,0,0.6)' : undefined, lineHeight: 1.3,
+                        fontFamily: block.fontFamily ? `"${block.fontFamily}", sans-serif` : undefined,
+                        textAlign: block.textAlign, lineHeight: 1.3,
                       }}>
                         {block.text}
                       </p>
@@ -908,7 +1007,7 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
 // ─── Outer: 다중 카드뉴스 콘텐츠 리스트 ──────────────────
 
 export function CardNewsPanel() {
-  const { selectedContentId, contents, selectedProjectId, projects, getBaseArticle, getInstagramContents, addInstagramContent, updateInstagramContent, deleteInstagramContent, getChannelModels, setChannelModels } = useProjectStore();
+  const { selectedContentId, contents, selectedProjectId, projects, getBaseArticle, getInstagramContents, getInstagramCards, addInstagramContent, updateInstagramContent, deleteInstagramContent, addToPublishQueue, getChannelModels, setChannelModels } = useProjectStore();
   const content = contents.find((c) => c.id === selectedContentId);
   const project = projects.find((p) => p.id === selectedProjectId);
   if (!content || !project) return null;
@@ -946,8 +1045,19 @@ export function CardNewsPanel() {
         onAdd={() => addInstagramContent(content.id)}
         onDelete={(id) => deleteInstagramContent(id)}
         addLabel="새 카드뉴스 추가"
-        onAddToQueue={(id, channel) => alert(`${channel}에 발행 큐 추가 (ID: ${id})`)}
+        onAddToQueue={async (id, channel) => {
+          const cards = getInstagramCards(id);
+          const warnings: string[] = [];
+          if (!cards.length) warnings.push('카드가 없습니다');
+          if (cards.length && !cards.some(c => c.text_content?.trim())) warnings.push('텍스트가 없습니다');
+          if (cards.length && !cards.some(c => c.background_image_url)) warnings.push('이미지가 없습니다');
+          if (warnings.length && !confirm(`⚠️ ${warnings.join(', ')}\n\n그래도 발행큐에 추가하시겠습니까?`)) return;
+          const ok = await addToPublishQueue(channel, content.id, { igContentId: id });
+          if (ok) alert(`✅ ${channel} 발행큐에 추가되었습니다`);
+          else alert('발행큐 추가 실패');
+        }}
         publishChannels={[{ id: 'instagram', label: 'Instagram', icon: '📸' }, { id: 'facebook', label: 'Facebook', icon: '👤' }]}
+        accentColor="bg-indigo-600 hover:bg-indigo-700"
         renderContent={(igContent) => (
           <CardNewsPanelInner
             key={igContent.id}
