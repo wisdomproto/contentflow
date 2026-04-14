@@ -32,21 +32,24 @@ function BaseArticlePanelInner({ content, project }: BaseArticlePanelInnerProps)
   const [translatedHtml, setTranslatedHtml] = useState<string | null>(null);
   const [loadingTranslation, setLoadingTranslation] = useState(false);
 
-  // Load translated content from R2 when language changes
-  useEffect(() => {
-    if (selectedLanguage === 'ko' || !baseArticle) {
-      setTranslatedHtml(null);
-      return;
-    }
+  // Load translated content from R2 via proxy when language changes
+  const translationUrl = (() => {
+    if (selectedLanguage === 'ko' || !baseArticle) return null;
     const translations = (baseArticle.factcheck_report as Record<string, unknown>)?.translations as Record<string, string> | undefined;
-    const url = translations?.[selectedLanguage];
-    if (!url) { setTranslatedHtml(null); return; }
+    return translations?.[selectedLanguage] || null;
+  })();
 
+  useEffect(() => {
+    if (!translationUrl) { setTranslatedHtml(null); return; }
+    let cancelled = false;
     setLoadingTranslation(true);
-    fetch(`/api/storage/proxy?url=${encodeURIComponent(url)}`).then(r => r.text()).then(html => {
-      setTranslatedHtml(html);
-    }).catch(() => setTranslatedHtml(null)).finally(() => setLoadingTranslation(false));
-  }, [selectedLanguage, baseArticle]);
+    fetch(`/api/storage/proxy?url=${encodeURIComponent(translationUrl)}`)
+      .then(r => { if (!r.ok) throw new Error('fetch failed'); return r.text(); })
+      .then(html => { if (!cancelled) setTranslatedHtml(html); })
+      .catch(() => { if (!cancelled) setTranslatedHtml(null); })
+      .finally(() => { if (!cancelled) setLoadingTranslation(false); });
+    return () => { cancelled = true; };
+  }, [selectedLanguage, translationUrl]);
 
   const [wordCount, setWordCount] = useState(baseArticle?.word_count ?? 0);
   const [showPromptDialog, setShowPromptDialog] = useState(false);
