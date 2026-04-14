@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Sidebar } from '@/components/layout/sidebar'
 import { TopBar } from '@/components/layout/top-bar'
 import { useAuth } from '@/hooks/use-auth'
@@ -9,18 +9,21 @@ import { useProjectStore } from '@/stores/project-store'
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
   const loadFromSupabase = useProjectStore((s) => s.loadFromSupabase)
+  const [dataLoading, setDataLoading] = useState(false)
+  const projects = useProjectStore((s) => s.projects)
 
-  // Load data from Supabase when user is authenticated
   useEffect(() => {
     if (user && loadFromSupabase) {
-      loadFromSupabase()
+      setDataLoading(true)
+      loadFromSupabase().finally(() => setDataLoading(false))
     }
   }, [user, loadFromSupabase])
 
-  if (loading) {
+  if (loading || (dataLoading && projects.length === 0)) {
     return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="text-muted-foreground text-sm">로딩중...</div>
+      <div className="h-screen flex flex-col items-center justify-center gap-3">
+        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="text-muted-foreground text-sm">데이터 로딩중...</div>
       </div>
     )
   }

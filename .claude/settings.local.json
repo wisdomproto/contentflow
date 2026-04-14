@@ -197,7 +197,8 @@
       "Bash(node -e \"fetch\\('http://localhost:3000/api/keywords/recommend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify\\({title:'성장호르몬',language:'ko'}\\)}\\).then\\(r=>r.json\\(\\)\\).then\\(d=>console.log\\('Result:',d.keywords?.length\\)\\);\")",
       "Bash(disown sleep:*)",
       "Bash(node -e \" fetch\\('http://localhost:3000/api/keywords/recommend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify\\({ title: '성장호르몬', industry: '성장클리닉', language: 'ko' }\\) }\\).then\\(r => r.json\\(\\)\\).then\\(d => { console.log\\('Keywords:', d.keywords?.length\\); d.keywords?.slice\\(0, 5\\).forEach\\(k => console.log\\(' ', k.keyword, '| naver:', k.naverVolume\\)\\); }\\); \")",
-      "Bash(node -e \"fetch\\('http://localhost:3000/api/keywords/recommend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify\\({title:'성장호르몬',language:'ko'}\\)}\\).then\\(r=>r.json\\(\\)\\).then\\(d=>console.log\\('R:',d.keywords?.length\\)\\);\")"
+      "Bash(node -e \"fetch\\('http://localhost:3000/api/keywords/recommend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify\\({title:'성장호르몬',language:'ko'}\\)}\\).then\\(r=>r.json\\(\\)\\).then\\(d=>console.log\\('R:',d.keywords?.length\\)\\);\")",
+      "Bash(findstr \":3000\")"
     ]
   }
 }
