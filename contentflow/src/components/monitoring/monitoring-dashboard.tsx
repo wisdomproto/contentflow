@@ -8,6 +8,7 @@ import { Plus } from 'lucide-react'
 import { useProjectStore } from '@/stores/project-store'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { TargetLanguagesSection } from '@/components/project/target-languages-section'
+import { fetchAiGenerate } from '@/lib/sse-stream-parser'
 
 const PLATFORMS = [
   { id: 'all', label: '전체' },
@@ -109,33 +110,7 @@ export function MonitoringDashboard() {
     try {
       const prompt = `Translate these Korean keywords to ${LANGUAGE_INFO[selectedLang]?.label || selectedLang}. Return ONLY a JSON array of translated strings, no explanation.\n\nKeywords: ${JSON.stringify(koKeywords)}`
 
-      const res = await fetch('/api/ai/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, model: 'gemini-2.5-flash' }),
-      })
-      const reader = res.body?.getReader()
-      if (!reader) throw new Error('No reader')
-      const decoder = new TextDecoder()
-      let fullText = ''
-      let buffer = ''
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6)
-            if (data === '[DONE]') continue
-            try {
-              const parsed = JSON.parse(data)
-              if (parsed.text) fullText += parsed.text
-            } catch {}
-          }
-        }
-      }
+      const fullText = await fetchAiGenerate(prompt, 'gemini-2.5-flash')
 
       const match = fullText.match(/\[[\s\S]*\]/)
       if (match) {

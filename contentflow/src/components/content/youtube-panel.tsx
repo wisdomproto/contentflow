@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { GenerationButton } from './generation-button';
 import { ImageCardWidget } from './image-card-widget';
+import { ChannelTranslationView } from './channel-translation-view';
 import type { Content, Project, YoutubeContent, YoutubeCard, VideoDuration } from '@/types/database';
 import { generateId } from '@/lib/utils';
 import { cn } from '@/lib/utils';
@@ -224,6 +225,7 @@ function YoutubePanelInner({ youtubeContent, content, project, hasBaseArticle, c
 
   return (
     <div className="space-y-3">
+      <ChannelTranslationView contentId={content.id} channel="youtube" />
       {/* Video Settings (collapsible) */}
       <button
         onClick={() => setShowVideoSettings(!showVideoSettings)}

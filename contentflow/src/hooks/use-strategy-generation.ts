@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
+import { parseSSEStream } from '@/lib/sse-stream-parser';
 import type { StrategyTab, StrategySSEEvent, StrategyInput, KeywordItem, CrawlResult } from '@/types/strategy';
 
 interface UseStrategyGenerationOptions {
@@ -42,45 +43,26 @@ export function useStrategyGeneration({
           return;
         }
 
-        const reader = res.body?.getReader();
-        if (!reader) return;
-
-        const decoder = new TextDecoder();
-        let buffer = '';
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
-
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed.startsWith('data: ')) continue;
-            try {
-              const event: StrategySSEEvent = JSON.parse(trimmed.slice(6));
-              switch (event.type) {
-                case 'tab_start':
-                  setCurrentTab(event.tab);
-                  onTabStart?.(event.tab);
-                  break;
-                case 'tab_complete':
-                  onTabComplete?.(event.tab, event.data);
-                  break;
-                case 'tab_error':
-                  onTabError?.(event.tab, event.error);
-                  break;
-                case 'complete':
-                  onComplete?.();
-                  break;
-              }
-            } catch {
-              // skip malformed
+        await parseSSEStream<StrategySSEEvent>(res, {
+          signal: controller.signal,
+          onChunk: (event) => {
+            switch (event.type) {
+              case 'tab_start':
+                setCurrentTab(event.tab);
+                onTabStart?.(event.tab);
+                break;
+              case 'tab_complete':
+                onTabComplete?.(event.tab, event.data);
+                break;
+              case 'tab_error':
+                onTabError?.(event.tab, event.error);
+                break;
+              case 'complete':
+                onComplete?.();
+                break;
             }
-          }
-        }
+          },
+        });
       } catch (err) {
         if ((err as Error).name !== 'AbortError') {
           onTabError?.('overview', (err as Error).message);
@@ -112,32 +94,12 @@ export function useStrategyGeneration({
           return;
         }
 
-        const reader = res.body?.getReader();
-        if (!reader) return;
-
-        const decoder = new TextDecoder();
-        let buffer = '';
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
-
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed.startsWith('data: ')) continue;
-            try {
-              const event: StrategySSEEvent = JSON.parse(trimmed.slice(6));
-              if (event.type === 'tab_complete') onTabComplete?.(event.tab, event.data);
-              if (event.type === 'tab_error') onTabError?.(event.tab, event.error);
-            } catch {
-              // skip
-            }
-          }
-        }
+        await parseSSEStream<StrategySSEEvent>(res, {
+          onChunk: (event) => {
+            if (event.type === 'tab_complete') onTabComplete?.(event.tab, event.data);
+            if (event.type === 'tab_error') onTabError?.(event.tab, event.error);
+          },
+        });
       } catch (err) {
         onTabError?.(tab, (err as Error).message);
       } finally {

@@ -8,6 +8,7 @@ import { DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL } from '@/lib/ai-models';
 import type { ImportedStrategy } from '@/types/analytics';
 import { generateId } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
+import { useSaveStatusStore } from './save-status-store';
 
 // ═══ Generic debounced Supabase write (shared by ALL card tables) ═══
 // Key: "table:id", Value: merged updates
@@ -20,21 +21,39 @@ async function _flushAllWrites() {
   _pendingWrites.clear();
   if (entries.length === 0) return;
 
+  const status = useSaveStatusStore.getState();
+  status._setFlushing(true);
   const supabase = createClient();
+  let failures = 0;
+  let lastErrMsg: string | null = null;
+
   for (const [key, updates] of entries) {
     const [table, id] = key.split(':', 2);
+    let ok = false;
     for (let attempt = 0; attempt < 2; attempt++) {
       const { error } = await supabase.from(table).update(updates).eq('id', id);
-      if (!error) break;
+      if (!error) { ok = true; break; }
+      lastErrMsg = error.message;
       if (attempt === 0) await new Promise(r => setTimeout(r, 500));
     }
+    if (!ok) failures += 1;
+  }
+
+  status._decrement(entries.length);
+  status._setFlushing(false);
+  if (failures > 0) {
+    status._setError(`${failures}건 저장 실패: ${lastErrMsg ?? ''}`);
+  } else {
+    status._setSavedAt(Date.now());
   }
 }
 
 function debouncedWrite(table: string, id: string, updates: Record<string, unknown>, delayMs = 800) {
   const key = `${table}:${id}`;
+  const hadPending = _pendingWrites.has(key);
   const pending = _pendingWrites.get(key) || {};
   _pendingWrites.set(key, { ...pending, ...updates });
+  if (!hadPending) useSaveStatusStore.getState()._increment();
 
   if (_flushTimer) clearTimeout(_flushTimer);
   _flushTimer = setTimeout(_flushAllWrites, delayMs);
@@ -250,7 +269,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
 
     // Load saved keywords
     const { data: proj } = await supabase.from('projects').select('saved_keywords').eq('id', projectId).single()
-    if (proj?.saved_keywords) set({ savedKeywords: proj.saved_keywords as any[] })
+    if (proj?.saved_keywords) set({ savedKeywords: proj.saved_keywords as ProjectState['savedKeywords'] })
 
     // TODO: marketing_strategies table does not exist yet — load strategies when table is created
   },

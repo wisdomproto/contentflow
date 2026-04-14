@@ -14,6 +14,7 @@ import { useProjectStore } from '@/stores/project-store';
 import { buildThreadsPrompt } from '@/lib/prompt-builder';
 import { Loader2, Copy, Check, Eye } from 'lucide-react';
 import { GenerationButton } from './generation-button';
+import { ChannelTranslationView } from './channel-translation-view';
 import type { Content, Project, ThreadsContent, ThreadsCard } from '@/types/database';
 import { generateId } from '@/lib/utils';
 
@@ -133,6 +134,7 @@ function ThreadsPanelInner({ threadsContent, content, project, hasBaseArticle, c
 
   return (
     <div className="space-y-4">
+      <ChannelTranslationView contentId={content.id} channel="threads" />
       {/* Action buttons */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">

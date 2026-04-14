@@ -18,41 +18,17 @@ import { buildBlogPrompt, buildBlogImagePromptForCard } from '@/lib/prompt-build
 import { calculateNaverSeoScore, type SeoDetail } from '@/lib/seo-scorer';
 import { Eye, Loader2, ChevronDown, ChevronRight, X, Plus } from 'lucide-react';
 import { GenerationButton } from './generation-button';
+import { ChannelTranslationView } from './channel-translation-view';
 import type { Content, Project, BlogContent, BlogCard } from '@/types/database';
 import type { ImportedStrategy } from '@/types/analytics';
 import { generateId, cn } from '@/lib/utils';
+import { fetchAiGenerate } from '@/lib/sse-stream-parser';
+import { WorkflowStepBar, type WorkflowStep as WorkflowStepType } from './workflow-step-bar';
 
-// ─── SSE fetch helper ──────────────────────────────────────────
-async function fetchAiGenerate(prompt: string, model: string): Promise<string> {
-  const res = await fetch('/api/ai/generate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, model }),
-  });
-  const reader = res.body?.getReader();
-  if (!reader) throw new Error('No reader');
-  const decoder = new TextDecoder();
-  let fullText = '';
-  let buffer = '';
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split('\n');
-    buffer = lines.pop() || '';
-    for (const line of lines) {
-      if (line.startsWith('data: ')) {
-        const data = line.slice(6);
-        if (data === '[DONE]') continue;
-        try {
-          const parsed = JSON.parse(data);
-          if (parsed.text) fullText += parsed.text;
-          if (parsed.error) throw new Error(parsed.error);
-        } catch {}
-      }
-    }
-  }
-  return fullText;
+interface NaverKeywordRow {
+  keyword: string;
+  totalSearchVolume?: number;
+  competition?: string;
 }
 
 // ─── SEO Score Display ─────────────────────────────────────────
@@ -91,7 +67,7 @@ function SeoScoreDisplay({ score, details }: { score: number; details: SeoDetail
 
 // ─── Workflow types ─────────────────────────────────────────────
 
-type WorkflowStep = 1 | 2 | 3 | 4;
+type WorkflowStep = WorkflowStepType;
 
 const WORKFLOW_STEPS = [
   { step: 1 as WorkflowStep, label: '키워드', icon: '🎯' },
@@ -188,7 +164,7 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
   const [removedGoldenKeywords, setRemovedGoldenKeywords] = useState<string[]>([]);
 
   // AI keyword recommendation state
-  const [recommendedKeywords, setRecommendedKeywords] = useState<any[]>([]);
+  const [recommendedKeywords, setRecommendedKeywords] = useState<Array<{ keyword: string; naverVolume?: number; naverComp?: string }>>([]);
   const [recommending, setRecommending] = useState(false);
 
   // ── Structure state (Step 2) ──
@@ -517,9 +493,9 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
       const data = await res.json();
       if (data.keywords?.length) {
         const results = data.keywords
-          .filter((kw: any) => kw.keyword !== keyword)
-          .map((kw: any) => ({ keyword: kw.keyword, naverVolume: kw.totalSearchVolume || 0, naverComp: kw.competition || '-' }))
-          .sort((a: any, b: any) => (b.naverVolume || 0) - (a.naverVolume || 0));
+          .filter((kw: NaverKeywordRow) => kw.keyword !== keyword)
+          .map((kw: NaverKeywordRow) => ({ keyword: kw.keyword, naverVolume: kw.totalSearchVolume || 0, naverComp: kw.competition || '-' }))
+          .sort((a: { naverVolume?: number }, b: { naverVolume?: number }) => (b.naverVolume || 0) - (a.naverVolume || 0));
         setRecommendedKeywords(results.slice(0, 20));
       }
     } catch (err) {
@@ -531,7 +507,7 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
 
   // AI auto-pick: analyze content and select best keywords from pool
   const handleAutoPickKeywords = async () => {
-    const pool = (savedKeywords as any[]).map((sk: any) => sk.keyword)
+    const pool = savedKeywords.map((sk) => sk.keyword)
     if (pool.length === 0) return
     setRecommending(true)
     setRecommendedKeywords([])
@@ -571,9 +547,9 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
           const data = await res.json()
           if (data.keywords?.length) {
             const naverSecs = data.keywords
-              .filter((kw: any) => kw.keyword !== parsed.primary && !secs.includes(kw.keyword))
-              .map((kw: any) => ({ keyword: kw.keyword, naverVolume: kw.totalSearchVolume || 0, naverComp: kw.competition || '-' }))
-              .sort((a: any, b: any) => (b.naverVolume || 0) - (a.naverVolume || 0))
+              .filter((kw: NaverKeywordRow) => kw.keyword !== parsed.primary && !secs.includes(kw.keyword))
+              .map((kw: NaverKeywordRow) => ({ keyword: kw.keyword, naverVolume: kw.totalSearchVolume || 0, naverComp: kw.competition || '-' }))
+              .sort((a: { naverVolume?: number }, b: { naverVolume?: number }) => (b.naverVolume || 0) - (a.naverVolume || 0))
             setRecommendedKeywords(naverSecs.slice(0, 20))
           }
         }
@@ -593,26 +569,9 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
 
   return (
     <div className="space-y-4">
+      <ChannelTranslationView contentId={content.id} channel="naver_blog" />
       {/* ── Step Progress Bar ── */}
-      <div className="flex items-center gap-1 p-1 bg-muted/30 rounded-lg">
-        {WORKFLOW_STEPS.map(({ step, label, icon }) => (
-          <button
-            key={step}
-            onClick={() => setCurrentStep(step)}
-            className={cn(
-              'flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-xs font-medium transition-colors',
-              currentStep === step
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : currentStep > step
-                  ? 'text-green-500 hover:bg-accent'
-                  : 'text-muted-foreground hover:bg-accent'
-            )}
-          >
-            <span>{currentStep > step ? '✓' : icon}</span>
-            <span>{label}</span>
-          </button>
-        ))}
-      </div>
+      <WorkflowStepBar steps={WORKFLOW_STEPS} currentStep={currentStep} onStepChange={setCurrentStep} />
 
       {/* ════════════════════════════════════════════════════════════
          Step 1: 🎯 키워드 설정
@@ -625,7 +584,7 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
           </div>
 
           {/* Main Keyword Pool */}
-          {(savedKeywords as any[]).length > 0 ? (
+          {savedKeywords.length > 0 ? (
             <div className="rounded-md border border-yellow-500/30 bg-yellow-500/5 p-3 space-y-2">
               <div className="flex items-center justify-between">
                 <div className="text-xs font-semibold flex items-center gap-1.5">🏆 메인 키워드 풀 <span className="text-muted-foreground font-normal">— 클릭하여 수동 선택 또는</span></div>
@@ -634,7 +593,7 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
                 </Button>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {(savedKeywords as any[]).map((sk: any) => (
+                {savedKeywords.map((sk) => (
                   <button
                     key={sk.keyword}
                     onClick={() => handleSelectMainKeyword(sk.keyword)}
@@ -646,7 +605,7 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
                     )}
                   >
                     {sk.keyword}
-                    {sk.naverMonthly > 0 && <span className="ml-1 text-[10px] opacity-60">{sk.naverMonthly?.toLocaleString()}</span>}
+                    {(sk.naverMonthly ?? 0) > 0 && <span className="ml-1 text-[10px] opacity-60">{sk.naverMonthly?.toLocaleString()}</span>}
                   </button>
                 ))}
               </div>
@@ -747,14 +706,14 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
                   </tr>
                 </thead>
                 <tbody>
-                  {recommendedKeywords.map((kw: any, i: number) => (
+                  {recommendedKeywords.map((kw, i) => (
                     <tr key={i} className="border-b border-border last:border-0 hover:bg-muted/30">
                       <td className="px-3 py-1.5 font-medium">{kw.keyword}</td>
                       <td className="px-3 py-1.5 text-right text-muted-foreground">
-                        {kw.naverVolume?.toLocaleString() ?? kw.naver_volume?.toLocaleString() ?? '-'}
+                        {kw.naverVolume?.toLocaleString() ?? '-'}
                       </td>
                       <td className="px-3 py-1.5 text-right text-muted-foreground">
-                        {kw.naverComp ?? kw.naver_comp ?? '-'}
+                        {kw.naverComp ?? '-'}
                       </td>
                       <td className="px-3 py-1.5 text-right">
                         <div className="flex gap-1 justify-end">
@@ -883,7 +842,7 @@ function BlogPanelInner({ blogContent, content, project, hasBaseArticle, channel
 Primary keyword: "${primaryKeyword}"
 Secondary keywords: ${secondaryKeywords.join(', ') || 'none'}
 Search intent: ${searchIntent}
-${baseArticle?.body ? `Base article summary: ${(baseArticle as any).body_plain_text?.substring(0, 500) || baseArticle.body.substring(0, 500)}` : ''}
+${baseArticle?.body ? `Base article summary: ${baseArticle.body_plain_text?.substring(0, 500) || baseArticle.body.substring(0, 500)}` : ''}
 ${project.industry ? `Industry: ${project.industry}` : ''}
 
 Return ONLY valid JSON (no explanation) with this exact structure:

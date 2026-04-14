@@ -9,6 +9,7 @@ import { IssuesList } from './issues-list'
 import { useProjectStore } from '@/stores/project-store'
 import { calculateNaverSeoScore } from '@/lib/seo-scorer'
 import { AnalyticsLanguageTabs } from '@/components/analytics/language-tabs'
+import { fetchAiGenerate } from '@/lib/sse-stream-parser'
 
 type TabId = 'audit' | 'content' | 'geo' | 'schema'
 
@@ -143,30 +144,7 @@ Analyze and provide scores + actionable recommendations in Korean:
 6. **경쟁 분석** — 이 주제에서 AI Overview에 인용될 가능성 vs 경쟁 콘텐츠
 7. **즉시 개선 항목** (5개) — 구체적 액션 아이템`
 
-      const streamRes = await fetch('/api/ai/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, model: 'gemini-2.5-flash' }),
-      })
-      const reader = streamRes.body?.getReader()
-      if (!reader) throw new Error('No reader')
-      const decoder = new TextDecoder()
-      let fullText = ''
-      let buffer = ''
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6)
-            if (data === '[DONE]') continue
-            try { const parsed = JSON.parse(data); if (parsed.text) fullText += parsed.text } catch {}
-          }
-        }
-      }
+      const fullText = await fetchAiGenerate(prompt, 'gemini-2.5-flash')
       setGeoResult(fullText)
     } catch (err) {
       console.error('GEO analysis error:', err)

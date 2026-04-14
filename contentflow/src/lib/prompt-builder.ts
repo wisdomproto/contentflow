@@ -1,5 +1,9 @@
 import type { Project, Content, BaseArticle, BlogCard, YoutubeContent, YoutubeCard } from '@/types/database';
 
+/** 이미지 생성 시 텍스트/글자가 포함되지 않도록 강제하는 공통 지시사항. */
+export const NO_TEXT_IMAGE_RULE =
+  'IMPORTANT: Do NOT include any text, letters, words, numbers, or typography in the image. The image must be purely visual with zero text elements.';
+
 export interface PromptContext {
   project: Project;
   content: Content;
@@ -376,7 +380,8 @@ export function buildCardNewsImagePromptsPrompt(ctx: PromptContext): string {
   sections.push('- image_prompt는 반드시 영어로 작성하세요 (이미지 모델 최적화)');
   sections.push('- image_prompt에 포함할 내용: 스타일(illustration, photo, flat design 등), 색상 팔레트, 구도, 분위기, 주요 객체');
   sections.push('- 모든 슬라이드의 이미지 스타일은 일관되게 유지하세요 (같은 색상 팔레트, 같은 일러스트 스타일)');
-  sections.push('- Korean context: any text in the image must be in Korean (한글). People should be East Asian / Korean appearance.');
+  sections.push(`- ${NO_TEXT_IMAGE_RULE} Do not describe any text, signs, labels, or typography in the image_prompt.`);
+  sections.push('- Korean context: People should be East Asian / Korean appearance.');
 
   sections.push(...buildBrandContext(project));
 
@@ -480,7 +485,7 @@ export function buildBlogImagePromptForCard(
 
   const parts: string[] = [];
   parts.push(`${style}.`);
-  parts.push('IMPORTANT: Do NOT include any text, letters, words, numbers, or typography in the image. The image must be purely visual with zero text elements.');
+  parts.push(NO_TEXT_IMAGE_RULE);
 
   if (alt) {
     parts.push(alt);

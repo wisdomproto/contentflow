@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FileText, BookOpen, Image, MessageCircle, Youtube, Globe, Smartphone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useProjectStore } from '@/stores/project-store';
@@ -11,7 +11,16 @@ import { CardNewsPanel } from './cardnews-panel';
 import { ThreadsPanel } from './threads-panel';
 import { YoutubePanel } from './youtube-panel';
 import { LanguageSelector } from './language-selector';
+import { useUIStore } from '@/stores/ui-store';
 import { createClient } from '@/lib/supabase/client';
+import {
+  translateAndSaveChannel,
+  buildBlogCardsHtml,
+  buildCardnewsHtml,
+  buildThreadsHtml,
+  buildYoutubeHtml,
+  type ChannelKind,
+} from '@/lib/channel-translator';
 
 type TabId = 'base-article' | 'wordpress' | 'blog' | 'cardnews' | 'threads' | 'youtube' | 'shorts';
 
@@ -34,82 +43,107 @@ const tabs: Tab[] = [
 export function ContentTabs() {
   const [activeTab, setActiveTab] = useState<TabId>('base-article');
   const [translationStatuses, setTranslationStatuses] = useState<Record<string, string>>({});
-  const { selectedContentId, getBaseArticle } = useProjectStore();
+  const { selectedLanguage } = useUIStore();
+
+  // Naver Blog is Korean-only — auto-switch away if user picks a non-ko language.
+  useEffect(() => {
+    if (selectedLanguage !== 'ko' && activeTab === 'blog') {
+      setActiveTab('base-article');
+    }
+  }, [selectedLanguage, activeTab]);
+  const {
+    selectedContentId,
+    selectedProjectId,
+    projects,
+    getBaseArticle,
+    getBlogContents,
+    getBlogCards,
+    getInstagramContents,
+    getInstagramCards,
+    getThreadsContents,
+    getThreadsCards,
+    getYoutubeContents,
+    getYoutubeCards,
+  } = useProjectStore();
 
   const handleTranslate = async (targetLang: string) => {
-    const baseArticle = selectedContentId ? getBaseArticle(selectedContentId) : null;
-    if (!baseArticle?.body) {
-      alert('기본글을 먼저 작성해주세요.');
+    if (!selectedContentId || !selectedProjectId) {
+      alert('콘텐츠를 먼저 선택해주세요.');
+      return;
+    }
+    const project = projects.find((p) => p.id === selectedProjectId);
+    if (!project) return;
+
+    const channelKind: ChannelKind | null =
+      activeTab === 'base-article' ? 'base'
+      : activeTab === 'blog' ? 'naver_blog'
+      : activeTab === 'wordpress' ? 'wordpress'
+      : activeTab === 'cardnews' ? 'instagram'
+      : activeTab === 'threads' ? 'threads'
+      : activeTab === 'youtube' ? 'youtube'
+      : null;
+
+    if (!channelKind) {
+      alert('이 채널은 번역을 지원하지 않습니다.');
       return;
     }
 
-    setTranslationStatuses(prev => ({ ...prev, [targetLang]: 'translating' }));
+    // Collect source HTML per channel
+    let sourceHtml = '';
+    if (channelKind === 'base') {
+      sourceHtml = getBaseArticle(selectedContentId)?.body || '';
+      if (!sourceHtml) {
+        alert('기본글을 먼저 작성해주세요.');
+        return;
+      }
+    } else if (channelKind === 'naver_blog' || channelKind === 'wordpress') {
+      const blog = getBlogContents(selectedContentId)[0];
+      if (!blog) {
+        alert(`${channelKind === 'naver_blog' ? 'N블로그' : 'WordPress'} 콘텐츠가 없습니다.`);
+        return;
+      }
+      sourceHtml = buildBlogCardsHtml(getBlogCards(blog.id));
+    } else if (channelKind === 'instagram') {
+      const ig = getInstagramContents(selectedContentId)[0];
+      if (!ig) { alert('카드뉴스 콘텐츠가 없습니다.'); return; }
+      sourceHtml = buildCardnewsHtml(getInstagramCards(ig.id), ig.caption);
+    } else if (channelKind === 'threads') {
+      const th = getThreadsContents(selectedContentId)[0];
+      if (!th) { alert('스레드 콘텐츠가 없습니다.'); return; }
+      sourceHtml = buildThreadsHtml(getThreadsCards(th.id));
+    } else if (channelKind === 'youtube') {
+      const yt = getYoutubeContents(selectedContentId)[0];
+      if (!yt) { alert('유튜브 콘텐츠가 없습니다.'); return; }
+      sourceHtml = buildYoutubeHtml(getYoutubeCards(yt.id));
+    }
+
+    if (!sourceHtml.trim()) {
+      alert('번역할 본문이 없습니다. 먼저 콘텐츠를 생성해주세요.');
+      return;
+    }
+
+    setTranslationStatuses((prev) => ({ ...prev, [targetLang]: 'translating' }));
     try {
-      const langNames: Record<string, string> = { en: 'English', vi: 'Vietnamese', th: 'Thai', ja: 'Japanese', zh: 'Chinese', ms: 'Malay', id: 'Indonesian' };
-      const res = await fetch('/api/ai/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: `Translate the following Korean blog article to ${langNames[targetLang] || targetLang}. Keep the HTML structure intact. Maintain medical/health terminology accuracy. Output ONLY the translated HTML.\n\n${baseArticle.body.substring(0, 8000)}`,
-        }),
+      const publicUrl = await translateAndSaveChannel({
+        projectId: selectedProjectId,
+        contentId: selectedContentId,
+        project,
+        targetLang,
+        channel: channelKind,
+        sourceHtml,
+        isNaver: channelKind === 'naver_blog',
       });
-      if (!res.ok) throw new Error('번역 API 오류');
 
-      const reader = res.body?.getReader();
-      if (!reader) throw new Error('스트림 오류');
-      const decoder = new TextDecoder();
-      let result = '';
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-          if (buffer.trim()) {
-            const payload = buffer.trim().replace(/^data: /, '');
-            if (payload !== '[DONE]') {
-              try { result += JSON.parse(payload).text || ''; } catch {}
-            }
-          }
-          break;
-        }
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed.startsWith('data: ')) continue;
-          const payload = trimmed.slice(6);
-          if (payload === '[DONE]') break;
-          try { result += JSON.parse(payload).text || ''; } catch {}
-        }
-      }
-
-      // Save translated HTML to R2
-      const projectId = useProjectStore.getState().selectedProjectId;
-      const blob = new Blob([result], { type: 'text/html' });
-      const fileName = `${selectedContentId}_${targetLang}.html`;
-      const presignRes = await fetch('/api/storage/presign', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectId, category: 'content', fileName, contentType: 'text/html', contentId: selectedContentId }),
-      });
-      const presignData = await presignRes.json();
-      if (!presignRes.ok) {
-        throw new Error(`R2 presign 실패: ${presignData.error}`);
-      }
-      {
-        const { presignedUrl, publicUrl } = presignData;
-        await fetch(presignedUrl, { method: 'PUT', body: blob, headers: { 'Content-Type': 'text/html' } });
-        // Store URL reference in base_article metadata
+      // Legacy sync: base article still keeps translations[] in factcheck_report for existing display code.
+      if (channelKind === 'base') {
         const supabase = createClient();
         const { data: ba } = await supabase.from('base_articles').select('factcheck_report').eq('content_id', selectedContentId).single();
         const existing = (ba?.factcheck_report as Record<string, unknown>) || {};
         const translations = (existing.translations as Record<string, string>) || {};
         translations[targetLang] = publicUrl;
         await supabase.from('base_articles').update({ factcheck_report: { ...existing, translations } }).eq('content_id', selectedContentId);
-        // Sync Zustand store locally (DB already updated above)
         useProjectStore.setState((state) => ({
-          baseArticles: state.baseArticles.map(ba2 =>
+          baseArticles: state.baseArticles.map((ba2) =>
             ba2.content_id === selectedContentId
               ? { ...ba2, factcheck_report: { ...existing, translations } }
               : ba2
@@ -117,10 +151,10 @@ export function ContentTabs() {
         }));
       }
 
-      setTranslationStatuses(prev => ({ ...prev, [targetLang]: 'completed' }));
+      setTranslationStatuses((prev) => ({ ...prev, [targetLang]: 'completed' }));
       alert(`${targetLang.toUpperCase()} 번역 완료!`);
     } catch (err) {
-      setTranslationStatuses(prev => ({ ...prev, [targetLang]: 'none' }));
+      setTranslationStatuses((prev) => ({ ...prev, [targetLang]: 'none' }));
       alert(`번역 실패: ${(err as Error).message}`);
     }
   };
@@ -130,7 +164,9 @@ export function ContentTabs() {
       {/* Tab Bar */}
       <div className="border-b border-border bg-background">
         <nav className="flex gap-1 px-4">
-          {tabs.map((tab) => (
+          {tabs
+            .filter((tab) => !(tab.id === 'blog' && selectedLanguage !== 'ko'))
+            .map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}

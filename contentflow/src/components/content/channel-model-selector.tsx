@@ -5,6 +5,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { Cpu, ImageIcon, RectangleHorizontal, Palette, MessageSquare, ChevronDown, ChevronRight } from 'lucide-react';
 import { TEXT_MODELS, IMAGE_MODELS } from '@/lib/ai-models';
 import { ASPECT_RATIO_PRESETS, ImageStyleSelector } from './image-style-selector';
+import { KoreanTextarea } from '@/components/ui/korean-input';
 
 interface ChannelModelSelectorProps {
   textModel: string;
@@ -116,9 +117,9 @@ export function ChannelModelSelector({
             {imageInstruction && <span className="text-primary ml-1">●</span>}
           </button>
           {showInstruction && (
-            <textarea
-              defaultValue={imageInstruction || ''}
-              onBlur={e => onImageInstructionChange(e.target.value)}
+            <KoreanTextarea
+              value={imageInstruction || ''}
+              onCommit={(v) => onImageInstructionChange?.(v)}
               placeholder="예: 텍스트 넣지 마, 동양인으로, 밝은 톤, 일러스트 스타일..."
               className="mt-1.5 w-full h-16 bg-muted border border-border rounded-md p-2 text-xs resize-none focus:outline-none focus:ring-1 focus:ring-primary"
             />

@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { useImageGeneration, type ImageGenerationProgress } from './use-image-generation';
-import { convertToWebpBlob } from './use-r2-upload';
+import { convertToWebpBlob, uploadToR2 } from './use-r2-upload';
 import type { AspectRatio } from '@/lib/ai/types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -69,35 +69,21 @@ export function useCardImageGeneration(config: CardImageConfig): UseCardImageGen
           cfg.imageModel
         );
         if (results[0]) {
-          // Convert to WebP on client (Canvas API) before uploading
           const { blob, mimeType } = await convertToWebpBlob(results[0].base64, results[0].mimeType);
           const ext = mimeType.split('/')[1] || 'webp';
+          const dataUrlFallback = `data:${results[0].mimeType};base64,${results[0].base64}`;
           let savedUrl: string;
           try {
-            const presignRes = await fetch('/api/storage/presign', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                projectId: cfg.projectId,
-                category: 'images',
-                fileName: `${cardId}.${ext}`,
-                contentType: mimeType,
-                contentId: cardId,
-              }),
+            const { publicUrl } = await uploadToR2(blob, {
+              projectId: cfg.projectId,
+              category: 'images',
+              fileName: `${cardId}.${ext}`,
+              contentType: mimeType,
+              contentId: cardId,
             });
-            if (presignRes.ok) {
-              const { presignedUrl, publicUrl } = await presignRes.json();
-              const uploadRes = await fetch(presignedUrl, {
-                method: 'PUT',
-                body: blob,
-                headers: { 'Content-Type': mimeType },
-              });
-              savedUrl = uploadRes.ok ? publicUrl : `data:${results[0].mimeType};base64,${results[0].base64}`;
-            } else {
-              savedUrl = `data:${results[0].mimeType};base64,${results[0].base64}`;
-            }
+            savedUrl = publicUrl;
           } catch {
-            savedUrl = `data:${results[0].mimeType};base64,${results[0].base64}`;
+            savedUrl = dataUrlFallback;
           }
           cfg.saveResult(cardId, savedUrl, prompt);
         }

@@ -6,6 +6,7 @@ import { useProjectStore } from '@/stores/project-store'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Send, Clock, Link2Off, Loader2 } from 'lucide-react'
+import { GenerationButton } from './generation-button'
 import type { BlogCard } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
@@ -398,15 +399,13 @@ export function LanguageSelector({ onTranslate, translationStatuses = {}, channe
             <Button size="sm" variant="outline" className="h-7 text-xs">
               원본 비교
             </Button>
-            {translationStatuses[selectedLanguage] === 'translating' ? (
-              <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5" disabled>
-                <Loader2 size={12} className="animate-spin" /> 번역 중...
-              </Button>
-            ) : (
-              <Button size="sm" className="h-7 text-xs gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white" onClick={() => onTranslate?.(selectedLanguage)}>
-                ✨ AI 번역
-              </Button>
-            )}
+            <GenerationButton
+              variant="translate"
+              size="sm"
+              className="h-7 text-xs"
+              isGenerating={translationStatuses[selectedLanguage] === 'translating'}
+              onClick={() => onTranslate?.(selectedLanguage)}
+            />
           </div>
         )}
 

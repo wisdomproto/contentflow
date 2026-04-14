@@ -16,42 +16,12 @@ import { useCardImageGeneration } from '@/hooks/use-card-image-generation';
 import { useProjectStore } from '@/stores/project-store';
 import { buildBlogPrompt, buildBlogImagePromptForCard } from '@/lib/prompt-builder';
 import { GenerationButton } from './generation-button';
+import { ChannelTranslationView } from './channel-translation-view';
 import { Globe, Loader2 } from 'lucide-react';
 import { generateId } from '@/lib/utils';
 import type { Content, Project, BlogContent, BlogCard } from '@/types/database';
-
-// Helper: fetch AI generate (SSE) and return full text
-async function fetchAiGenerate(prompt: string, model: string): Promise<string> {
-  const res = await fetch('/api/ai/generate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, model }),
-  });
-  const reader = res.body?.getReader();
-  if (!reader) throw new Error('No reader');
-  const decoder = new TextDecoder();
-  let fullText = '';
-  let buffer = '';
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split('\n');
-    buffer = lines.pop() || '';
-    for (const line of lines) {
-      if (line.startsWith('data: ')) {
-        const data = line.slice(6);
-        if (data === '[DONE]') continue;
-        try {
-          const parsed = JSON.parse(data);
-          if (parsed.text) fullText += parsed.text;
-          if (parsed.error) throw new Error(parsed.error);
-        } catch {}
-      }
-    }
-  }
-  return fullText;
-}
+import { fetchAiGenerate } from '@/lib/sse-stream-parser';
+import { WorkflowStepBar, type WorkflowStep as WorkflowStepType } from './workflow-step-bar';
 
 // ─── Inner: 개별 WordPress 콘텐츠 ────────────────────────────────
 
@@ -63,7 +33,7 @@ interface WordpressPanelInnerProps {
   channelModels: { textModel: string; imageModel: string; aspectRatio: string; imageStyle: string; imageInstruction: string };
 }
 
-type WorkflowStep = 1 | 2 | 3 | 4;
+type WorkflowStep = WorkflowStepType;
 
 const WORKFLOW_STEPS = [
   { step: 1 as WorkflowStep, label: '키워드 설정', icon: '🎯' },
@@ -371,26 +341,8 @@ Return ONLY JSON: { "primary": "best keyword", "secondary": ["2nd", "3rd"] }`
 
   return (
     <div className="space-y-4">
-      {/* Workflow Steps */}
-      <div className="flex items-center gap-1 p-1 bg-muted/30 rounded-lg">
-        {WORKFLOW_STEPS.map(({ step, label, icon }, i) => (
-          <button
-            key={step}
-            onClick={() => setCurrentStep(step)}
-            className={cn(
-              'flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-xs font-medium transition-colors',
-              currentStep === step
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : currentStep > step
-                  ? 'text-green-500 hover:bg-accent'
-                  : 'text-muted-foreground hover:bg-accent'
-            )}
-          >
-            <span>{currentStep > step ? '✓' : icon}</span>
-            <span>{label}</span>
-          </button>
-        ))}
-      </div>
+      <ChannelTranslationView contentId={content.id} channel="wordpress" />
+      <WorkflowStepBar steps={WORKFLOW_STEPS} currentStep={currentStep} onStepChange={setCurrentStep} />
 
       {/* Step 1: 키워드 설정 */}
       {currentStep === 1 && (

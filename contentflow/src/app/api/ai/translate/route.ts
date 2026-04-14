@@ -2,24 +2,27 @@ import { GoogleGenAI } from '@google/genai';
 import { NextRequest } from 'next/server';
 import { buildTranslationPrompt } from '@/lib/translation-prompt-builder';
 import { DEFAULT_TEXT_MODEL } from '@/lib/ai-models';
+import {
+  jsonError,
+  requireEnv,
+  SSE_HEADERS,
+  isTransientProviderError,
+} from '@/lib/api-helpers';
+
+const MAX_RETRIES = 2;
+const RETRY_DELAY = 3000;
 
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return new Response(
-      JSON.stringify({ error: 'GEMINI_API_KEY 환경변수가 설정되지 않았습니다. .env.local 파일에 설정해 주세요.' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
+  const envError = requireEnv('GEMINI_API_KEY');
+  if (envError) return envError;
+  const apiKey = process.env.GEMINI_API_KEY!;
 
   try {
-    const { text, sourceLanguage, targetLanguage, channelType, model, project, isNaver } = await req.json();
+    const { text, sourceLanguage, targetLanguage, channelType, model, project, isNaver } =
+      await req.json();
 
     if (!text || !targetLanguage) {
-      return new Response(
-        JSON.stringify({ error: 'text and targetLanguage required' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      return jsonError('text and targetLanguage required', 400);
     }
 
     const ai = new GoogleGenAI({ apiKey });
@@ -31,44 +34,55 @@ export async function POST(req: NextRequest) {
       isNaver,
     });
 
-    const result = await ai.models.generateContentStream({
-      model: model || DEFAULT_TEXT_MODEL,
-      contents: text,
-      config: { systemInstruction: systemPrompt },
-    });
+    let result: Awaited<ReturnType<typeof ai.models.generateContentStream>> | null = null;
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        result = await ai.models.generateContentStream({
+          model: model || DEFAULT_TEXT_MODEL,
+          contents: text,
+          config: { systemInstruction: systemPrompt },
+        });
+        break;
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+        if (isTransientProviderError(err) && attempt < MAX_RETRIES) {
+          await new Promise((r) => setTimeout(r, RETRY_DELAY * (attempt + 1)));
+          continue;
+        }
+        throw err;
+      }
+    }
+    if (!result) throw lastError ?? new Error('AI 스트림 시작 실패');
 
     const stream = new ReadableStream({
       async start(controller) {
         const encoder = new TextEncoder();
         try {
-          for await (const chunk of result) {
+          for await (const chunk of result!) {
             const chunkText = chunk.text;
             if (chunkText) {
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: chunkText })}\n\n`));
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify({ text: chunkText })}\n\n`)
+              );
             }
           }
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));
         } catch (err) {
           const msg = err instanceof Error ? err.message : 'AI 번역 중 오류가 발생했습니다.';
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: msg })}\n\n`));
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ error: msg })}\n\n`)
+          );
         } finally {
           controller.close();
         }
       },
     });
 
-    return new Response(stream, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        Connection: 'keep-alive',
-      },
-    });
+    return new Response(stream, { headers: SSE_HEADERS });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'AI 요청 처리 중 오류가 발생했습니다.';
-    return new Response(
-      JSON.stringify({ error: msg }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    return jsonError(msg, 500);
   }
 }

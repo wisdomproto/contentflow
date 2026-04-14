@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, useCallback } from 'react';
+import { parseSSEStream } from '@/lib/sse-stream-parser';
 
 interface UseAiGenerationOptions {
   onChunk?: (text: string, accumulated: string) => void;
@@ -11,15 +12,14 @@ interface UseAiGenerationOptions {
 export function useAiGeneration({ onChunk, onComplete, onError }: UseAiGenerationOptions) {
   const [isGenerating, setIsGenerating] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
-  const accumulatedRef = useRef('');
 
   const generate = useCallback(
     async (prompt: string, model?: string) => {
       if (abortRef.current) abortRef.current.abort();
       const controller = new AbortController();
       abortRef.current = controller;
-      accumulatedRef.current = '';
       setIsGenerating(true);
+      let accumulated = '';
 
       try {
         const res = await fetch('/api/ai/generate', {
@@ -30,67 +30,27 @@ export function useAiGeneration({ onChunk, onComplete, onError }: UseAiGeneratio
         });
 
         if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || `HTTP ${res.status}`);
+          const data = await res.json().catch(() => ({}));
+          throw new Error((data as { error?: string }).error || `HTTP ${res.status}`);
         }
 
-        const reader = res.body?.getReader();
-        if (!reader) throw new Error('스트림을 읽을 수 없습니다.');
-
-        const decoder = new TextDecoder();
-        let buffer = '';
-
-        const processLines = (lines: string[]) => {
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed.startsWith('data: ')) continue;
-            const payload = trimmed.slice(6);
-
-            if (payload === '[DONE]') {
-              onComplete?.(accumulatedRef.current);
-              setIsGenerating(false);
-              return true; // done
+        let streamError: string | null = null;
+        await parseSSEStream(res, {
+          signal: controller.signal,
+          onChunk: (chunk) => {
+            if (chunk.error) {
+              streamError = chunk.error;
+              return;
             }
-
-            try {
-              const parsed = JSON.parse(payload);
-              if (parsed.error) {
-                onError?.(parsed.error);
-                setIsGenerating(false);
-                return true; // done
-              }
-              if (parsed.text) {
-                accumulatedRef.current += parsed.text;
-                onChunk?.(parsed.text, accumulatedRef.current);
-              }
-            } catch {
-              // skip malformed JSON
+            if (chunk.text) {
+              accumulated += chunk.text;
+              onChunk?.(chunk.text, accumulated);
             }
-          }
-          return false;
-        };
+          },
+        });
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) {
-            // Process remaining buffer
-            if (buffer.trim()) {
-              if (processLines([buffer])) return;
-            }
-            break;
-          }
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
-
-          if (processLines(lines)) return;
-        }
-
-        // Stream ended without [DONE]
-        if (accumulatedRef.current) {
-          onComplete?.(accumulatedRef.current);
-        }
+        if (streamError) throw new Error(streamError);
+        onComplete?.(accumulated);
       } catch (err) {
         if ((err as Error).name !== 'AbortError') {
           onError?.((err as Error).message || 'AI 생성 중 오류가 발생했습니다.');

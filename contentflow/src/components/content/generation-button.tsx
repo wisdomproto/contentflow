@@ -1,10 +1,10 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Sparkles, ImageIcon, Loader2, Square } from 'lucide-react';
+import { Sparkles, ImageIcon, Loader2, Square, Languages } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type GenerationVariant = 'text' | 'image' | 'batch-image';
+type GenerationVariant = 'text' | 'image' | 'batch-image' | 'translate';
 
 interface GenerationButtonProps {
   variant?: GenerationVariant;
@@ -26,12 +26,14 @@ const defaultLabels: Record<GenerationVariant, { label: string; loading: string 
   text: { label: 'AI 생성', loading: '생성 중...' },
   image: { label: '이미지 생성', loading: '이미지 생성 중...' },
   'batch-image': { label: '전체 이미지', loading: '이미지 생성 중...' },
+  translate: { label: 'AI 번역', loading: '번역 중...' },
 };
 
 const variantIcon: Record<GenerationVariant, typeof Sparkles> = {
   text: Sparkles,
   image: ImageIcon,
   'batch-image': ImageIcon,
+  translate: Languages,
 };
 
 const variantColors: Record<GenerationVariant, { base: string; generating: string }> = {
@@ -46,6 +48,10 @@ const variantColors: Record<GenerationVariant, { base: string; generating: strin
   'batch-image': {
     base: '',
     generating: 'border-green-600 text-green-600',
+  },
+  translate: {
+    base: 'bg-indigo-600 hover:bg-indigo-700 text-white',
+    generating: 'bg-indigo-600 hover:bg-indigo-600 text-white',
   },
 };
 
@@ -67,6 +73,7 @@ export function GenerationButton({
   const Icon = variantIcon[variant];
   const colors = variantColors[variant];
   const isImageVariant = variant === 'image' || variant === 'batch-image';
+  const usesOutline = isImageVariant;
 
   const progressText = progress && progress.total > 0
     ? ` (${progress.current}/${progress.total})`
@@ -78,7 +85,7 @@ export function GenerationButton({
         <Button
           disabled
           size={size}
-          variant={isImageVariant ? 'outline' : 'default'}
+          variant={usesOutline ? 'outline' : 'default'}
           className={cn('gap-1.5', colors.generating, className)}
         >
           <Loader2 size={14} className="animate-spin" />
@@ -103,7 +110,7 @@ export function GenerationButton({
       onClick={onClick}
       disabled={disabled}
       size={size}
-      variant={isImageVariant ? 'outline' : 'default'}
+      variant={usesOutline ? 'outline' : 'default'}
       className={cn('gap-1.5', !isImageVariant && colors.base, className)}
     >
       <Icon size={14} /> {displayLabel}

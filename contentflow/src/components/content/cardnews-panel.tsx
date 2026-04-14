@@ -10,138 +10,21 @@ import { ChannelContentList } from './channel-content-list';
 import { PromptEditDialog } from './prompt-edit-dialog';
 import { useAiGeneration } from '@/hooks/use-ai-generation';
 import { useCardImageGeneration } from '@/hooks/use-card-image-generation';
-import { base64ToBlob, convertToWebpBlob } from '@/hooks/use-r2-upload';
+import { base64ToBlob } from '@/hooks/use-r2-upload';
 import { useProjectStore } from '@/stores/project-store';
-import { buildCardNewsImagePromptsPrompt } from '@/lib/prompt-builder';
+import { useBatchImageStore, selectBatchProgress } from '@/stores/batch-image-store';
+import { buildCardNewsImagePromptsPrompt, NO_TEXT_IMAGE_RULE } from '@/lib/prompt-builder';
 
 import { Eye, EyeOff, Loader2, Hash, X, Download, Upload, RefreshCw, ChevronDown, Save } from 'lucide-react';
 import { GenerationButton } from './generation-button';
+import { KoreanInput } from '@/components/ui/korean-input';
+import { ChannelTranslationView } from './channel-translation-view';
 import type { Content, Project, InstagramContent, InstagramCard, BlogCard } from '@/types/database';
 import { generateId, cn } from '@/lib/utils';
 
-// ─── Module-level batch image generation (survives tab switches) ──
-
-interface BatchJob {
-  id: string;
-  abortController: AbortController;
-  progress: { current: number; total: number };
-  currentSlideIndex: number;  // which slide is being generated right now
-  isRunning: boolean;
-  listeners: Set<() => void>;
-}
-
-const batchJobs = new Map<string, BatchJob>();
-
-function getBatchJob(igContentId: string): BatchJob | undefined {
-  return batchJobs.get(igContentId);
-}
-
-function subscribeBatch(igContentId: string, listener: () => void): () => void {
-  const job = batchJobs.get(igContentId);
-  if (job) job.listeners.add(listener);
-  return () => { job?.listeners.delete(listener); };
-}
-
-function notifyBatch(job: BatchJob) {
-  job.listeners.forEach(fn => fn());
-}
-
-async function runBatchImageGeneration(
-  igContentId: string,
-  prompts: { prompt: string; aspectRatio: string; slideIndex: number }[],
-  imageModel: string,
-  projectId: string,
-) {
-  if (batchJobs.get(igContentId)?.isRunning) return;
-
-  const controller = new AbortController();
-  const job: BatchJob = {
-    id: igContentId,
-    abortController: controller,
-    progress: { current: 0, total: prompts.length },
-    currentSlideIndex: -1,
-    isRunning: true,
-    listeners: batchJobs.get(igContentId)?.listeners ?? new Set(),
-  };
-  batchJobs.set(igContentId, job);
-  notifyBatch(job);
-
-  for (let i = 0; i < prompts.length; i++) {
-    if (controller.signal.aborted) break;
-    job.progress = { current: i, total: prompts.length };
-    job.currentSlideIndex = prompts[i].slideIndex;
-    notifyBatch(job);
-
-    const p = prompts[i];
-    try {
-      const res = await fetch('/api/ai/generate-image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: p.prompt, model: imageModel, aspectRatio: p.aspectRatio }),
-        signal: controller.signal,
-      });
-      if (!res.ok) { console.warn(`[batch] Slide ${i + 1} HTTP ${res.status}`); continue; }
-      const data = await res.json();
-      if (!data?.image) continue;
-
-      const store = useProjectStore.getState();
-      const cards = store.getInstagramCards(igContentId);
-      const card = cards[p.slideIndex];
-      if (!card) continue;
-
-      let savedUrl = `data:${data.mimeType};base64,${data.image}`;
-      try {
-        const { blob, mimeType: webpMime } = await convertToWebpBlob(data.image, data.mimeType);
-        const ext = webpMime.split('/')[1] || 'webp';
-        const presignRes = await fetch('/api/storage/presign', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ projectId, category: 'images', fileName: `${card.id}.${ext}`, contentType: webpMime, contentId: card.id }),
-        });
-        if (presignRes.ok) {
-          const { presignedUrl, publicUrl } = await presignRes.json();
-          const uploadRes = await fetch(presignedUrl, { method: 'PUT', body: blob, headers: { 'Content-Type': webpMime } });
-          if (uploadRes.ok) savedUrl = publicUrl;
-        }
-      } catch { /* R2 fail → keep data URL */ }
-
-      store.updateInstagramCard(card.id, { background_image_url: savedUrl });
-    } catch (err) {
-      if ((err as Error).name === 'AbortError') break;
-      console.warn(`[batch] Slide ${i + 1} error:`, (err as Error).message);
-    }
-  }
-
-  job.progress = { current: prompts.length, total: prompts.length };
-  job.currentSlideIndex = -1;
-  job.isRunning = false;
-  notifyBatch(job);
-  // Cleanup after a bit
-  setTimeout(() => { if (!job.isRunning) batchJobs.delete(igContentId); }, 3000);
-}
-
-function abortBatch(igContentId: string) {
-  const job = batchJobs.get(igContentId);
-  if (job) {
-    job.abortController.abort();
-    job.isRunning = false;
-    notifyBatch(job);
-    batchJobs.delete(igContentId);
-  }
-}
-
-/** Hook to subscribe to batch progress */
-function useBatchProgress(igContentId: string) {
-  const [, forceUpdate] = useState(0);
-  useEffect(() => {
-    return subscribeBatch(igContentId, () => forceUpdate(n => n + 1));
-  }, [igContentId]);
-  const job = getBatchJob(igContentId);
-  return {
-    isRunning: job?.isRunning ?? false,
-    progress: job?.progress ?? { current: 0, total: 0 },
-    currentSlideIndex: job?.currentSlideIndex ?? -1,
-  };
-}
+// Module-level batch image generation lives in `useBatchImageStore`
+// (Zustand) — shared across all mounts of CardNewsPanel so in-flight jobs
+// survive tab switches.
 
 // ─── Inner: 개별 카드뉴스 콘텐츠 ────────────────────────────
 
@@ -413,8 +296,13 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
     onError: useCallback((err: string) => { alert(`AI 생성 오류: ${err}`); }, []),
   });
 
-  // ── Image Generation (module-level, survives tab switches) ──
-  const { isRunning: isGeneratingImages, progress: cardnewsBatchProgress, currentSlideIndex: batchSlideIndex } = useBatchProgress(igContent.id);
+  // ── Image Generation (global batch store, survives tab switches) ──
+  const batchJob = useBatchImageStore(selectBatchProgress(igContent.id));
+  const startBatchJob = useBatchImageStore((s) => s.startJob);
+  const abortBatchJob = useBatchImageStore((s) => s.abortJob);
+  const isGeneratingImages = batchJob.isRunning;
+  const cardnewsBatchProgress = { current: batchJob.current, total: batchJob.total };
+  const batchSlideIndex = batchJob.currentSlideIndex;
 
   const isGenerating = isGeneratingPrompts || isGeneratingImages;
 
@@ -469,13 +357,15 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
       const prompt = imageStyle ? `${imageStyle}. ${basePrompt}` : basePrompt;
       return { slideIndex: i, prompt, aspectRatio: channelModels.aspectRatio || '4:5' };
     });
-    runBatchImageGeneration(igContent.id, prompts, channelModels.imageModel, project.id);
+    startBatchJob({ igContentId: igContent.id, prompts, imageModel: channelModels.imageModel, projectId: project.id });
   };
 
   const { isGeneratingImage: isRegeneratingCard, generatingCardId, generateCardImage: generateSingleCardImage } = useCardImageGeneration({
     getPrompt: (card: InstagramCard) => {
-      if (card.image_prompt) return imageStyle ? `${imageStyle}. ${card.image_prompt}` : card.image_prompt;
-      return `Create an illustration for social media card: "${card.text_content || 'Slide'}". ${imageStyle}`;
+      const base = card.image_prompt
+        ? (imageStyle ? `${imageStyle}. ${card.image_prompt}` : card.image_prompt)
+        : `Create an illustration for social media card: "${card.text_content || 'Slide'}". ${imageStyle}`;
+      return `${base}\n${NO_TEXT_IMAGE_RULE}`;
     },
     getExistingImage: (card: InstagramCard) => card.background_image_url || null,
     saveResult: (cardId: string, dataUrl: string, prompt: string) => {
@@ -637,6 +527,8 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
   };
 
   return (
+    <div className="flex flex-col h-full">
+      <ChannelTranslationView contentId={content.id} channel="instagram" />
     <div className="flex gap-4 h-full">
       {/* ══ Left sidebar: templates + properties ══ */}
       <div className="w-80 xl:w-96 shrink-0 space-y-3 overflow-y-auto border-r border-border pr-3">
@@ -728,12 +620,10 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
                 className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-muted/50 transition-colors">
                 <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                   {activeTemplateId?.startsWith('custom-') ? (
-                    <input
-                      type="text"
-                      defaultValue={tpl.name}
-                      onBlur={(e) => renameTemplate(activeTemplateId, e.target.value)}
-                      onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-                      className="text-[10px] font-semibold bg-transparent border-b border-transparent hover:border-muted-foreground/30 focus:border-primary focus:outline-none w-24"
+                    <KoreanInput
+                      value={tpl.name}
+                      onCommit={(v) => renameTemplate(activeTemplateId, v)}
+                      className="h-auto px-0 py-0 rounded-none border-0 border-b border-transparent hover:border-muted-foreground/30 focus-visible:border-primary focus-visible:ring-0 text-[10px] font-semibold bg-transparent w-24"
                     />
                   ) : (
                     <span className="text-[10px] font-semibold">{tpl.name}</span>
@@ -857,7 +747,7 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
             isGenerating={isGeneratingImages}
             disabled={cards.length === 0 || isGeneratingPrompts}
             onClick={handleGenerateAllImages}
-            onAbort={() => abortBatch(igContent.id)}
+            onAbort={() => abortBatchJob(igContent.id)}
             progress={cardnewsBatchProgress}
           />
           {cards.length > 0 && (
@@ -999,6 +889,7 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
       {/* Prompt dialog */}
       <PromptEditDialog open={showPromptDialog} onOpenChange={setShowPromptDialog} initialPrompt={generatedPrompt}
         isGenerating={isGeneratingPrompts} onGenerate={handleStartGeneration} onAbort={abortPrompts} />
+    </div>
     </div>
     </div>
   );

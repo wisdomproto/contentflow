@@ -3,9 +3,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { GripVertical, Trash2, Plus, ChevronDown, Loader2, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { KoreanInput, KoreanTextarea } from '@/components/ui/korean-input';
 import { ImageCardWidget } from './image-card-widget';
 import { ImageEditorDialog } from './image-editor-dialog';
 import { ImageStyleSelector } from './image-style-selector';
@@ -16,25 +15,8 @@ import Placeholder from '@tiptap/extension-placeholder';
 import type { BlogCard } from '@/types/database';
 import { cn } from '@/lib/utils';
 
-// 통합 섹션 content 타입
-export interface SectionContent {
-  text?: string;
-  url?: string;
-  alt?: string;
-  caption?: string;
-  image_prompt?: string;
-  image_style?: string;
-}
-
-export interface GlobalCardStyle {
-  align?: 'left' | 'center' | 'right' | 'justify';
-  headingBold?: boolean;
-  bodyBold?: boolean;
-  headingFont?: string;
-  bodyFont?: string;
-  headingSize?: number; // px
-  bodySize?: number;    // px
-}
+import type { BlogCardContent as SectionContent, GlobalCardStyle } from '@/types/cards';
+export type { BlogCardContent as SectionContent, GlobalCardStyle } from '@/types/cards';
 
 interface BlogCardItemProps {
   card: BlogCard;
@@ -233,27 +215,27 @@ function SectionImageArea({
               onChange={(style) => onUpdate({ image_style: style })}
               compact
             />
-            <Textarea
-              defaultValue={content.image_prompt ?? ''}
-              onBlur={(e) => onUpdate({ image_prompt: e.target.value })}
+            <KoreanTextarea
+              value={content.image_prompt ?? ''}
+              onCommit={(v) => onUpdate({ image_prompt: v })}
               placeholder="이미지 생성 프롬프트 (영어 권장)..."
               className="h-20 resize-none overflow-y-auto text-xs"
             />
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <Label className="text-xs text-muted-foreground">Alt 텍스트</Label>
-                <Input
-                  defaultValue={content.alt ?? ''}
-                  onBlur={(e) => onUpdate({ alt: e.target.value })}
+                <KoreanInput
+                  value={content.alt ?? ''}
+                  onCommit={(v) => onUpdate({ alt: v })}
                   placeholder="이미지 설명"
                   className="h-8 text-xs mt-1"
                 />
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">캡션</Label>
-                <Input
-                  defaultValue={content.caption ?? ''}
-                  onBlur={(e) => onUpdate({ caption: e.target.value })}
+                <KoreanInput
+                  value={content.caption ?? ''}
+                  onCommit={(v) => onUpdate({ caption: v })}
                   placeholder="이미지 캡션"
                   className="h-8 text-xs mt-1"
                 />

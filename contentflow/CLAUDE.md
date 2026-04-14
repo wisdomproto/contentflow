@@ -56,8 +56,16 @@ node scripts/fix-article-tone.mjs        # 기본글 톤 수정
 ## 핵심 설계 결정
 - **Inside-Out 마이그레이션**: IndexedDB → Supabase (31개 컴포넌트 무수정)
 - **generateId()**: pure UUID (Supabase 호환)
-- **SSE 파싱**: `fetchAiGenerate` 헬퍼로 통일
+- **SSE 파싱**: `lib/sse-stream-parser.ts`의 `parseSSEStream` / `fetchSSEText` / `fetchAiGenerate` 공용
+- **R2 업로드**: `hooks/use-r2-upload.ts`의 `uploadToR2()` 순수 함수 공용 (presign + PUT + 재시도)
+- **API 에러 핸들링**: `lib/api-helpers.ts` — `jsonError`, `requireEnv`, `SSE_HEADERS`, `isTransientProviderError`
+- **카드 타입**: `types/cards.ts` — `BlogCardContent`, `CardCanvasData`, `TextBlock`, `GlobalCardStyle`
+- **저장 상태**: `stores/save-status-store.ts` — 전역 debounce 진행 상태 (TopBar에 인디케이터 표시)
+- **Batch 이미지 생성**: `stores/batch-image-store.ts` — 탭 전환 간 job 유지 (Zustand)
 - **다국어**: 모든 주요 모듈에 언어 탭 (ko/en/th/vi/ja/zh/ms/id)
+- **채널별 번역**: `lib/channel-translator.ts` — 채널별 HTML 소스 번역 → R2 저장 → `translations` 테이블에 URL 기록
+- **N블로그 다국어 필터**: 한국어가 아닌 언어 선택 시 N블로그 탭 자동 숨김
+- **한글 IME**: `components/ui/korean-input.tsx` — `<KoreanInput>`, `<KoreanTextarea>` 공용 (`value`+`onCommit` 패턴)
 - **채널 탭**: 기본글 | N블로그 | WordPress | 카드뉴스 | 스레드 | 롱폼 | 숏폼
 
 ## 환경변수 (.env.local) — 배포 시 호스팅에 설정 필요

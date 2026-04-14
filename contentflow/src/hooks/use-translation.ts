@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { parseSSEStream } from '@/lib/sse-stream-parser'
 
 interface TranslateOptions {
   text: string
@@ -28,34 +29,27 @@ export function useTranslation() {
         body: JSON.stringify(options),
       })
 
-      const reader = response.body?.getReader()
-      if (!reader) throw new Error('No reader')
-
-      const decoder = new TextDecoder()
+      let streamError: string | null = null
       let result = ''
 
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        const chunk = decoder.decode(value)
-        const lines = chunk.split('\n').filter(l => l.startsWith('data: '))
-
-        for (const line of lines) {
-          const data = line.slice(6)
-          if (data === '[DONE]') break
-          try {
-            const parsed = JSON.parse(data)
-            if (parsed.text) {
-              result += parsed.text
-              setTranslatedText(result)
-            }
-            if (parsed.error) throw new Error(parsed.error)
-          } catch {}
-        }
-      }
+      await parseSSEStream(response, {
+        onChunk: (chunk) => {
+          if (chunk.error) {
+            streamError = chunk.error
+            return
+          }
+          if (chunk.text) {
+            result += chunk.text
+            setTranslatedText(result)
+          }
+        },
+      })
 
       setTranslating(false)
+      if (streamError) {
+        setError(streamError)
+        return null
+      }
       return result
     } catch (err) {
       setError(String(err))

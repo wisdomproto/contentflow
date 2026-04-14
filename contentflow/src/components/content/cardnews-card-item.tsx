@@ -5,33 +5,10 @@ import { Trash2, Plus, ChevronDown, Loader2, Type, Upload, Download, Bold, Align
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import type { InstagramCard } from '@/types/database';
+import type { TextBlock, CardCanvasData } from '@/types/cards';
+export type { TextBlock, CardCanvasData } from '@/types/cards';
 import { cn } from '@/lib/utils';
 import { generateId } from '@/lib/utils';
-
-// ─── Data Types ───────────────────────────────────────────
-
-export interface TextBlock {
-  id: string;
-  text: string;
-  x: number;       // % from left (0-100)
-  y: number;       // % from top (0-100)
-  fontSize: number;
-  color: string;
-  fontFamily?: string; // e.g. 'Noto Sans KR', 'Noto Serif KR'
-  fontWeight: 'normal' | 'bold';
-  textAlign: 'left' | 'center' | 'right' | 'justify';
-  width: number;   // % of card width
-  height?: number;  // % of card height (auto if undefined)
-  hidden?: boolean; // hide this block from canvas
-  shadow?: boolean; // text shadow
-}
-
-export interface CardCanvasData {
-  bgColor: string;
-  imageUrl: string | null;
-  imageY: number;           // object-position Y %
-  textBlocks: TextBlock[];
-}
 
 // ─── Helpers ──────────────────────────────────────────────
 
