@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!/^[a-zA-Z]+-[a-zA-Z0-9-]+$/.test(projectId)) {
+    if (!/^[a-zA-Z0-9]+-[a-zA-Z0-9-]+$/.test(projectId)) {
       return NextResponse.json(
         { error: '유효하지 않은 프로젝트 ID 형식입니다.' },
         { status: 400 }
