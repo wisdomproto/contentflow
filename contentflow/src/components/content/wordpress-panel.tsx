@@ -980,7 +980,7 @@ export function WordpressPanel() {
           const cards = getBlogCards(id);
           const warnings: string[] = [];
           if (!cards.length) warnings.push('본문이 비어있습니다');
-          if (cards.length && !cards.some(c => c.body?.trim())) warnings.push('본문 내용이 없습니다');
+          if (cards.length && !cards.some(c => (c.content as Record<string, string>)?.text?.trim())) warnings.push('본문 내용이 없습니다');
           if (warnings.length && !confirm(`⚠️ ${warnings.join(', ')}\n\n그래도 발행큐에 추가하시겠습니까?`)) return;
           const ok = await addToPublishQueue(channel, content.id, { blogContentId: id });
           if (ok) alert(`✅ ${channel} 발행큐에 추가되었습니다`);
