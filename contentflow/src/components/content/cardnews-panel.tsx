@@ -414,11 +414,11 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
     const state = useProjectStore.getState();
     const currentCards = state.getInstagramCards(igContent.id);
     if (currentCards.length === 0) return;
-    const prompts = currentCards.map((card, i) => ({
-      slideIndex: i,
-      prompt: card.image_prompt || `Create an illustration for social media card: "${card.text_content || 'Slide'}". ${imageStyle}`,
-      aspectRatio: channelModels.aspectRatio || '4:5',
-    }));
+    const prompts = currentCards.map((card, i) => {
+      const basePrompt = card.image_prompt || `Create an image for social media card: "${card.text_content || 'Slide'}"`;
+      const prompt = imageStyle ? `${imageStyle}. ${basePrompt}` : basePrompt;
+      return { slideIndex: i, prompt, aspectRatio: channelModels.aspectRatio || '4:5' };
+    });
     runBatchImageGeneration(igContent.id, prompts, channelModels.imageModel, project.id);
   };
 
