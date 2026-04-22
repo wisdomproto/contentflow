@@ -89,10 +89,33 @@ export interface User {
   created_at: string;
 }
 
+export interface WpCredentials {
+  siteUrl: string;
+  username: string;
+  appPassword: string;
+}
+
+export interface MetaPage {
+  id: string;
+  name: string;
+  pageAccessToken: string;
+  instagram: { id: string; username: string } | null;
+}
+
+export interface MetaCredentials {
+  accessToken: string;
+  userId: string;
+  userName: string;
+  pages: MetaPage[];
+  connectedAt: string;
+}
+
 export interface Project {
   id: string;
   user_id: string;
   name: string;
+  wp_credentials?: WpCredentials | null;
+  meta_credentials?: MetaCredentials | null;
   description: string | null;
   cover_image_url: string | null;
   industry: string | null;
@@ -242,6 +265,19 @@ export interface InstagramCard {
   image_prompt?: string | null;
   reference_image_url?: string | null;
   sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// Cardnews template (custom, per-project). Built-ins live in cardnews-templates.ts.
+export interface CardTemplateRow {
+  id: string;
+  project_id: string;
+  name: string;
+  bg_color: string;
+  image_y: number;
+  text_blocks: Record<string, unknown>[];
+  preview: { bg: string; textColor: string };
   created_at: string;
   updated_at: string;
 }

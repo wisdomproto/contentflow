@@ -48,6 +48,12 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
     getBlogContents,
     getBlogCards,
     setChannelModels,
+    cardTemplates: cardTemplatesRaw,
+    hiddenBuiltins,
+    createCardTemplate,
+    updateCardTemplate: storeUpdateCardTemplate,
+    deleteCardTemplate,
+    hideBuiltinTemplate,
   } = useProjectStore();
 
   const baseArticle = getBaseArticle(content.id);
@@ -68,105 +74,119 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
   const [isTemplatePropsOpen, setIsTemplatePropsOpen] = useState(false);
   // Working template = local draft of template properties (edits don't touch cards until Save/Reset)
   const [workingTplData, setWorkingTplData] = useState<CardCanvasData | null>(null);
-  const [savedTemplates, setSavedTemplates] = useState<CardTemplate[]>(() => {
-    try { const s = localStorage.getItem('cf-saved-templates'); return s ? JSON.parse(s) : []; } catch { return []; }
-  });
+  // Derive CardTemplate[] from DB rows (snake_case → camelCase)
+  const savedTemplates: CardTemplate[] = cardTemplatesRaw.map(row => ({
+    id: row.id,
+    name: row.name,
+    bgColor: row.bg_color,
+    imageY: Number(row.image_y),
+    textBlocks: row.text_blocks as unknown as Omit<TextBlock, 'text'>[],
+    preview: row.preview,
+  }));
 
-  const createNewTemplate = () => {
-    const tpl: CardTemplate = {
-      id: `custom-${Date.now()}`,
-      name: `새 템플릿 ${savedTemplates.length + 1}`,
-      bgColor: '#ffffff',
-      imageY: 50,
-      preview: { bg: '#ffffff', textColor: '#1a1a1a' },
-      textBlocks: [
-        { id: 'header', x: 10, y: 3, fontSize: 10, color: '#888888', fontWeight: 'normal', textAlign: 'center', width: 80 },
-        { id: 'title', x: 10, y: 15, fontSize: 20, color: '#1a1a1a', fontWeight: 'bold', textAlign: 'center', width: 80 },
-        { id: 'body', x: 10, y: 80, fontSize: 8, color: '#444444', fontWeight: 'normal', textAlign: 'center', width: 80 },
-        { id: 'footer', x: 10, y: 92, fontSize: 10, color: '#999999', fontWeight: 'normal', textAlign: 'center', width: 80 },
-      ],
-    };
-    setSavedTemplates(prev => {
-      const next = [...prev, tpl];
-      localStorage.setItem('cf-saved-templates', JSON.stringify(next));
-      return next;
+  const isCustomTemplate = (id: string) => !CARD_TEMPLATES.some(t => t.id === id);
+
+  const createNewTemplate = async () => {
+    const name = `새 템플릿 ${savedTemplates.length + 1}`;
+    const bgColor = '#ffffff';
+    const textBlocks = [
+      { id: 'header', x: 10, y: 3, fontSize: 10, color: '#888888', fontWeight: 'normal' as const, textAlign: 'center' as const, width: 80 },
+      { id: 'title', x: 10, y: 15, fontSize: 20, color: '#1a1a1a', fontWeight: 'bold' as const, textAlign: 'center' as const, width: 80 },
+      { id: 'body', x: 10, y: 80, fontSize: 8, color: '#444444', fontWeight: 'normal' as const, textAlign: 'center' as const, width: 80 },
+      { id: 'footer', x: 10, y: 92, fontSize: 10, color: '#999999', fontWeight: 'normal' as const, textAlign: 'center' as const, width: 80 },
+    ];
+    const newId = await createCardTemplate(project.id, {
+      name, bg_color: bgColor, image_y: 50,
+      text_blocks: textBlocks as unknown as Record<string, unknown>[],
+      preview: { bg: bgColor, textColor: '#1a1a1a' },
     });
-    setActiveTemplateId(tpl.id);
-    applyTemplate(tpl);
+    if (!newId) return;
+    setActiveTemplateId(newId);
+    applyTemplate({ id: newId, name, bgColor, imageY: 50, preview: { bg: bgColor, textColor: '#1a1a1a' }, textBlocks });
   };
 
   const renameTemplate = (id: string, newName: string) => {
-    if (!id.startsWith('custom-') || !newName.trim()) return;
-    setSavedTemplates(prev => {
-      const next = prev.map(t => t.id === id ? { ...t, name: newName.trim() } : t);
-      localStorage.setItem('cf-saved-templates', JSON.stringify(next));
-      return next;
-    });
+    if (!isCustomTemplate(id) || !newName.trim()) return;
+    storeUpdateCardTemplate(id, { name: newName.trim() });
   };
 
-  const updateCurrentTemplate = () => {
+  const updateCurrentTemplate = async () => {
     if (!activeTemplateId || !workingTplData) return;
     const data = workingTplData;
-    const updatedBlocks = data.textBlocks.map(({ text, ...rest }) => rest);
+    const updatedBlocks = data.textBlocks.map(({ text: _text, ...rest }) => rest);
 
-    if (activeTemplateId.startsWith('custom-')) {
-      // Update saved (custom) template
-      setSavedTemplates(prev => {
-        const next = prev.map(t => t.id === activeTemplateId
-          ? { ...t, bgColor: data.bgColor, imageY: data.imageY, preview: { bg: data.bgColor, textColor: data.textBlocks[0]?.color || '#ffffff' }, textBlocks: updatedBlocks }
-          : t);
-        localStorage.setItem('cf-saved-templates', JSON.stringify(next));
-        return next;
+    if (isCustomTemplate(activeTemplateId)) {
+      storeUpdateCardTemplate(activeTemplateId, {
+        bg_color: data.bgColor,
+        image_y: data.imageY,
+        text_blocks: updatedBlocks as unknown as Record<string, unknown>[],
+        preview: { bg: data.bgColor, textColor: data.textBlocks[0]?.color || '#ffffff' },
       });
     } else {
-      // Built-in template: save as override in custom templates
       const existing = allTemplates.find(t => t.id === activeTemplateId);
       if (!existing) return;
-      const overrideTpl: CardTemplate = {
-        ...existing,
-        id: `custom-${activeTemplateId}`,
+      const newId = await createCardTemplate(project.id, {
         name: `${existing.name} (수정)`,
-        bgColor: data.bgColor,
-        imageY: data.imageY,
+        bg_color: data.bgColor,
+        image_y: data.imageY,
+        text_blocks: updatedBlocks as unknown as Record<string, unknown>[],
         preview: { bg: data.bgColor, textColor: data.textBlocks[0]?.color || '#ffffff' },
-        textBlocks: updatedBlocks,
-      };
-      setSavedTemplates(prev => {
-        const next = [...prev, overrideTpl];
-        localStorage.setItem('cf-saved-templates', JSON.stringify(next));
-        return next;
       });
-      setActiveTemplateId(overrideTpl.id);
+      if (newId) setActiveTemplateId(newId);
     }
   };
 
-  const deleteSavedTemplate = (id: string) => {
-    setSavedTemplates(prev => {
-      const next = prev.filter(t => t.id !== id);
-      localStorage.setItem('cf-saved-templates', JSON.stringify(next));
-      return next;
-    });
+  const deleteSavedTemplate = async (id: string) => {
+    await deleteCardTemplate(id);
     if (activeTemplateId === id) setActiveTemplateId(null);
   };
 
-  const [hiddenTemplates, setHiddenTemplates] = useState<string[]>(() => {
-    try { const s = localStorage.getItem('cf-hidden-templates'); return s ? JSON.parse(s) : []; } catch { return []; }
-  });
-  const deleteTemplate = (id: string) => {
-    if (id.startsWith('custom-')) {
-      deleteSavedTemplate(id);
+  const deleteTemplate = async (id: string) => {
+    if (isCustomTemplate(id)) {
+      await deleteSavedTemplate(id);
     } else {
-      // Hide built-in template
-      setHiddenTemplates(prev => {
-        const next = [...prev, id];
-        localStorage.setItem('cf-hidden-templates', JSON.stringify(next));
-        return next;
-      });
+      await hideBuiltinTemplate(project.id, id);
       if (activeTemplateId === id) setActiveTemplateId(null);
     }
   };
 
-  const allTemplates = [...CARD_TEMPLATES, ...savedTemplates].filter(t => !hiddenTemplates.includes(t.id));
+  // One-time localStorage → DB migration, per project (non-destructive).
+  // Runs whenever DB has no templates for this project AND localStorage has data.
+  // No flag — DB state itself tracks completion.
+  const migrationInFlight = useRef(false);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (migrationInFlight.current) return;
+    if (cardTemplatesRaw.length > 0 || hiddenBuiltins.length > 0) return;
+    const local = localStorage.getItem('cf-saved-templates');
+    const hidden = localStorage.getItem('cf-hidden-templates');
+    if (!local && !hidden) return;
+    migrationInFlight.current = true;
+    (async () => {
+      try {
+        if (local) {
+          const tpls = JSON.parse(local) as CardTemplate[];
+          for (const tpl of tpls) {
+            await createCardTemplate(project.id, {
+              name: tpl.name,
+              bg_color: tpl.bgColor,
+              image_y: tpl.imageY,
+              text_blocks: tpl.textBlocks as unknown as Record<string, unknown>[],
+              preview: tpl.preview,
+            });
+          }
+        }
+        if (hidden) {
+          const ids = JSON.parse(hidden) as string[];
+          for (const id of ids) await hideBuiltinTemplate(project.id, id);
+        }
+      } catch (e) { console.error('template migration:', e); }
+      finally { migrationInFlight.current = false; }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project.id, cardTemplatesRaw.length, hiddenBuiltins.length]);
+
+  const allTemplates = [...CARD_TEMPLATES, ...savedTemplates].filter(t => !hiddenBuiltins.includes(t.id));
   const [isCaptionOpen, setIsCaptionOpen] = useState(false);
   const [isSlideTextOpen, setIsSlideTextOpen] = useState(false);
 
@@ -527,9 +547,9 @@ function CardNewsPanelInner({ igContent, content, project, hasBaseArticle, chann
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-[85vh]">
       <ChannelTranslationView contentId={content.id} channel="instagram" />
-    <div className="flex gap-4 h-full">
+    <div className="flex gap-4 flex-1 min-h-0">
       {/* ══ Left sidebar: templates + properties ══ */}
       <div className="w-80 xl:w-96 shrink-0 space-y-3 overflow-y-auto border-r border-border pr-3">
         <div className="flex items-center justify-between">

@@ -167,11 +167,9 @@ export function MonitoringDashboard() {
       } catch {}
 
       // Instagram (if connected)
-      const projectId = localStorage.getItem('cf_selectedProjectId')
-      const metaCredsRaw = projectId ? localStorage.getItem(`meta_credentials_${projectId}`) : null
-      if (metaCredsRaw) {
+      const metaCreds = project?.meta_credentials
+      if (metaCreds) {
         try {
-          const metaCreds = JSON.parse(metaCredsRaw)
           const page = metaCreds.pages?.[0]
           if (page?.instagram?.id) {
             const igRes = await fetch('/api/monitoring/search/instagram', {

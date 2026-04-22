@@ -89,16 +89,14 @@ export function MetaAnalyticsDashboard() {
   const availableCountries = COUNTRIES.filter(c => targetLanguages.includes(c.code))
 
   async function loadInsights() {
-    const projectId = localStorage.getItem('cf_selectedProjectId')
-    const metaCredsRaw = projectId ? localStorage.getItem(`meta_credentials_${projectId}`) : null
-    if (!metaCredsRaw) {
+    const metaCreds = project?.meta_credentials
+    if (!metaCreds) {
       setHasCredentials(false)
       return
     }
     setHasCredentials(true)
     setLoading(true)
     try {
-      const metaCreds = JSON.parse(metaCredsRaw)
       const page = metaCreds.pages?.[0]
       if (!page) return
 

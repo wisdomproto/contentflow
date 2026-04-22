@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { useProjectStore } from '@/stores/project-store'
 
 const CHANNELS = [
@@ -11,16 +10,10 @@ const CHANNELS = [
 ]
 
 export function ChannelCards() {
-  const { selectedProjectId } = useProjectStore()
-  const [wpConnected, setWpConnected] = useState(false)
-  const [metaConnected, setMetaConnected] = useState(false)
-
-  useEffect(() => {
-    if (selectedProjectId) {
-      setWpConnected(!!localStorage.getItem(`wp_credentials_${selectedProjectId}`))
-      setMetaConnected(!!localStorage.getItem(`meta_credentials_${selectedProjectId}`))
-    }
-  }, [selectedProjectId])
+  const { selectedProjectId, projects } = useProjectStore()
+  const project = projects.find(p => p.id === selectedProjectId)
+  const wpConnected = !!project?.wp_credentials
+  const metaConnected = !!project?.meta_credentials
 
   function isConnected(channelId: string) {
     if (channelId === 'wordpress') return wpConnected

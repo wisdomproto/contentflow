@@ -55,24 +55,9 @@ export function LanguageSelector({ onTranslate, translationStatuses = {}, channe
   const [showConnectDialog, setShowConnectDialog] = useState(false)
   const [publishing, setPublishing] = useState(false)
 
-  // WordPress 연결 상태를 localStorage에서 확인
-  const [isWpConnected, setIsWpConnected] = useState(false)
-  const [isMetaConnected, setIsMetaConnected] = useState(false)
-
-  useEffect(() => {
-    if (channel === 'wordpress' && selectedProjectId) {
-      const saved = localStorage.getItem(`wp_credentials_${selectedProjectId}`)
-      setIsWpConnected(!!saved)
-    } else {
-      setIsWpConnected(false)
-    }
-    if ((channel === 'instagram' || channel === 'facebook' || channel === 'threads') && selectedProjectId) {
-      const saved = localStorage.getItem(`meta_credentials_${selectedProjectId}`)
-      setIsMetaConnected(!!saved)
-    } else {
-      setIsMetaConnected(false)
-    }
-  }, [channel, selectedProjectId])
+  // 연결 상태를 project DB 필드에서 확인
+  const isWpConnected = !!project?.wp_credentials
+  const isMetaConnected = !!project?.meta_credentials
 
   const isConnected = channel === 'wordpress' ? isWpConnected
     : (channel === 'instagram' || channel === 'facebook' || channel === 'threads') ? isMetaConnected
@@ -98,17 +83,9 @@ export function LanguageSelector({ onTranslate, translationStatuses = {}, channe
         return
       }
 
-      const metaCredsRaw = localStorage.getItem(`meta_credentials_${selectedProjectId}`)
-      if (!metaCredsRaw) {
+      const metaCreds = project?.meta_credentials
+      if (!metaCreds) {
         setShowConnectDialog(true)
-        return
-      }
-
-      let metaCreds: { accessToken: string; userId: string; userName: string; pages: Array<{ id: string; name: string; pageAccessToken: string; instagram: { id: string; username: string } | null }> }
-      try {
-        metaCreds = JSON.parse(metaCredsRaw)
-      } catch {
-        alert('저장된 Meta 자격증명이 올바르지 않습니다')
         return
       }
 
@@ -167,17 +144,9 @@ export function LanguageSelector({ onTranslate, translationStatuses = {}, channe
         return
       }
 
-      const credsRaw = localStorage.getItem(`wp_credentials_${selectedProjectId}`)
-      if (!credsRaw) {
+      const creds = project?.wp_credentials
+      if (!creds) {
         setShowConnectDialog(true)
-        return
-      }
-
-      let creds: { siteUrl: string; username: string; appPassword: string }
-      try {
-        creds = JSON.parse(credsRaw)
-      } catch {
-        alert('저장된 자격증명이 올바르지 않습니다')
         return
       }
 
@@ -289,17 +258,9 @@ export function LanguageSelector({ onTranslate, translationStatuses = {}, channe
         return
       }
 
-      const credsRaw = localStorage.getItem(`wp_credentials_${selectedProjectId}`)
-      if (!credsRaw) {
+      const creds = project?.wp_credentials
+      if (!creds) {
         setShowConnectDialog(true)
-        return
-      }
-
-      let creds: { siteUrl: string; username: string; appPassword: string }
-      try {
-        creds = JSON.parse(credsRaw)
-      } catch {
-        alert('저장된 자격증명이 올바르지 않습니다')
         return
       }
 

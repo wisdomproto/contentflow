@@ -55,6 +55,13 @@ node scripts/fix-article-tone.mjs        # 기본글 톤 수정
 
 ## 핵심 설계 결정
 - **Inside-Out 마이그레이션**: IndexedDB → Supabase (31개 컴포넌트 무수정)
+- **모든 사용자 데이터 DB 저장**: localStorage는 UX 세션 상태(선택/플래그)에만 사용. 2026-04-22 완료:
+  - 카드뉴스 템플릿 → `card_templates` + `card_hidden_builtins` (프로젝트 단위)
+  - WordPress 자격증명 → `projects.wp_credentials` JSONB
+  - Meta OAuth 토큰 → `projects.meta_credentials` JSONB
+  - localStorage → DB 자동 마이그레이션 (비파괴적, localStorage 백업 유지)
+  - ⚠️ 새 테이블은 반드시 `ALTER TABLE ... DISABLE ROW LEVEL SECURITY` 필요 (dev 정책)
+- **카드뉴스 2-pane 레이아웃**: `h-[85vh]` 고정 컨테이너 + 좌우 독립 overflow-y-auto (템플릿 고정/카드 스크롤)
 - **generateId()**: pure UUID (Supabase 호환)
 - **SSE 파싱**: `lib/sse-stream-parser.ts`의 `parseSSEStream` / `fetchSSEText` / `fetchAiGenerate` 공용
 - **R2 업로드**: `hooks/use-r2-upload.ts`의 `uploadToR2()` 순수 함수 공용 (presign + PUT + 재시도)

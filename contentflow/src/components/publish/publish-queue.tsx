@@ -138,9 +138,8 @@ export function PublishQueue() {
 
   const handlePublishNow = async (record: any) => {
     if (record.channel !== 'wordpress') { alert('현재 WordPress 발행만 지원합니다.'); return }
-    const credsRaw = localStorage.getItem(`wp_credentials_${selectedProjectId}`)
-    if (!credsRaw) { alert('WordPress 연결 설정을 먼저 해주세요.'); return }
-    const creds = JSON.parse(credsRaw)
+    const creds = project?.wp_credentials
+    if (!creds) { alert('WordPress 연결 설정을 먼저 해주세요.'); return }
 
     // Get blog cards for this content
     const supabase = createClient()

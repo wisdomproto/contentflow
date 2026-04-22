@@ -8,21 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Link2, ExternalLink, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useProjectStore } from '@/stores/project-store';
-
-interface MetaPage {
-  id: string;
-  name: string;
-  pageAccessToken: string;
-  instagram: { id: string; username: string } | null;
-}
-
-interface MetaConnectionInfo {
-  accessToken: string;
-  userId: string;
-  userName: string;
-  pages: MetaPage[];
-  connectedAt: string;
-}
+import type { MetaCredentials as MetaConnectionInfo, WpCredentials } from '@/types/database';
 
 interface ChannelConfig {
   id: string;
@@ -87,6 +73,8 @@ const CHANNELS: ChannelConfig[] = [
 ];
 
 function WordPressCredentialsForm({ projectId }: { projectId: string }) {
+  const { projects, updateProject } = useProjectStore();
+  const project = projects.find(p => p.id === projectId);
   const [wpUrl, setWpUrl] = useState('');
   const [wpUser, setWpUser] = useState('');
   const [wpPass, setWpPass] = useState('');
@@ -94,20 +82,31 @@ function WordPressCredentialsForm({ projectId }: { projectId: string }) {
   const [testing, setTesting] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
+  // Load from DB (with one-time localStorage migration)
   useEffect(() => {
+    const fromDb = project?.wp_credentials;
+    if (fromDb) {
+      setWpUrl(fromDb.siteUrl || '');
+      setWpUser(fromDb.username || '');
+      setWpPass(fromDb.appPassword || '');
+      setWpConnected(true);
+      return;
+    }
+    // One-time migration from localStorage (non-destructive: keep localStorage as backup)
     const saved = localStorage.getItem(`wp_credentials_${projectId}`);
     if (saved) {
       try {
-        const { siteUrl, username, appPassword } = JSON.parse(saved);
-        setWpUrl(siteUrl || '');
-        setWpUser(username || '');
-        setWpPass(appPassword || '');
+        const parsed = JSON.parse(saved) as WpCredentials;
+        updateProject(projectId, { wp_credentials: parsed });
+        setWpUrl(parsed.siteUrl || '');
+        setWpUser(parsed.username || '');
+        setWpPass(parsed.appPassword || '');
         setWpConnected(true);
       } catch {
         // ignore parse errors
       }
     }
-  }, [projectId]);
+  }, [projectId, project?.wp_credentials, updateProject]);
 
   async function testConnection() {
     if (!wpUrl || !wpUser || !wpPass) {
@@ -140,10 +139,9 @@ function WordPressCredentialsForm({ projectId }: { projectId: string }) {
       alert('URL, 사용자명, 앱 비밀번호를 모두 입력해주세요');
       return;
     }
-    localStorage.setItem(
-      `wp_credentials_${projectId}`,
-      JSON.stringify({ siteUrl: wpUrl, username: wpUser, appPassword: wpPass })
-    );
+    updateProject(projectId, {
+      wp_credentials: { siteUrl: wpUrl, username: wpUser, appPassword: wpPass },
+    });
     setWpConnected(true);
     alert('저장되었습니다');
   }
@@ -219,22 +217,23 @@ function WordPressCredentialsForm({ projectId }: { projectId: string }) {
 }
 
 export function ChannelConnectionsSection() {
-  const { selectedProjectId } = useProjectStore();
-  const [metaConnectionInfo, setMetaConnectionInfo] = useState<MetaConnectionInfo | null>(null);
+  const { selectedProjectId, projects, updateProject } = useProjectStore();
+  const project = projects.find(p => p.id === selectedProjectId);
+  const metaConnectionInfo = project?.meta_credentials ?? null;
 
-  // Load Meta connection info from localStorage
+  // One-time migration from localStorage to DB (non-destructive)
   useEffect(() => {
-    if (selectedProjectId) {
-      const saved = localStorage.getItem(`meta_credentials_${selectedProjectId}`);
-      if (saved) {
-        try {
-          setMetaConnectionInfo(JSON.parse(saved));
-        } catch {
-          // ignore parse errors
-        }
+    if (!selectedProjectId || project?.meta_credentials) return;
+    const saved = localStorage.getItem(`meta_credentials_${selectedProjectId}`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved) as MetaConnectionInfo;
+        updateProject(selectedProjectId, { meta_credentials: parsed });
+      } catch {
+        // ignore parse errors
       }
     }
-  }, [selectedProjectId]);
+  }, [selectedProjectId, project?.meta_credentials, updateProject]);
 
   // Check URL params for Meta OAuth callback result
   useEffect(() => {
@@ -242,10 +241,8 @@ export function ChannelConnectionsSection() {
     const metaConnected = params.get('meta_connected');
     if (metaConnected && selectedProjectId) {
       try {
-        const connectionInfo = JSON.parse(decodeURIComponent(metaConnected));
-        localStorage.setItem(`meta_credentials_${selectedProjectId}`, JSON.stringify(connectionInfo));
-        setMetaConnectionInfo(connectionInfo);
-        // Clean URL
+        const connectionInfo = JSON.parse(decodeURIComponent(metaConnected)) as MetaConnectionInfo;
+        updateProject(selectedProjectId, { meta_credentials: connectionInfo });
         window.history.replaceState({}, '', window.location.pathname);
         alert('Meta 계정이 연결되었습니다!');
       } catch {
@@ -257,12 +254,11 @@ export function ChannelConnectionsSection() {
       alert(`Meta 연결 실패: ${metaError}`);
       window.history.replaceState({}, '', window.location.pathname);
     }
-  }, [selectedProjectId]);
+  }, [selectedProjectId, updateProject]);
 
   function disconnectMeta() {
     if (!selectedProjectId) return;
-    localStorage.removeItem(`meta_credentials_${selectedProjectId}`);
-    setMetaConnectionInfo(null);
+    updateProject(selectedProjectId, { meta_credentials: null });
   }
 
   const isMetaChannel = (id: string) => id === 'instagram' || id === 'facebook' || id === 'threads';
@@ -394,14 +390,10 @@ export function ChannelConnectionsSection() {
   );
 }
 
-// WordPress 연결 상태 배지 (localStorage 읽기)
+// WordPress 연결 상태 배지 (DB 읽기)
 function WordPressStatusBadge({ projectId }: { projectId: string }) {
-  const [connected, setConnected] = useState(false);
-
-  useEffect(() => {
-    const saved = localStorage.getItem(`wp_credentials_${projectId}`);
-    setConnected(!!saved);
-  }, [projectId]);
+  const { projects } = useProjectStore();
+  const connected = !!projects.find(p => p.id === projectId)?.wp_credentials;
 
   if (connected) {
     return (

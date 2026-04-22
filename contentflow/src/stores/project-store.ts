@@ -2,7 +2,7 @@
 export { useUIStore } from './ui-store'
 
 import { create } from 'zustand';
-import type { Project, Content, ContentStatus, BaseArticle, BlogContent, BlogCard, InstagramContent, InstagramCard, ThreadsContent, ThreadsCard, YoutubeContent, YoutubeCard } from '@/types/database';
+import type { Project, Content, ContentStatus, BaseArticle, BlogContent, BlogCard, InstagramContent, InstagramCard, ThreadsContent, ThreadsCard, YoutubeContent, YoutubeCard, CardTemplateRow } from '@/types/database';
 import type { MarketingStrategy, StrategyInput, GenerationStatus, StrategyTab } from '@/types/strategy';
 import { DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL } from '@/lib/ai-models';
 import type { ImportedStrategy } from '@/types/analytics';
@@ -73,6 +73,9 @@ interface ProjectState {
   threadsCards: ThreadsCard[];
   youtubeContents: YoutubeContent[];
   youtubeCards: YoutubeCard[];
+  // Cardnews templates (per selected project)
+  cardTemplates: CardTemplateRow[];
+  hiddenBuiltins: string[];
   sidebarCollapsed: boolean;
   showProjectSettings: boolean;
   showStrategy: boolean;
@@ -173,6 +176,14 @@ interface ProjectState {
   deleteYoutubeCard: (cardId: string) => void;
   reorderYoutubeCards: (youtubeContentId: string, cardIds: string[]) => Promise<void>;
 
+  // Card templates (cardnews, per project)
+  loadCardTemplates: (projectId: string) => Promise<void>;
+  createCardTemplate: (projectId: string, data: Omit<CardTemplateRow, 'id' | 'project_id' | 'created_at' | 'updated_at'>) => Promise<string>;
+  updateCardTemplate: (templateId: string, updates: Partial<Omit<CardTemplateRow, 'id' | 'project_id' | 'created_at'>>) => void;
+  deleteCardTemplate: (templateId: string) => Promise<void>;
+  hideBuiltinTemplate: (projectId: string, builtinId: string) => Promise<void>;
+  unhideBuiltinTemplate: (projectId: string, builtinId: string) => Promise<void>;
+
   // Strategy
   strategies: MarketingStrategy[];
   getStrategy: (projectId: string) => MarketingStrategy | undefined;
@@ -216,6 +227,8 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
   threadsCards: [],
   youtubeContents: [],
   youtubeCards: [],
+  cardTemplates: [],
+  hiddenBuiltins: [],
   strategies: [],
   savedKeywords: [],
   sidebarCollapsed: false,
@@ -259,6 +272,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       instagramContents: [], instagramCards: [],
       threadsContents: [], threadsCards: [],
       youtubeContents: [], youtubeCards: [],
+      cardTemplates: [], hiddenBuiltins: [],
       strategies: [], savedKeywords: [],
     })
     if (!projectId) return
@@ -270,6 +284,9 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     // Load saved keywords
     const { data: proj } = await supabase.from('projects').select('saved_keywords').eq('id', projectId).single()
     if (proj?.saved_keywords) set({ savedKeywords: proj.saved_keywords as ProjectState['savedKeywords'] })
+
+    // Load cardnews templates for this project
+    get().loadCardTemplates(projectId).catch(err => console.error('loadCardTemplates:', err))
 
     // TODO: marketing_strategies table does not exist yet — load strategies when table is created
   },
@@ -580,6 +597,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       'funnel_config', 'ga4_config', 'imported_strategy',
       'writing_guide_global', 'writing_guide_blog', 'writing_guide_instagram',
       'writing_guide_threads', 'writing_guide_youtube',
+      'wp_credentials', 'meta_credentials',
       'created_at', 'updated_at',
     ])
     const dbUpdates: Record<string, unknown> = {}
@@ -1449,6 +1467,70 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     await Promise.all(cardIds.map((id, index) =>
       supabase.from('youtube_cards').update({ sort_order: index }).eq('id', id)
     )).catch(err => console.error('reorderYoutubeCards error:', err))
+  },
+
+  // ====== Card templates (cardnews, per project) ======
+  loadCardTemplates: async (projectId) => {
+    const supabase = createClient()
+    const [tplRes, hiddenRes] = await Promise.all([
+      supabase.from('card_templates').select('*').eq('project_id', projectId).order('created_at'),
+      supabase.from('card_hidden_builtins').select('builtin_id').eq('project_id', projectId),
+    ])
+    if (tplRes.error) console.error('loadCardTemplates tpl error:', tplRes.error.message)
+    if (hiddenRes.error) console.error('loadCardTemplates hidden error:', hiddenRes.error.message)
+    set({
+      cardTemplates: (tplRes.data ?? []) as CardTemplateRow[],
+      hiddenBuiltins: (hiddenRes.data ?? []).map((r: { builtin_id: string }) => r.builtin_id),
+    })
+  },
+
+  createCardTemplate: async (projectId, data) => {
+    const supabase = createClient()
+    const id = generateId()
+    const now = new Date().toISOString()
+    const row: CardTemplateRow = {
+      id, project_id: projectId,
+      name: data.name,
+      bg_color: data.bg_color,
+      image_y: data.image_y,
+      text_blocks: data.text_blocks,
+      preview: data.preview,
+      created_at: now,
+      updated_at: now,
+    }
+    const { error } = await supabase.from('card_templates').insert(row as unknown as Record<string, unknown>)
+    if (error) { console.error('createCardTemplate error:', error.message); return '' }
+    set(state => ({ cardTemplates: [...state.cardTemplates, row] }))
+    return id
+  },
+
+  updateCardTemplate: (templateId, updates) => {
+    const updatedData = { ...updates, updated_at: new Date().toISOString() }
+    set(state => ({
+      cardTemplates: state.cardTemplates.map(t => t.id === templateId ? { ...t, ...updatedData } : t)
+    }))
+    debouncedWrite('card_templates', templateId, updatedData as unknown as Record<string, unknown>)
+  },
+
+  deleteCardTemplate: async (templateId) => {
+    const supabase = createClient()
+    const { error } = await supabase.from('card_templates').delete().eq('id', templateId)
+    if (error) { console.error('deleteCardTemplate error:', error.message); return }
+    set(state => ({ cardTemplates: state.cardTemplates.filter(t => t.id !== templateId) }))
+  },
+
+  hideBuiltinTemplate: async (projectId, builtinId) => {
+    const supabase = createClient()
+    const { error } = await supabase.from('card_hidden_builtins').insert({ project_id: projectId, builtin_id: builtinId })
+    if (error && !error.message.includes('duplicate')) { console.error('hideBuiltinTemplate error:', error.message); return }
+    set(state => ({ hiddenBuiltins: Array.from(new Set([...state.hiddenBuiltins, builtinId])) }))
+  },
+
+  unhideBuiltinTemplate: async (projectId, builtinId) => {
+    const supabase = createClient()
+    const { error } = await supabase.from('card_hidden_builtins').delete().match({ project_id: projectId, builtin_id: builtinId })
+    if (error) { console.error('unhideBuiltinTemplate error:', error.message); return }
+    set(state => ({ hiddenBuiltins: state.hiddenBuiltins.filter(id => id !== builtinId) }))
   },
 
   // ====== Strategy ======
