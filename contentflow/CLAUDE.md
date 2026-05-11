@@ -75,6 +75,14 @@ node scripts/fix-article-tone.mjs        # 기본글 톤 수정
 - **한글 IME**: `components/ui/korean-input.tsx` — `<KoreanInput>`, `<KoreanTextarea>` 공용 (`value`+`onCommit` 패턴)
 - **채널 탭**: 기본글 | N블로그 | WordPress | 카드뉴스 | 스레드 | 롱폼 | 숏폼
 
+## 마케팅 전략 페이지 (HTML 뷰어 방식)
+- **드롭다운 + iframe 뷰어**: `components/strategy/strategy-dashboard.tsx`가 `public/strategy-templates/`의 HTML 파일을 드롭다운에서 선택해서 iframe으로 표시
+- **템플릿 목록 API**: `/api/strategy/templates` — 폴더 내 `.html` 파일 자동 인덱싱 (title/description meta tags 추출)
+- **새 전략 추가법**: `public/strategy-templates/*.html` 파일 생성 → 드롭다운에 자동 등장
+- **HTML 형식**: 기존 `parseStrategyHtml`(`lib/strategy-html-parser.ts`)과 호환되도록 `<script>const kwData=[...]; const topics=[...];</script>` 또는 `<table class="kw-table">`/`.cycle-item` 구조 권장
+- **임포트 다이얼로그**(`strategy-import-dialog.tsx`): 탭으로 "템플릿 선택"(드롭다운) + "파일 업로드" 양쪽 지원
+- **기존 AI 생성 흐름**: `StrategyInputForm`·5개 탭 컴포넌트(overview/keyword/channel/content/kpi)는 코드는 남아 있지만 현재 페이지에서 사용 안 함 (필요시 별도 진입점 추가)
+
 ## 환경변수 (.env.local) — 배포 시 호스팅에 설정 필요
 ```
 GEMINI_API_KEY                    # Google Gemini AI

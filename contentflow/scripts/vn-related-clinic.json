@@ -1,0 +1,10 @@
+[
+  {
+    "keywords": ["khám tăng chiều cao", "phòng khám tăng chiều cao", "bệnh viện tăng chiều cao"],
+    "language_code": "vi",
+    "location_code": 2704,
+    "include_adult_keywords": false,
+    "limit": 200,
+    "sort_by": "search_volume"
+  }
+]
