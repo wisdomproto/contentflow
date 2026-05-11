@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Upload, FileText, Check, X, Tag, FolderOpen } from 'lucide-react';
+import { Upload, FileText, Check, X, Tag, FolderOpen, ListChecks } from 'lucide-react';
 import { useProjectStore } from '@/stores/project-store';
 import type { ImportedStrategy, ImportedKeyword, ImportedCategory } from '@/types/analytics';
 
@@ -11,19 +11,41 @@ interface StrategyImportDialogProps {
   onClose: () => void;
 }
 
+interface TemplateMeta {
+  filename: string;
+  title: string;
+  description: string;
+  size: number;
+  modifiedAt: string;
+  url: string;
+}
+
 export function StrategyImportDialog({ projectId, onClose }: StrategyImportDialogProps) {
+  const [mode, setMode] = useState<'template' | 'upload'>('template');
   const [file, setFile] = useState<File | null>(null);
+  const [templates, setTemplates] = useState<TemplateMeta[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [templatesLoading, setTemplatesLoading] = useState(true);
   const [result, setResult] = useState<{
     keywords: ImportedKeyword[];
     categories: ImportedCategory[];
     keywordCount: number;
     categoryCount: number;
     topicCount: number;
+    fileName?: string;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const importStrategy = useProjectStore(s => s.importStrategy);
+
+  useEffect(() => {
+    fetch('/api/strategy/templates')
+      .then(r => r.json())
+      .then(data => setTemplates(data.templates ?? []))
+      .catch(() => setTemplates([]))
+      .finally(() => setTemplatesLoading(false));
+  }, []);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -35,13 +57,23 @@ export function StrategyImportDialog({ projectId, onClose }: StrategyImportDialo
   };
 
   const handleParse = async () => {
-    if (!file) return;
     setLoading(true);
     setError(null);
 
     try {
       const formData = new FormData();
-      formData.append('file', file);
+
+      if (mode === 'template') {
+        const tpl = templates.find(t => t.filename === selectedTemplate);
+        if (!tpl) throw new Error('템플릿을 선택하세요');
+        const htmlRes = await fetch(tpl.url);
+        if (!htmlRes.ok) throw new Error('템플릿 파일을 불러올 수 없습니다');
+        const blob = await htmlRes.blob();
+        formData.append('file', new File([blob], tpl.filename, { type: 'text/html' }));
+      } else {
+        if (!file) throw new Error('파일을 선택하세요');
+        formData.append('file', file);
+      }
 
       const res = await fetch('/api/strategy/import-html', {
         method: 'POST',
@@ -59,12 +91,18 @@ export function StrategyImportDialog({ projectId, onClose }: StrategyImportDialo
     }
   };
 
+  const canParse = mode === 'template' ? !!selectedTemplate : !!file;
+  const sourceName = mode === 'template'
+    ? templates.find(t => t.filename === selectedTemplate)?.filename
+    : file?.name;
+
   const handleImport = () => {
-    if (!result || !file) return;
+    if (!result) return;
+    const finalName = sourceName ?? 'imported-strategy.html';
 
     const imported: ImportedStrategy = {
       importedAt: new Date().toISOString(),
-      sourceFileName: file.name,
+      sourceFileName: finalName,
       keywords: result.keywords,
       categories: result.categories,
     };
@@ -82,29 +120,88 @@ export function StrategyImportDialog({ projectId, onClose }: StrategyImportDialo
         </div>
 
         <div className="p-4 space-y-4">
-          {/* 파일 선택 */}
-          <div
-            className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
-            onClick={() => fileRef.current?.click()}
-          >
-            <input ref={fileRef} type="file" accept=".html" onChange={handleFileSelect} className="hidden" />
-            {file ? (
-              <div className="flex items-center justify-center gap-2">
-                <FileText size={20} className="text-primary" />
-                <span className="font-semibold">{file.name}</span>
-                <span className="text-xs text-muted-foreground">({(file.size / 1024).toFixed(0)} KB)</span>
-              </div>
-            ) : (
-              <>
-                <Upload size={32} className="mx-auto text-muted-foreground/50 mb-2" />
-                <p className="text-sm text-muted-foreground">마케팅 전략 HTML 파일을 선택하세요</p>
-              </>
-            )}
+          {/* 모드 탭 */}
+          <div className="flex gap-1 border-b">
+            <button
+              type="button"
+              onClick={() => { setMode('template'); setResult(null); setError(null); }}
+              className={`px-3 py-1.5 text-sm font-medium border-b-2 -mb-px transition-colors ${mode === 'template' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+            >
+              <ListChecks size={14} className="inline mr-1.5" />템플릿 선택
+            </button>
+            <button
+              type="button"
+              onClick={() => { setMode('upload'); setResult(null); setError(null); }}
+              className={`px-3 py-1.5 text-sm font-medium border-b-2 -mb-px transition-colors ${mode === 'upload' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+            >
+              <Upload size={14} className="inline mr-1.5" />파일 업로드
+            </button>
           </div>
 
-          {file && !result && (
+          {/* 템플릿 드롭다운 */}
+          {mode === 'template' && (
+            <div className="space-y-2">
+              {templatesLoading ? (
+                <p className="text-sm text-muted-foreground py-3 text-center">템플릿 목록 불러오는 중...</p>
+              ) : templates.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-3 text-center">저장된 템플릿이 없습니다 (public/strategy-templates/)</p>
+              ) : (
+                <>
+                  <label className="text-xs font-semibold text-muted-foreground">템플릿 선택</label>
+                  <select
+                    value={selectedTemplate}
+                    onChange={(e) => { setSelectedTemplate(e.target.value); setResult(null); setError(null); }}
+                    className="w-full px-3 py-2 rounded-md border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="">— 선택하세요 —</option>
+                    {templates.map(t => (
+                      <option key={t.filename} value={t.filename}>{t.title}</option>
+                    ))}
+                  </select>
+                  {selectedTemplate && (() => {
+                    const tpl = templates.find(t => t.filename === selectedTemplate);
+                    if (!tpl) return null;
+                    return (
+                      <div className="text-xs text-muted-foreground bg-muted/40 rounded-md p-2.5 space-y-1">
+                        <div className="font-medium text-foreground">{tpl.filename}</div>
+                        {tpl.description && <div>{tpl.description}</div>}
+                        <div className="flex gap-3 text-[11px] opacity-70">
+                          <span>{(tpl.size / 1024).toFixed(0)} KB</span>
+                          <span>수정 {new Date(tpl.modifiedAt).toLocaleDateString('ko-KR')}</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* 파일 업로드 */}
+          {mode === 'upload' && (
+            <div
+              className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+              onClick={() => fileRef.current?.click()}
+            >
+              <input ref={fileRef} type="file" accept=".html" onChange={handleFileSelect} className="hidden" />
+              {file ? (
+                <div className="flex items-center justify-center gap-2">
+                  <FileText size={20} className="text-primary" />
+                  <span className="font-semibold">{file.name}</span>
+                  <span className="text-xs text-muted-foreground">({(file.size / 1024).toFixed(0)} KB)</span>
+                </div>
+              ) : (
+                <>
+                  <Upload size={32} className="mx-auto text-muted-foreground/50 mb-2" />
+                  <p className="text-sm text-muted-foreground">마케팅 전략 HTML 파일을 선택하세요</p>
+                </>
+              )}
+            </div>
+          )}
+
+          {canParse && !result && (
             <Button onClick={handleParse} disabled={loading} className="w-full">
-              {loading ? '분석 중...' : '파일 분석'}
+              {loading ? '분석 중...' : (mode === 'template' ? '템플릿 분석' : '파일 분석')}
             </Button>
           )}
 
