@@ -83,6 +83,14 @@ node scripts/fix-article-tone.mjs        # 기본글 톤 수정
 - **임포트 다이얼로그**(`strategy-import-dialog.tsx`): 탭으로 "템플릿 선택"(드롭다운) + "파일 업로드" 양쪽 지원
 - **기존 AI 생성 흐름**: `StrategyInputForm`·5개 탭 컴포넌트(overview/keyword/channel/content/kpi)는 코드는 남아 있지만 현재 페이지에서 사용 안 함 (필요시 별도 진입점 추가)
 
+## 외부 사이트 블로그 연동 API (2026-05-14)
+- **엔드포인트**: `GET /api/blog/by-project/[projectId]/posts?lang={lang}` — 공개 read-only
+- **용도**: dflo(187 성장클리닉) 등 외부 사이트가 빌드 타임에 published 글을 fetch해 정적 HTML로 렌더 (WordPress 우회)
+- **권한**: service-role 클라이언트 + `status='published'` 필터 + `contents!inner:content_id(project_id)` PostgREST inner join으로 **프로젝트 격리 강제** (다른 프로젝트 글 누수 방지)
+- **응답**: `{posts: [{id, slug, title, body_html, cards, global_style, ...}]}` — translations 테이블 매칭 시 해당 언어 body/title 우선
+- **캐시**: `Cache-Control: s-maxage=300, stale-while-revalidate=600` (CDN 5분, SWR 10분)
+- **파일**: `src/app/api/blog/by-project/[projectId]/posts/route.ts`
+
 ## 환경변수 (.env.local) — 배포 시 호스팅에 설정 필요
 ```
 GEMINI_API_KEY                    # Google Gemini AI
