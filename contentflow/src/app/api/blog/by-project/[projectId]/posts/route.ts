@@ -27,7 +27,7 @@ export async function GET(
       id, content_id, seo_title, url_slug, meta_description,
       primary_keyword, secondary_keywords, seo_details, status,
       published_at,
-      contents:content_id(id, title, tags, project_id, updated_at),
+      contents!inner:content_id(id, title, tags, project_id, updated_at),
       base_articles:content_id(body, body_plain_text)
     `)
     .eq('contents.project_id', projectId)
