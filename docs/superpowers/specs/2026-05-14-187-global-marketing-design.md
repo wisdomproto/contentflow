@@ -21,6 +21,23 @@
 3. **DFlo 앱 = funnel의 핵심**: 상담 후 환자 2그룹(상담만 / 본격 치료)을 앱이 관리. 그룹 A는 계속 nurture, 그룹 B는 현지 진료 + 앱 관리.
 4. **모델 표준화 → 복제**: TH에서 검증된 모델을 VN에 복제 → EN에 본격 적용. 후속 시장 속도 ↑.
 
+## 2-1. 3축 유기적 사이클 (오가닉 · 유료 · 홈페이지)
+
+마케팅을 3축으로 나누되, 셋이 **서로 강화하는 사이클**로 작동해야 24개월 자산이 쌓인다. 하나만 잘하면 단기 성과로 끝남.
+
+```
+[🌱 오가닉: 콘텐츠 자산]   [💰 유료: 즉시 검증·트래픽]
+              ↓ 트래픽 ↓
+[🏠 홈페이지: CTA · SEO · 체류·재방문]
+              ↑ 피드백 (데이터·SEO·리타게팅) ↑
+```
+
+**상호 강화 사이클**:
+- **홈페이지 데이터 → 유료 최적화**: winning audience 파악 → 광고 비중 ↓ + 효율 ↑
+- **홈페이지 체류·재방문 → 오가닉 SEO 부스트**: 도메인 권위·체류시간이 SEO 신호로
+- **유료 검증 → 오가닉 콘텐츠 방향**: 광고에서 검증된 카피·메시지를 오가닉 채널에 confidence로 발행
+- **오가닉 자산 누적 → 유료 의존도 ↓**: SEO 트래픽 안정 = Phase C 도달 = 광고 ROI 정점
+
 ## 3. 합의된 결정 사항 (12개)
 
 | # | 항목 | 결정 |
@@ -84,7 +101,15 @@
 - 현지 에이전시 **핸드오프 conversion** (한국 상담 → 현지 진료 전환)
 - DFlo 앱 **engagement** (양 그룹 retention)
 
-## 5. 운영 모델 — 한국 vs 현지 에이전시 분리
+## 5. 운영 모델 — 한국 컨트롤 + 각국 관리
+
+**Hub-and-Spoke 구조**: 🇰🇷 한국 본사가 컨트롤 타워 (마케팅·콘텐츠·광고·다국어 번역·상담·전략·DFlo 앱 supervision·데이터·KPI). 각국은 spoke — 🇰🇷 한국(직영, 강남 압구정) / 🇹🇭 태국·🇻🇳 베트남·🇺🇸🇮🇳🇵🇭🇲🇾 영어 4시장(현지 에이전시).
+
+- **↓ 컨트롤**: 한국 → 각국 (전략·콘텐츠·광고·상담·진료 프로토콜)
+- **↑ 리포팅**: 각국 → 한국 (진료 데이터·환자 현황·매출)
+- 한국 본사가 **상담받을 때까지 전 과정 통제** → 본격 치료 결정 시 각국 현지 에이전시로 핸드오프
+
+아래 표는 영역별 상세 분담:
 
 | 영역 | 🇰🇷 한국 본사 | 🌏 현지 에이전시 |
 |---|---|---|
@@ -122,7 +147,14 @@
 | Phase B (M3-5) | 40% | 40% | 20% |
 | Phase C (M6+) | 20% | 65% | 15% |
 
-## 8. 시장별 상담 채널 (한국 응대)
+**Phase별 디테일** (각 신규 시장 진입 시 Phase A부터 시작, 6-9개월 사이클):
+- **Phase A (M0-2) 검증**: 광고로 빠르게 데이터 수집 + winning audience·키워드 발견. ⚠️ 광고 비중을 너무 낮추면 데이터 수집 안 됨 — 미친듯이 검증.
+- **Phase B (M3-5) 균형**: 광고 효율 안정화 + 오가닉 SEO 누적 시작. 🔄 광고에서 winning 발견한 메시지·카피를 오가닉 콘텐츠로 본격 발행 (데이터 → 콘텐츠 피드백).
+- **Phase C (M6+) 자산**: 오가닉 메인 트래픽 source. 광고는 conversion 키워드·retargeting만. 🎯 이 Phase 도달 = 시장 검증 완료 = 다음 시장 진입 trigger.
+
+## 8. 시장별 채널 매트릭스 (상담 + 오가닉 + 유료)
+
+### 8.1 상담 채널 (한국 응대)
 
 | 시장 | 메인 상담 채널 | 한국 응대 인력 언어 |
 |---|---|---|
@@ -132,6 +164,45 @@
 | 🇺🇸🇮🇳🇵🇭🇲🇾 EN | WhatsApp + Messenger | 한국어 + 영어 |
 
 → 통합 inbox + 챗봇 1차 응대 + Supabase `leads` 테이블 + 응답 SLA 5분 / 30분
+
+### 8.2 시장별 오가닉/유료 주력 채널
+
+| 축 | 오가닉 메인 | 오가닉 보조 | 유료 메인 | 유료 보조 | CPC 메모 |
+|---|---|---|---|---|---|
+| 🇰🇷 KR | **네이버 블로그·카페·지식인** | 인스타·유튜브·카카오 채널·구글 SEO | 네이버 파워링크·GFA | Meta Ads, 카카오 광고, 유튜브 Ads | 본진 (네이버 73%) |
+| 🇹🇭 TH | **Facebook 페이지 + Line OA** | Instagram·TikTok·유튜브·구글 SEO (태국어) | **Meta Ads** (FB/IG/TikTok) | Google Ads, Line Ads, 한류 KOL | $0.60 (CPM 중간) |
+| 🇻🇳 VN | **Facebook + Zalo** | TikTok (폭증)·유튜브·구글 SEO (베트남어) | **Meta Ads + TikTok Ads** | Google Ads, Zalo Ads, 베트남 KOL | $0.18 (저비용) |
+| 🇺🇸🇮🇳🇵🇭🇲🇾 EN | **구글 SEO + 유튜브** | Instagram·Facebook (PH 1위)·Reddit (US 의료 Q&A) | **Google Ads** (IN/PH/MY) + Meta Ads (US) | YouTube Ads, TikTok Ads (PH), WhatsApp 그룹 (IN) | US $1-2.5(도구)/$5-7(HGH) · **IN $0.10 (광고 효율 1위)** · PH $0.15 · MY $0.27 |
+
+**핵심 인사이트**:
+- 🇰🇷 한국: 네이버 비중 압도. 글로벌과 채널 셋업 자체가 다름 (별도 운영).
+- 🇹🇭 태국: Facebook과 Line이 메인. Line OA는 유료 광고가 아닌 **자체 채널(오가닉)** + 상담 채널로 이중 활용.
+- 🇻🇳 베트남: Zalo가 자국 SNS + 메신저. Facebook과 병행. TikTok 폭증 트렌드.
+- 🇺🇸🇮🇳🇵🇭🇲🇾 영어: **구글 SEO가 핵심 오가닉** (영어 시장 보편). 유료는 **인도 광고 효율 1위 ($0.10)**, 미국은 HGH 키워드 비싸 SEO·콘텐츠 중심.
+
+**채널 비중 진화 (Phase A→B→C)에 따른 운영**:
+- Phase A: 유료 메인 (Meta/Google/TikTok Ads) 60% — 빠른 검증
+- Phase B: 오가닉 메인 (블로그·SEO·자체 SNS 페이지) 누적 시작
+- Phase C: 오가닉 메인이 우세 (구글 SEO + Facebook/Line OA 등 자체 페이지 + KOL)
+
+### 8.3 국가별 3축 실행 전략
+
+각 시장별 **오가닉 / 유료 / 홈페이지** 3축 디테일. HTML 버전(`187-global-strategy.html`)에 국가별 탭으로 상세 시각화.
+
+**🇹🇭 태국 (Phase 1)**
+- **오가닉**: Facebook 페이지 + Line OA 메인 / Instagram·TikTok·유튜브·구글 SEO 보조. 콘텐츠 = 치료 사례 카드·영상, 의학 가이드, 채용현 원장 브랜딩, KOL 재가공. 발행 = 페북/IG 주 3-5회, Line OA 주 1-2회, TikTok 주 2-3회, 블로그 주 2-3편
+- **유료**: Meta Ads (FB/IG/TikTok) 메인 / Google Ads·Line Ads·한류 KOL·TikTok Ads. 예산 (Phase A) = Meta 60% / Google 20% / Line 10% / KOL 10%
+- **홈페이지**: CTA = Line + Messenger 듀얼 floating / SEO = โกรทฮอร์โมน·คลินิกเพิ่มความสูง·ส่วนสูงเด็ก + hreflang ko↔th / 체류 = 사례 갤러리(200건)·키 예측 도구·Line OA newsletter
+
+**🇻🇳 베트남 (Phase 2)**
+- **오가닉**: Facebook + Zalo OA 메인 / TikTok(폭증)·유튜브·구글 SEO 보조. 콘텐츠 = 치료 사례, NuBest 대안 포지셔닝, 식단 트렌드(Thực đơn tăng chiều cao), 결혼·취업 시장 키 중요성
+- **유료**: Meta Ads + TikTok Ads 메인 / Zalo Ads·Google Ads·베트남 KOL. 예산 = Meta 50% / TikTok 25% / Zalo 10% / KOL 10% / Google 5%
+- **홈페이지**: CTA = Zalo + Messenger / SEO = cách tăng chiều cao·dự đoán chiều cao + hreflang ko↔vi / 체류 = 베트남어 키 예측 도구·한국 의료 신뢰성·식단 가이드
+
+**🇺🇸🇮🇳🇵🇭🇲🇾 영어 4시장 (Phase 3)**
+- **오가닉**: 구글 SEO 영어 메인 (월 598K 4국 도달) + 유튜브 / Instagram·Facebook(PH 1위)·Reddit(US 의료 Q&A)·WhatsApp 그룹(IN). 콘텐츠 = Height calculator 도구, HGH 가이드, NuBest 대안, 인도 결혼·취업 모티베이션
+- **유료**: 인도 = Google Ads ($0.10 광고 효율 1위) / 필리핀 = Meta+TikTok Ads / 말레이 = Meta Ads / 미국 = Google 도구 키워드만 ($1-2.5), HGH는 SEO만 ($5-7 비쌈). 예산 (4시장 통합) = 인도 35% / 필리핀 20% / 미국 25% / 말레이 10% / 콘텐츠 제작 10%
+- **홈페이지**: CTA = WhatsApp (IN/PH/MY) + Messenger (US) / SEO = height calculator·how to increase height·hgh + US Reddit·Quora 백링크 / 체류 = Height calculator 도구·인터랙티브 height chart·케이스 스터디
 
 ## 9. 공유 자산 구조
 

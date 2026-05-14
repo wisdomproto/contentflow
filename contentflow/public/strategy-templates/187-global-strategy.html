@@ -110,6 +110,102 @@
   .ops-col ul { padding-left: 20px; margin: 4px 0; }
   .ops-col ul li { font-size: 12.5px; padding: 3px 0; }
   .ops-col ul li::marker { color: inherit; }
+
+  /* Country strategy tabs (3 axis x country) */
+  .cs-tabs { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; margin: 16px 0 20px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .cs-tab-bar { display: flex; flex-wrap: wrap; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+  .cs-tab-btn { padding: 14px 20px; border: 0; background: transparent; cursor: pointer; font-size: 14px; font-weight: 700; color: #64748b; border-bottom: 3px solid transparent; transition: all 0.15s; font-family: inherit; }
+  .cs-tab-btn:hover { color: #0f172a; background: #f1f5f9; }
+  .cs-tab-btn.active { color: #047857; border-bottom-color: #059669; background: #fff; }
+  .cs-tab-panel { display: none; padding: 22px 24px; }
+  .cs-tab-panel.active { display: block; }
+  .cs-tab-panel h3 { margin-top: 0; font-size: 17px; padding: 0; border: 0; }
+  .axis-card { background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #94a3b8; border-radius: 8px; padding: 16px 18px; margin-bottom: 14px; }
+  .axis-organic { border-left-color: #059669; background: #f0fdf4; }
+  .axis-paid { border-left-color: #f59e0b; background: #fffbeb; }
+  .axis-website { border-left-color: #0891b2; background: #f0f9ff; }
+  .axis-card h4 { font-size: 15px; font-weight: 800; margin: 0 0 10px; }
+  .axis-organic h4 { color: #047857; }
+  .axis-paid h4 { color: #92400e; }
+  .axis-website h4 { color: #0e7490; }
+  .axis-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 8px; }
+  .axis-3col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 4px; }
+  @media (max-width: 768px) { .axis-cols, .axis-3col { grid-template-columns: 1fr; } }
+  .axis-card strong { display: block; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; color: #334155; }
+  .axis-card ol, .axis-card ul { padding-left: 18px; margin: 4px 0; font-size: 12.5px; }
+  .axis-card ol li, .axis-card ul li { margin-bottom: 4px; line-height: 1.55; }
+  .axis-kpi { font-size: 11.5px; font-style: italic; color: #475569; background: rgba(255,255,255,0.7); padding: 6px 10px; border-radius: 6px; margin-top: 8px; }
+
+  /* 3-axis cycle infographic (문서 초반 인포그래픽) */
+  .cycle-section { background: linear-gradient(180deg, #ecfdf5 0%, #fff 100%); border: 1px solid #99f6e4; border-radius: 14px; padding: 22px 26px; margin: 16px 0 28px; }
+  .cycle-section h2 { border: 0; padding: 0; margin: 0 0 4px; font-size: 18px; color: #0f172a; }
+  .cycle-section .cycle-sub { font-size: 12.5px; color: #475569; margin-bottom: 16px; }
+  .axis-trio-top { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; max-width: 720px; margin: 0 auto 6px; }
+  @media (max-width: 720px) { .axis-trio-top { grid-template-columns: 1fr; } }
+  .axis-node-big { background: #fff; border: 2px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; text-align: center; transition: transform 0.15s, box-shadow 0.15s; }
+  .axis-node-big:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+  .axis-node-big.organic { border-color: #059669; background: linear-gradient(135deg, #f0fdf4, #fff); }
+  .axis-node-big.paid { border-color: #f59e0b; background: linear-gradient(135deg, #fffbeb, #fff); }
+  .axis-node-big.website { border-color: #0891b2; background: linear-gradient(135deg, #f0f9ff, #fff); max-width: 540px; margin: 0 auto; }
+  .axis-node-big .ax-icon { font-size: 32px; line-height: 1; margin-bottom: 4px; }
+  .axis-node-big h4 { font-size: 15px; font-weight: 800; margin: 0 0 4px; }
+  .axis-node-big.organic h4 { color: #047857; }
+  .axis-node-big.paid h4 { color: #92400e; }
+  .axis-node-big.website h4 { color: #0e7490; }
+  .axis-node-big .ax-tagline { font-size: 12px; font-weight: 700; color: #334155; margin: 0 0 4px; }
+  .axis-node-big .ax-detail { font-size: 11.5px; color: #64748b; line-height: 1.5; margin: 0; }
+  .cycle-arrows-down { text-align: center; font-size: 14px; font-weight: 700; color: #059669; margin: 6px 0; letter-spacing: 0.5px; }
+  .cycle-feedback { background: #fff; border: 1px solid #99f6e4; border-radius: 10px; padding: 12px 16px; margin-top: 10px; }
+  .cycle-feedback strong { display: block; color: #047857; font-size: 13px; margin-bottom: 6px; }
+  .cycle-feedback ul { padding-left: 18px; margin: 4px 0 0; }
+  .cycle-feedback ul li { font-size: 12px; color: #334155; margin-bottom: 4px; line-height: 1.55; }
+
+  /* Phase tabs */
+  .ph-tabs { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; margin: 12px 0 20px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .ph-tab-bar { display: flex; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+  .ph-tab-btn { flex: 1; padding: 14px; border: 0; background: transparent; cursor: pointer; font-size: 13px; font-weight: 700; color: #64748b; border-bottom: 3px solid transparent; transition: all 0.15s; font-family: inherit; }
+  .ph-tab-btn:hover { background: #f1f5f9; color: #0f172a; }
+  .ph-tab-btn.active { background: #fff; color: #0f172a; }
+  .ph-tab-btn[data-ph-tab="a"].active { border-bottom-color: #f59e0b; color: #92400e; }
+  .ph-tab-btn[data-ph-tab="b"].active { border-bottom-color: #0891b2; color: #0e7490; }
+  .ph-tab-btn[data-ph-tab="c"].active { border-bottom-color: #059669; color: #047857; }
+  .ph-tab-panel { display: none; padding: 20px 24px; }
+  .ph-tab-panel.active { display: block; }
+  .ph-content { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+  @media (max-width: 720px) { .ph-content { grid-template-columns: 1fr; } }
+  .ph-bar-large { display: flex; gap: 3px; height: 32px; border-radius: 6px; overflow: hidden; margin: 10px 0; }
+  .ph-bar-large > div { display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 13px; }
+  .ph-bar-ad { background: #f59e0b; }
+  .ph-bar-or { background: #059669; }
+  .ph-bar-ko { background: #0891b2; }
+  .ph-info h4 { font-size: 16px; font-weight: 800; margin: 0 0 8px; }
+  .ph-info p { font-size: 13px; line-height: 1.55; color: #334155; margin: 4px 0; }
+  .ph-info ul { padding-left: 18px; margin: 4px 0; font-size: 12.5px; }
+  .ph-info ul li { margin-bottom: 4px; line-height: 1.55; }
+  .ph-meta { background: #f8fafc; border-radius: 8px; padding: 12px 14px; font-size: 12px; }
+  .ph-meta strong { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #475569; margin-bottom: 4px; }
+
+  /* Hub-and-spoke control diagram (한국 컨트롤 + 각국 관리) */
+  .hub-diagram { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px 22px; margin: 12px 0 16px; }
+  .hub-hq { background: linear-gradient(135deg, #059669, #0891b2); color: #fff; border-radius: 10px; padding: 16px 20px; text-align: center; max-width: 640px; margin: 0 auto; }
+  .hub-hq h4 { font-size: 16px; font-weight: 800; margin: 0 0 4px; color: #fff; }
+  .hub-hq p { font-size: 11.5px; color: rgba(255,255,255,0.92); margin: 0; line-height: 1.5; }
+  .hub-flows { display: flex; justify-content: center; gap: 48px; margin: 12px 0; flex-wrap: wrap; }
+  .hub-flow-down, .hub-flow-up { font-size: 12px; font-weight: 800; text-align: center; }
+  .hub-flow-down { color: #059669; }
+  .hub-flow-up { color: #ea580c; }
+  .hub-flow-down span, .hub-flow-up span { display: block; font-weight: 400; color: #64748b; font-size: 10.5px; margin-top: 2px; }
+  .hub-spokes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  @media (max-width: 720px) { .hub-spokes { grid-template-columns: 1fr 1fr; } }
+  .hub-spoke { border: 2px solid #e2e8f0; border-radius: 10px; padding: 12px 10px; text-align: center; }
+  .hub-spoke.kr-direct { border-color: #059669; background: #f0fdf4; }
+  .hub-spoke.agency { border-color: #ea580c; background: #fff7ed; }
+  .hub-spoke .spoke-flag { font-size: 20px; line-height: 1.2; }
+  .hub-spoke h5 { font-size: 12.5px; font-weight: 800; margin: 4px 0 2px; }
+  .hub-spoke .spoke-mode { font-size: 10.5px; font-weight: 800; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.3px; }
+  .hub-spoke.kr-direct .spoke-mode { color: #047857; }
+  .hub-spoke.agency .spoke-mode { color: #c2410c; }
+  .hub-spoke .spoke-role { font-size: 10.5px; color: #64748b; line-height: 1.45; }
 </style>
 </head>
 <body>
@@ -128,17 +224,60 @@
 </div>
 
 <div class="nav-jump">
+  <a href="#cycle" style="background:#ecfdf5;color:#047857;font-weight:700;">🔄 3축 사이클</a>
   <a href="#hypothesis">핵심 가설</a>
   <a href="#decisions">합의 결정 12개</a>
   <a href="#funnel">환자 Funnel</a>
   <a href="#ops">운영 분리</a>
   <a href="#matrix">진입 매트릭스</a>
   <a href="#phase">Phase 비중</a>
-  <a href="#sns">상담 채널</a>
+  <a href="#sns">채널 매트릭스</a>
+  <a href="#country-strategy" style="background:#fef3c7;color:#92400e;font-weight:700;">🌏 국가별 3축 전략</a>
   <a href="#assets">공유 자산</a>
   <a href="#kpi">KPI</a>
   <a href="#open">Open Questions</a>
   <a href="#next">다음 단계</a>
+</div>
+
+<div class="cycle-section" id="cycle">
+  <h2>🔄 3축은 유기적 사이클</h2>
+  <p class="cycle-sub"><b>오가닉 · 유료 · 홈페이지</b> — 셋이 서로 강화하는 사이클로 작동해야 24개월 자산이 쌓입니다. 하나만 잘하면 단기 성과로 끝남.</p>
+
+  <div class="axis-trio-top">
+    <div class="axis-node-big organic">
+      <div class="ax-icon">🌱</div>
+      <h4>오가닉 마케팅</h4>
+      <p class="ax-tagline">콘텐츠 자산 빌딩</p>
+      <p class="ax-detail">블로그·SEO·SNS 페이지·KOL<br>5년 evergreen 트래픽</p>
+    </div>
+    <div class="axis-node-big paid">
+      <div class="ax-icon">💰</div>
+      <h4>유료 마케팅</h4>
+      <p class="ax-tagline">즉시 검증·트래픽</p>
+      <p class="ax-detail">Meta/Google/TikTok Ads<br>winning audience 발견</p>
+    </div>
+  </div>
+
+  <div class="cycle-arrows-down">↓ 트래픽 흘려보내기 ↓</div>
+
+  <div class="axis-node-big website">
+    <div class="ax-icon">🏠</div>
+    <h4>홈페이지 완성</h4>
+    <p class="ax-tagline">CTA · SEO · 체류·재방문</p>
+    <p class="ax-detail">상담 SNS 클릭 (메인 conversion) + 도구·사례·블로그로 재방문 유도</p>
+  </div>
+
+  <div class="cycle-arrows-down">↑ 피드백 (데이터·SEO·리타게팅) ↑</div>
+
+  <div class="cycle-feedback">
+    <strong>3축 상호 강화 사이클</strong>
+    <ul>
+      <li><b>홈페이지 데이터 → 유료 최적화</b>: winning audience 파악 → 광고 비중 ↓ + 효율 ↑</li>
+      <li><b>홈페이지 체류·재방문 → 오가닉 SEO 부스트</b>: 도메인 권위·체류시간이 SEO 신호로</li>
+      <li><b>유료 검증 → 오가닉 콘텐츠 방향</b>: 광고에서 검증된 카피·메시지를 오가닉 채널에 confidence로 발행</li>
+      <li><b>오가닉 자산 누적 → 유료 의존도 ↓</b>: SEO 트래픽 안정 = Phase C 도달 = 광고 ROI 정점</li>
+    </ul>
+  </div>
 </div>
 
 <h2 id="hypothesis">🎯 핵심 가설</h2>
@@ -240,7 +379,47 @@
   </ul>
 </div>
 
-<h2 id="ops">⚙️ 운영 모델 — 한국 vs 현지 에이전시</h2>
+<h2 id="ops">⚙️ 운영 모델 — 한국 컨트롤 + 각국 관리</h2>
+
+<div class="hub-diagram">
+  <div class="hub-hq">
+    <h4>🇰🇷 한국 본사 — 컨트롤 타워</h4>
+    <p>마케팅 · 콘텐츠 · 광고 운영 · 다국어 번역 · 상담 응대 · 전략 · DFlo 앱 supervision · 데이터·KPI</p>
+  </div>
+  <div class="hub-flows">
+    <div class="hub-flow-down">↓ 컨트롤<span>전략 · 콘텐츠 · 광고 · 상담 · 진료 프로토콜</span></div>
+    <div class="hub-flow-up">↑ 리포팅<span>진료 데이터 · 환자 현황 · 매출</span></div>
+  </div>
+  <div class="hub-spokes">
+    <div class="hub-spoke kr-direct">
+      <div class="spoke-flag">🇰🇷</div>
+      <h5>한국 (본진)</h5>
+      <div class="spoke-mode">직영</div>
+      <div class="spoke-role">강남 압구정 클리닉<br>본사 직접 운영</div>
+    </div>
+    <div class="hub-spoke agency">
+      <div class="spoke-flag">🇹🇭</div>
+      <h5>태국 (Phase 1)</h5>
+      <div class="spoke-mode">현지 에이전시</div>
+      <div class="spoke-role">클로징 · 현지 진료<br>의료법 컴플라이언스</div>
+    </div>
+    <div class="hub-spoke agency">
+      <div class="spoke-flag">🇻🇳</div>
+      <h5>베트남 (Phase 2)</h5>
+      <div class="spoke-mode">현지 에이전시</div>
+      <div class="spoke-role">클로징 · 현지 진료<br>의료법 컴플라이언스</div>
+    </div>
+    <div class="hub-spoke agency">
+      <div class="spoke-flag">🇺🇸🇮🇳🇵🇭🇲🇾</div>
+      <h5>영어 4시장 (Phase 3)</h5>
+      <div class="spoke-mode">현지 에이전시</div>
+      <div class="spoke-role">클로징 · 현지 진료<br>의료법 컴플라이언스</div>
+    </div>
+  </div>
+</div>
+
+<p class="note">한국 본사가 <b>상담받을 때까지 전 과정을 통제</b> (마케팅·콘텐츠·광고·상담). 본격 치료 결정 시 <b>각국 현지 에이전시로 핸드오프</b> → 현지 진료. 한국은 진료 프로토콜 표준화 + 데이터 supervision 유지. 아래 표는 영역별 상세 분담.</p>
+
 <div class="ops-split">
   <div class="ops-col kr">
     <h4>🇰🇷 한국 본사</h4>
@@ -290,53 +469,116 @@
 </table>
 <p class="note">각 시장 진입 시 <b>현지 에이전시 협약이 사전 조건</b>. 협약 없이 광고 시작 X.</p>
 
-<h2 id="phase">📊 Phase별 채널 비중</h2>
-<div class="phase-cards">
-  <div class="phase-card pa">
-    <h4>Phase A (M0-2) — 빠른 검증</h4>
-    <p style="font-size:12px;color:#64748b;">유료 우선, 데이터 수집</p>
-    <div class="bar">
-      <div class="bar-ad" style="flex:60;"></div>
-      <div class="bar-or" style="flex:20;"></div>
-      <div class="bar-ko" style="flex:20;"></div>
-    </div>
-    <div class="legend">
-      <span><i class="bar-ad"></i>광고 60%</span>
-      <span><i class="bar-or"></i>오가닉 20%</span>
-      <span><i class="bar-ko"></i>KOL 20%</span>
+<h2 id="phase">📊 Phase별 채널 비중 (시간 진화)</h2>
+<p class="note">각 신규 시장은 진입 시점에서 Phase A부터 시작 — 6-9개월 사이클로 진화. 광고 → 오가닉 비중 점진 전환. 탭으로 각 Phase 디테일 확인.</p>
+
+<div class="ph-tabs">
+  <div class="ph-tab-bar">
+    <button class="ph-tab-btn active" data-ph-tab="a">Phase A (M0-2) · 검증</button>
+    <button class="ph-tab-btn" data-ph-tab="b">Phase B (M3-5) · 균형</button>
+    <button class="ph-tab-btn" data-ph-tab="c">Phase C (M6+) · 자산</button>
+  </div>
+
+  <!-- Phase A -->
+  <div class="ph-tab-panel active" id="ph-tab-a">
+    <div class="ph-content">
+      <div class="ph-info">
+        <h4 style="color:#92400e;">Phase A — 빠른 검증 (M0-2)</h4>
+        <p><b>목표</b>: 광고로 빠르게 데이터 수집 + winning audience·키워드 발견</p>
+        <p><b>핵심 활동</b>:</p>
+        <ul>
+          <li>Meta/Google/TikTok Ads 풀가동 (60%)</li>
+          <li>KOL 3-5명 협업 캠페인 (20%)</li>
+          <li>오가닉은 기초 셋업 + 사이트 구조 + 블로그 초기 콘텐츠 (20%)</li>
+        </ul>
+        <p><b>예상 결과</b>: CPL·CTR 데이터, winning creative 1-2개, KOL 효과 측정, 초기 상담 SNS 트래픽</p>
+      </div>
+      <div>
+        <div class="ph-bar-large">
+          <div class="ph-bar-ad" style="flex:60;">광고 60%</div>
+          <div class="ph-bar-or" style="flex:20;">SEO 20%</div>
+          <div class="ph-bar-ko" style="flex:20;">KOL 20%</div>
+        </div>
+        <div class="ph-meta">
+          <strong>중점 채널</strong>
+          Meta Ads 메인 · Google Ads 보조 · 한류 KOL · TikTok Ads (시장에 따라)
+        </div>
+        <div class="ph-meta" style="margin-top:10px;background:#fef3c7;">
+          <strong style="color:#92400e;">⚠️ 경고</strong>
+          이 단계에서 광고 비중을 너무 낮추면 데이터 수집 안 됨. 미친듯이 검증해야 winning 발견.
+        </div>
+      </div>
     </div>
   </div>
-  <div class="phase-card pb">
-    <h4>Phase B (M3-5) — 균형</h4>
-    <p style="font-size:12px;color:#64748b;">SEO 누적 시작</p>
-    <div class="bar">
-      <div class="bar-ad" style="flex:40;"></div>
-      <div class="bar-or" style="flex:40;"></div>
-      <div class="bar-ko" style="flex:20;"></div>
-    </div>
-    <div class="legend">
-      <span><i class="bar-ad"></i>광고 40%</span>
-      <span><i class="bar-or"></i>오가닉 40%</span>
-      <span><i class="bar-ko"></i>KOL 20%</span>
+
+  <!-- Phase B -->
+  <div class="ph-tab-panel" id="ph-tab-b">
+    <div class="ph-content">
+      <div class="ph-info">
+        <h4 style="color:#0e7490;">Phase B — 균형 (M3-5)</h4>
+        <p><b>목표</b>: 광고 효율 안정화 + 오가닉 SEO 누적 시작 + 자산 빌딩</p>
+        <p><b>핵심 활동</b>:</p>
+        <ul>
+          <li>광고 집중 ↓ (winning audience·키워드만, 40%)</li>
+          <li>오가닉 콘텐츠 누적 (블로그·SNS 페이지, 40%)</li>
+          <li>KOL 지속 (20%)</li>
+        </ul>
+        <p><b>예상 결과</b>: SEO 키워드 일부 ranking 진입, 블로그 누적 30편+, KOL 콘텐츠 자산화</p>
+      </div>
+      <div>
+        <div class="ph-bar-large">
+          <div class="ph-bar-ad" style="flex:40;">광고 40%</div>
+          <div class="ph-bar-or" style="flex:40;">SEO 40%</div>
+          <div class="ph-bar-ko" style="flex:20;">KOL 20%</div>
+        </div>
+        <div class="ph-meta">
+          <strong>중점 채널</strong>
+          Meta Ads (winning만) · 구글 SEO 블로그 · 자체 SNS 페이지 · KOL
+        </div>
+        <div class="ph-meta" style="margin-top:10px;background:#f0f9ff;">
+          <strong style="color:#0e7490;">🔄 핵심 결정</strong>
+          광고에서 winning 발견한 메시지·카피를 오가닉 채널 콘텐츠로 본격 발행. <b>데이터 → 콘텐츠 피드백</b>.
+        </div>
+      </div>
     </div>
   </div>
-  <div class="phase-card pc">
-    <h4>Phase C (M6+) — 자산 안정</h4>
-    <p style="font-size:12px;color:#64748b;">오가닉 우선</p>
-    <div class="bar">
-      <div class="bar-ad" style="flex:20;"></div>
-      <div class="bar-or" style="flex:65;"></div>
-      <div class="bar-ko" style="flex:15;"></div>
-    </div>
-    <div class="legend">
-      <span><i class="bar-ad"></i>광고 20%</span>
-      <span><i class="bar-or"></i>오가닉 65%</span>
-      <span><i class="bar-ko"></i>KOL 15%</span>
+
+  <!-- Phase C -->
+  <div class="ph-tab-panel" id="ph-tab-c">
+    <div class="ph-content">
+      <div class="ph-info">
+        <h4 style="color:#047857;">Phase C — 자산 안정 (M6+)</h4>
+        <p><b>목표</b>: 오가닉이 메인 트래픽 source · 광고는 결정적 키워드만 · 자산 evergreen화</p>
+        <p><b>핵심 활동</b>:</p>
+        <ul>
+          <li>광고는 conversion 키워드·retargeting만 (20%)</li>
+          <li>오가닉 SEO·SNS 자체 페이지·KOL이 메인 (65%)</li>
+          <li>KOL 지속 협업 + 자체 인플루언서 풀 구축 (15%)</li>
+        </ul>
+        <p><b>예상 결과</b>: 광고 의존도 ↓ · ROI 정점 · 다음 시장(베트남/영어) 진입 trigger</p>
+      </div>
+      <div>
+        <div class="ph-bar-large">
+          <div class="ph-bar-ad" style="flex:20;">광고 20%</div>
+          <div class="ph-bar-or" style="flex:65;">SEO 65%</div>
+          <div class="ph-bar-ko" style="flex:15;">KOL 15%</div>
+        </div>
+        <div class="ph-meta">
+          <strong>중점 채널</strong>
+          구글 SEO · Facebook/Line OA 자체 페이지 · KOL 협업 · retargeting 광고
+        </div>
+        <div class="ph-meta" style="margin-top:10px;background:#ecfdf5;">
+          <strong style="color:#047857;">🎯 다음 단계</strong>
+          이 Phase 도달 = 시장 검증 완료. <b>다음 시장으로 진입</b> (TH→VN→EN). 모델 표준화 문서 작성.
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
-<h2 id="sns">💬 시장별 상담 채널 (한국 본사 응대)</h2>
+<h2 id="sns">💬 시장별 채널 매트릭스 (상담 + 오가닉 + 유료)</h2>
+
+<h3>8.1 상담 채널 (한국 본사 응대)</h3>
 <table>
   <thead>
     <tr><th>시장</th><th>메인 상담 채널</th><th>한국 응대 인력 언어</th></tr>
@@ -348,6 +590,368 @@
     <tr><td>🇺🇸🇮🇳🇵🇭🇲🇾 EN</td><td><span class="badge b-green">WhatsApp</span> + <span class="badge b-blue">Messenger</span></td><td>한국어 + <b>영어 인력</b></td></tr>
   </tbody>
 </table>
+
+<h3>8.2 시장별 오가닉 / 유료 주력 채널</h3>
+<table>
+  <thead>
+    <tr><th>축</th><th>오가닉 메인</th><th>오가닉 보조</th><th>유료 메인</th><th>유료 보조</th><th>CPC 메모</th></tr>
+  </thead>
+  <tbody>
+    <tr style="background:#f0f9ff;">
+      <td><b>🇰🇷 KR</b></td>
+      <td><span class="badge b-green">네이버 블로그</span> <span class="badge b-green">카페</span> <span class="badge b-green">지식인</span></td>
+      <td>인스타·유튜브·카카오 채널·구글 SEO</td>
+      <td><span class="badge b-amber">네이버 파워링크</span> <span class="badge b-amber">GFA</span></td>
+      <td>Meta Ads, 카카오 광고, 유튜브 Ads</td>
+      <td>본진 (네이버 73%)</td>
+    </tr>
+    <tr style="background:#fffbeb;">
+      <td><b>🇹🇭 TH</b></td>
+      <td><span class="badge b-green">Facebook 페이지</span> <span class="badge b-green">Line OA</span></td>
+      <td>Instagram·TikTok·유튜브·구글 SEO (태국어)</td>
+      <td><span class="badge b-amber">Meta Ads (FB/IG/TikTok)</span></td>
+      <td>Google Ads, Line Ads, 한류 KOL</td>
+      <td>$0.60 (CPM 중간)</td>
+    </tr>
+    <tr style="background:#f0fdf4;">
+      <td><b>🇻🇳 VN</b></td>
+      <td><span class="badge b-green">Facebook</span> <span class="badge b-green">Zalo</span></td>
+      <td>TikTok (폭증)·유튜브·구글 SEO (베트남어)</td>
+      <td><span class="badge b-amber">Meta Ads</span> <span class="badge b-amber">TikTok Ads</span></td>
+      <td>Google Ads, Zalo Ads, 베트남 KOL</td>
+      <td><b>$0.18 (저비용)</b></td>
+    </tr>
+    <tr style="background:#faf5ff;">
+      <td><b>🇺🇸🇮🇳🇵🇭🇲🇾 EN</b></td>
+      <td><span class="badge b-green">구글 SEO</span> <span class="badge b-green">유튜브</span></td>
+      <td>Instagram·Facebook (PH 1위)·Reddit (US 의료 Q&amp;A)</td>
+      <td><span class="badge b-amber">Google Ads</span> (IN/PH/MY) + <span class="badge b-amber">Meta Ads</span> (US)</td>
+      <td>YouTube Ads, TikTok Ads (PH), WhatsApp 그룹 (IN)</td>
+      <td>US $1-2.5(도구)/$5-7(HGH) · <b>IN $0.10 (광고 효율 1위)</b> · PH $0.15 · MY $0.27</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="info-box">
+  <strong>핵심 인사이트</strong>
+  <ul style="margin:0;">
+    <li>🇰🇷 한국: <b>네이버 비중 압도</b>. 글로벌과 채널 셋업이 다름 (별도 운영).</li>
+    <li>🇹🇭 태국: <b>Facebook과 Line이 메인</b>. Line OA는 유료가 아닌 <b>자체 채널(오가닉) + 상담 채널</b> 이중 활용.</li>
+    <li>🇻🇳 베트남: <b>Zalo가 자국 SNS + 메신저</b>. Facebook과 병행. <b>TikTok 폭증</b> 트렌드.</li>
+    <li>🇺🇸🇮🇳🇵🇭🇲🇾 영어: <b>구글 SEO가 핵심 오가닉</b>. 유료는 <b>인도 광고 효율 1위 ($0.10)</b>, 미국은 HGH 키워드 비싸 SEO·콘텐츠 중심.</li>
+  </ul>
+</div>
+
+<div class="warn-box">
+  <strong>Phase 진화에 따른 채널 비중</strong>
+  Phase A (M0-2): <b>유료 메인 60%</b> (Meta/Google/TikTok Ads) — 빠른 검증 ·
+  Phase B (M3-5): 오가닉 누적 시작 (블로그·SEO·자체 SNS 페이지) ·
+  Phase C (M6+): <b>오가닉 65%</b> (구글 SEO + Facebook/Line OA 등 자체 페이지 + KOL)
+</div>
+
+<h2 id="country-strategy">🌏 국가별 3축 실행 전략</h2>
+<p class="note">각 시장별 — <b>오가닉 마케팅</b> / <b>유료 마케팅</b> / <b>홈페이지 완성</b> 3축. 채널 우선순위 + 콘텐츠 유형 + 발행 빈도 + KPI 포함.</p>
+
+<div class="cs-tabs">
+  <div class="cs-tab-bar">
+    <button class="cs-tab-btn active" data-cs-tab="th">🇹🇭 태국 (Phase 1)</button>
+    <button class="cs-tab-btn" data-cs-tab="vn">🇻🇳 베트남 (Phase 2)</button>
+    <button class="cs-tab-btn" data-cs-tab="en">🇺🇸🇮🇳🇵🇭🇲🇾 영어 4시장 (Phase 3)</button>
+  </div>
+
+  <!-- 🇹🇭 TH -->
+  <div class="cs-tab-panel active" id="cs-tab-th">
+    <h3>🇹🇭 태국 (Phase 1, M0-9) — 메인 진입 시장</h3>
+
+    <div class="axis-card axis-organic">
+      <h4>🌱 Axis 1: 오가닉 마케팅</h4>
+      <div class="axis-cols">
+        <div>
+          <strong>핵심 채널 (우선순위)</strong>
+          <ol>
+            <li><b>Facebook 페이지</b> — 5,800만 사용자, 가족 단위 결정 + 의료 정보 공유</li>
+            <li><b>Line OA</b> — 자체 채널 + 1:1 상담 (5,400만)</li>
+            <li><b>구글 SEO 태국어</b> — 블로그 콘텐츠 누적 자산</li>
+            <li><b>Instagram</b> — 한류 친화 중상류층</li>
+            <li><b>TikTok</b> — 짧은 영상 (한류 트렌드)</li>
+            <li><b>YouTube</b> — 채용현 원장 강의·사례 영상</li>
+          </ol>
+        </div>
+        <div>
+          <strong>핵심 콘텐츠 유형</strong>
+          <ul>
+            <li><b>치료 사례 카드·영상</b> (dflo_0.1 200건 익명화 → 태국어)</li>
+            <li><b>의학 가이드</b> (성장호르몬·사춘기·영양) — 태국어</li>
+            <li><b>채용현 원장 퍼스널 브랜딩</b> (쌍둥이 아빠 의사 인터뷰)</li>
+            <li><b>환자 후기 카드</b> (의료광고법 익명화)</li>
+            <li><b>한류 KOL 재가공 콘텐츠</b></li>
+          </ul>
+          <p style="font-size:11.5px;color:#64748b;margin-top:6px;"><b>발행 빈도</b>: 페북/IG 주 3-5회 · Line OA 주 1-2회 broadcast · TikTok 주 2-3회 · YouTube 월 2-4편 · 블로그 주 2-3편</p>
+        </div>
+      </div>
+      <p class="axis-kpi">KPI: 페북 reach·engagement · Line OA 친구 수·답신율 · SEO 태국어 키워드 ranking · YouTube 시청 시간</p>
+    </div>
+
+    <div class="axis-card axis-paid">
+      <h4>💰 Axis 2: 유료 마케팅</h4>
+      <div class="axis-cols">
+        <div>
+          <strong>핵심 채널 (우선순위 + CPC)</strong>
+          <ol>
+            <li><b>Meta Ads</b> (FB/IG/TikTok 통합) — 메인, CPC $0.60</li>
+            <li><b>Google Ads 태국어</b> — โกรทฮอร์โมน · คลินิกเพิ่มความสูง</li>
+            <li><b>Line Ads (LAP)</b> — Line OA 친구 모집</li>
+            <li><b>한류 KOL Sponsored</b> — 인스타·틱톡</li>
+            <li><b>TikTok Ads</b> — 어린 부모 타겟 (별도)</li>
+          </ol>
+        </div>
+        <div>
+          <strong>광고 크리에이티브 유형</strong>
+          <ul>
+            <li><b>영상 광고</b> — 사례 영상, 채용현 원장 인터뷰</li>
+            <li><b>카드 이미지</b> — 사례 비교, 인포그래픽</li>
+            <li><b>Lead Form 광고</b> — Meta Lead Ads → Messenger 자동 응대</li>
+            <li><b>검색 광고 카피</b> — CTR 최적화 (의료법 컴플라이언스)</li>
+          </ul>
+          <p style="font-size:11.5px;color:#64748b;margin-top:6px;"><b>예산 분배 (Phase A 기준)</b>: Meta 60% / Google 20% / Line 10% / KOL 10%</p>
+        </div>
+      </div>
+      <p class="axis-kpi">KPI: CPL · CPM · CTR · ROAS · 상담 SNS 클릭 conversion</p>
+    </div>
+
+    <div class="axis-card axis-website">
+      <h4>🏠 Axis 3: 홈페이지 완성 (태국어 페이지)</h4>
+      <div class="axis-3col">
+        <div>
+          <strong>🎯 CTA</strong>
+          <ul>
+            <li>우측 하단 floating <b>Line + Messenger 듀얼 버튼</b></li>
+            <li>각 페이지 inline CTA (사례·블로그 끝)</li>
+            <li>모바일 Sticky header CTA</li>
+            <li>폼 → 콜백 옵션</li>
+          </ul>
+        </div>
+        <div>
+          <strong>🔍 SEO</strong>
+          <ul>
+            <li>hreflang ko ↔ th 정확 설정</li>
+            <li>Schema: MedicalOrganization, Physician (채용현 원장)</li>
+            <li>키워드: โกรทฮอร์โมน · คลินิกเพิ่มความสูง · ส่วนสูงเด็ก</li>
+            <li>백링크 (태국 의료 디렉토리, 한류 인플루언서)</li>
+            <li>Lighthouse 90+</li>
+          </ul>
+        </div>
+        <div>
+          <strong>📚 체류·재방문</strong>
+          <ul>
+            <li><b>사례 갤러리</b> (200건, 풍부한 시각 자료)</li>
+            <li><b>인터랙티브 도구</b> — 키 예측 계산기, BMI (태국어)</li>
+            <li>의학 블로그 (Q&amp;A, 시즌 콘텐츠)</li>
+            <li><b>Line OA Newsletter</b> 가입 유도</li>
+            <li>채용현 원장 영상 시리즈</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🇻🇳 VN -->
+  <div class="cs-tab-panel" id="cs-tab-vn">
+    <h3>🇻🇳 베트남 (Phase 2, M6-18) — 태국 모델 복제</h3>
+
+    <div class="axis-card axis-organic">
+      <h4>🌱 Axis 1: 오가닉 마케팅</h4>
+      <div class="axis-cols">
+        <div>
+          <strong>핵심 채널 (우선순위)</strong>
+          <ol>
+            <li><b>Facebook 페이지</b> — 7,500만+, 가장 큰 SNS</li>
+            <li><b>Zalo OA</b> — 베트남 자국 메신저/SNS, 1:1 상담</li>
+            <li><b>TikTok</b> — 베트남 폭증 트렌드</li>
+            <li><b>구글 SEO 베트남어</b> — cách tăng chiều cao 4.4K 등</li>
+            <li><b>YouTube</b></li>
+            <li><b>Instagram</b> — 도시 중상류층</li>
+          </ol>
+        </div>
+        <div>
+          <strong>핵심 콘텐츠 유형</strong>
+          <ul>
+            <li><b>치료 사례 베트남어</b> (카드·영상)</li>
+            <li><b>의학 가이드 베트남어</b> — NuBest 대안 포지셔닝</li>
+            <li><b>채용현 원장 한류 콘텐츠</b> (베트남어 자막)</li>
+            <li><b>식단 트렌드</b> — Thực đơn tăng chiều cao (하노이 발 11배 폭증)</li>
+            <li><b>결혼·취업 시장 키 중요성</b> 콘텐츠</li>
+          </ul>
+          <p style="font-size:11.5px;color:#64748b;margin-top:6px;"><b>발행 빈도</b>: 페북 주 3-5회 · Zalo OA 주 1-2회 · TikTok 주 2-3회 · 블로그 주 2-3편</p>
+        </div>
+      </div>
+      <p class="axis-kpi">KPI: 페북 reach · Zalo 친구 수 · TikTok 조회수 · SEO 베트남어 ranking</p>
+    </div>
+
+    <div class="axis-card axis-paid">
+      <h4>💰 Axis 2: 유료 마케팅</h4>
+      <div class="axis-cols">
+        <div>
+          <strong>핵심 채널 (우선순위 + CPC)</strong>
+          <ol>
+            <li><b>Meta Ads</b> (FB/IG) — 메인</li>
+            <li><b>TikTok Ads</b> — 별도 비중 ↑ (베트남 큼)</li>
+            <li><b>Zalo Ads</b> — 자국 플랫폼</li>
+            <li><b>Google Ads</b> — CPC $0.18 저비용</li>
+            <li><b>베트남 KOL</b></li>
+          </ol>
+        </div>
+        <div>
+          <strong>광고 크리에이티브 유형</strong>
+          <ul>
+            <li><b>영상 광고</b> — 한류 KOL + 사례 영상</li>
+            <li><b>이미지 카드</b> — 식단·운동 가이드</li>
+            <li><b>Lead Form</b> — Zalo OA 추가 CTA</li>
+            <li><b>NuBest 대안 메시지</b> — 한국 정통 의료 차별화</li>
+          </ul>
+          <p style="font-size:11.5px;color:#64748b;margin-top:6px;"><b>예산 분배</b>: Meta 50% / TikTok 25% / Zalo 10% / KOL 10% / Google 5%</p>
+        </div>
+      </div>
+      <p class="axis-kpi">KPI: CPL · CTR · Zalo 친구 모집 비용 · 상담 SNS 클릭 conversion</p>
+    </div>
+
+    <div class="axis-card axis-website">
+      <h4>🏠 Axis 3: 홈페이지 완성 (베트남어 페이지)</h4>
+      <div class="axis-3col">
+        <div>
+          <strong>🎯 CTA</strong>
+          <ul>
+            <li>우측 하단 <b>Zalo + Messenger 듀얼 버튼</b></li>
+            <li>inline CTA (베트남어)</li>
+            <li>모바일 Sticky CTA</li>
+          </ul>
+        </div>
+        <div>
+          <strong>🔍 SEO</strong>
+          <ul>
+            <li>hreflang ko ↔ vi</li>
+            <li>Schema: MedicalOrganization, Physician</li>
+            <li>키워드: cách tăng chiều cao · sữa tăng chiều cao · dự đoán chiều cao</li>
+            <li>NuBest 키워드 대체 포지셔닝</li>
+          </ul>
+        </div>
+        <div>
+          <strong>📚 체류·재방문</strong>
+          <ul>
+            <li>베트남어 키 예측 도구</li>
+            <li>한국 의료 신뢰성 시리즈</li>
+            <li>치료 사례 베트남어</li>
+            <li>한국식 식단 트렌드 가이드</li>
+            <li>Zalo OA newsletter</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🇺🇸🇮🇳🇵🇭🇲🇾 EN -->
+  <div class="cs-tab-panel" id="cs-tab-en">
+    <h3>🇺🇸🇮🇳🇵🇭🇲🇾 영어 4시장 (Phase 3, M12-24) — 1세트로 4국 도달</h3>
+
+    <div class="axis-card axis-organic">
+      <h4>🌱 Axis 1: 오가닉 마케팅</h4>
+      <div class="axis-cols">
+        <div>
+          <strong>핵심 채널 (우선순위)</strong>
+          <ol>
+            <li><b>구글 SEO 영어</b> — 가장 중요 (월 598K 4국 도달)</li>
+            <li><b>YouTube 영어</b> — 글로벌, 한류 친화</li>
+            <li><b>Instagram</b> — US/IN/PH 강세</li>
+            <li><b>Facebook</b> — PH 1위, US 30+ 강세</li>
+            <li><b>Reddit</b> — US 의료 Q&amp;A 커뮤니티</li>
+            <li><b>WhatsApp 그룹</b> — 인도 의료 커뮤니티</li>
+          </ol>
+        </div>
+        <div>
+          <strong>핵심 콘텐츠 유형</strong>
+          <ul>
+            <li><b>Height calculator/predictor 도구</b> (월 110K 검색)</li>
+            <li><b>HGH/Growth Hormone 가이드</b> (월 82K)</li>
+            <li><b>치료 사례 영어</b> 카드·영상</li>
+            <li><b>NuBest 대안 분석</b> (한국 정통 의료)</li>
+            <li><b>채용현 원장 영어 자막 영상</b></li>
+            <li><b>How to increase height 인도 특화</b> — 결혼·취업 모티베이션</li>
+          </ul>
+          <p style="font-size:11.5px;color:#64748b;margin-top:6px;"><b>발행 빈도</b>: 구글 SEO 블로그 주 2-3편 (영어 1세트로 4시장 도달) · YouTube 월 2-4편</p>
+        </div>
+      </div>
+      <p class="axis-kpi">KPI: SEO 영어 키워드 ranking (height calculator, hgh, how to increase height) · 도구 페이지 사용 수 · YouTube 시청 시간</p>
+    </div>
+
+    <div class="axis-card axis-paid">
+      <h4>💰 Axis 2: 유료 마케팅</h4>
+      <div class="axis-cols">
+        <div>
+          <strong>핵심 채널 (시장별)</strong>
+          <ul>
+            <li>🇮🇳 인도: <b>Google Ads 메인 (CPC $0.10, 광고 효율 1위)</b> · Meta · YouTube</li>
+            <li>🇵🇭 필리핀: <b>Meta + TikTok Ads</b> · Google ($0.15)</li>
+            <li>🇲🇾 말레이: <b>Meta Ads</b> · Google ($0.27)</li>
+            <li>🇺🇸 미국: <b>Google Ads 도구 키워드만 ($1-2.5)</b> · Meta. HGH는 SEO만 (CPC $5-7 비쌈)</li>
+          </ul>
+        </div>
+        <div>
+          <strong>광고 크리에이티브 유형</strong>
+          <ul>
+            <li><b>도구 키워드 광고</b> — height calculator (전 시장)</li>
+            <li><b>인도 결혼·취업 시장 모티베이션</b> 광고</li>
+            <li><b>치료 사례 영상</b> — 채용현 원장 인터뷰</li>
+            <li><b>NuBest 비교 카피</b> — 한국 정통 의료 차별화</li>
+            <li><b>Lead Form</b> — WhatsApp/Messenger 자동 응대</li>
+          </ul>
+          <p style="font-size:11.5px;color:#64748b;margin-top:6px;"><b>예산 분배 (4시장 통합)</b>: 인도 35% / 필리핀 20% / 미국 25% / 말레이 10% / 콘텐츠 제작 10%</p>
+        </div>
+      </div>
+      <p class="axis-kpi">KPI: CPL (인도 최저 목표) · CTR · 도구 페이지 conversion · 상담 SNS 클릭 conversion</p>
+    </div>
+
+    <div class="axis-card axis-website">
+      <h4>🏠 Axis 3: 홈페이지 완성 (영어 페이지)</h4>
+      <div class="axis-3col">
+        <div>
+          <strong>🎯 CTA</strong>
+          <ul>
+            <li><b>WhatsApp 버튼</b> (IN·PH·MY 메인)</li>
+            <li><b>Messenger 버튼</b> (US 메인)</li>
+            <li><b>Email/Form</b> (US 보조)</li>
+            <li>Calendly 예약 옵션 (US)</li>
+          </ul>
+        </div>
+        <div>
+          <strong>🔍 SEO</strong>
+          <ul>
+            <li>hreflang en-US/en-IN/en-PH/en-MY (또는 단일 en)</li>
+            <li>Schema: MedicalOrganization, Physician, Tool (calculator)</li>
+            <li>키워드: height calculator · how to increase height · hgh</li>
+            <li>US Reddit·Quora 백링크</li>
+            <li>도메인 권위 (DR) 빌딩 우선</li>
+          </ul>
+        </div>
+        <div>
+          <strong>📚 체류·재방문</strong>
+          <ul>
+            <li><b>Height calculator 도구</b> (체류·재방문 핵심 무기)</li>
+            <li>인터랙티브 height chart (연령·국가별)</li>
+            <li>의학 카테고리 가이드 시리즈</li>
+            <li>치료 사례 영어 (dflo_0.1)</li>
+            <li>미국·인도 한국 의료관광 후기</li>
+            <li>Newsletter 가입 (영어)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="info-box">
+  <strong>🇰🇷 KR (한국 본진) — 별도 운영 (기존 가동 중)</strong>
+  네이버 SEO 본진 + 카카오 채널 상담 + 기존 광고 운영. 글로벌과 채널 셋업이 다르므로 별도 매뉴얼 (<code>documents/연세새봄의원_마케팅전략 260323.html</code>). 글로벌 콘텐츠는 한국어 베이스에서 AI 자동 번역으로 확장.
+</div>
 
 <h2 id="assets">🏛️ 공유 자산 구조</h2>
 
@@ -459,6 +1063,30 @@
 <script>
 const kwData = [];
 const topics = [];
+
+// Country strategy tabs (3 axis x country)
+document.querySelectorAll('.cs-tab-btn').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    var tab = btn.getAttribute('data-cs-tab');
+    document.querySelectorAll('.cs-tab-btn').forEach(function(b){ b.classList.remove('active'); });
+    document.querySelectorAll('.cs-tab-panel').forEach(function(p){ p.classList.remove('active'); });
+    btn.classList.add('active');
+    var panel = document.getElementById('cs-tab-' + tab);
+    if (panel) panel.classList.add('active');
+  });
+});
+
+// Phase tabs (channel mix evolution)
+document.querySelectorAll('.ph-tab-btn').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    var tab = btn.getAttribute('data-ph-tab');
+    document.querySelectorAll('.ph-tab-btn').forEach(function(b){ b.classList.remove('active'); });
+    document.querySelectorAll('.ph-tab-panel').forEach(function(p){ p.classList.remove('active'); });
+    btn.classList.add('active');
+    var panel = document.getElementById('ph-tab-' + tab);
+    if (panel) panel.classList.add('active');
+  });
+});
 </script>
 
 </body>
