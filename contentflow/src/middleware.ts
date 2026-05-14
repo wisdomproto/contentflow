@@ -7,6 +7,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|api/).*)',
+    // 정적 파일(.html 등 public 자산)은 auth 미들웨어 제외 — strategy-templates iframe 등
+    '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:html|svg|png|jpg|jpeg|gif|webp|ico)$).*)',
   ],
 }
