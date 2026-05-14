@@ -82,6 +82,8 @@ node scripts/fix-article-tone.mjs        # 기본글 톤 수정
 - **HTML 형식**: 기존 `parseStrategyHtml`(`lib/strategy-html-parser.ts`)과 호환되도록 `<script>const kwData=[...]; const topics=[...];</script>` 또는 `<table class="kw-table">`/`.cycle-item` 구조 권장
 - **임포트 다이얼로그**(`strategy-import-dialog.tsx`): 탭으로 "템플릿 선택"(드롭다운) + "파일 업로드" 양쪽 지원
 - **기존 AI 생성 흐름**: `StrategyInputForm`·5개 탭 컴포넌트(overview/keyword/channel/content/kpi)는 코드는 남아 있지만 현재 페이지에서 사용 안 함 (필요시 별도 진입점 추가)
+- **187 글로벌 마케팅 전략 페이지 5종** (2026-05-14): `187-global-market.html`(10개국 시장 분석) · `187-global-strategy.html`(큰 그림 — 3축 유기적 사이클 + hub-spoke 운영 구조 + Phase 탭 + 국가별 3축 탭) · `187-th/vn/en-operations.html`(국가별 디테일 작전 페이지 — 전략+실행 통합, 페르소나·키워드·90일 캘린더, hero 색상 국가 구분)
+- **정적 파일 serving 버그 수정**: `src/middleware.ts` matcher가 `.html` 등 정적 파일 확장자를 Supabase auth 미들웨어에서 제외 — 안 하면 strategy-templates HTML이 Next.js catch-all로 fallback (iframe 깨짐)
 
 ## 외부 사이트 블로그 연동 API (2026-05-14)
 - **엔드포인트**: `GET /api/blog/by-project/[projectId]/posts?lang={lang}` — 공개 read-only

@@ -1,7 +1,7 @@
 # 187 성장클리닉 글로벌 마케팅 전략 — 설계 스펙
 
 - **작성일**: 2026-05-14
-- **상태**: Draft (Brainstorming 완료, Implementation Plan 대기)
+- **상태**: v2 — 전략 + 국가별 작전 페이지 작성 완료 · HTML 시각화 5종 · 정량 수치(예산·KPI·M0) TBD
 - **대상**: 연세새봄의원 (강남 압구정) — 187 성장클리닉
 - **본진 원장**: 채용현 (쌍둥이 아빠 의사 퍼스널 브랜딩)
 - **핵심 자산**: 채용현 원장 책 + 박미정 책(외부) + **dflo_0.1 백엔드 환자 치료 사례 + DFlo 187 성장케어 앱**
@@ -298,7 +298,10 @@ spec 승인 후 `superpowers:writing-plans` skill로 구체 실행 계획 작성
 
 ## 13. 참고 자료
 
-- `contentflow/public/strategy-templates/187-global-strategy.html` — 본 spec의 HTML 시각화
+- `contentflow/public/strategy-templates/187-global-strategy.html` — 본 spec의 HTML 시각화 (3축 사이클 + hub-spoke + Phase 탭 + 국가별 3축 탭)
+- `contentflow/public/strategy-templates/187-th-operations.html` — 🇹🇭 태국 Phase 1 작전 페이지 (전략+실행 통합 · 90일 캘린더)
+- `contentflow/public/strategy-templates/187-vn-operations.html` — 🇻🇳 베트남 Phase 2 작전 페이지
+- `contentflow/public/strategy-templates/187-en-operations.html` — 🇺🇸🇮🇳🇵🇭🇲🇾 영어 4시장 Phase 3 작전 페이지
 - `contentflow/public/strategy-templates/187-global-market.html` — 10개국 시장 분석
 - `documents/연세새봄의원_마케팅전략 260323.html` — 한국 본진 통합 마케팅 전략
 - `C:/projects/dflo_0.1/` — 환자 데이터 백엔드 + DFlo 앱 (`cases/` 폴더, `v4/`, `ai-server/`)
