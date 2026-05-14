@@ -206,6 +206,43 @@
   .hub-spoke.kr-direct .spoke-mode { color: #047857; }
   .hub-spoke.agency .spoke-mode { color: #c2410c; }
   .hub-spoke .spoke-role { font-size: 10.5px; color: #64748b; line-height: 1.45; }
+
+  /* Ranked card grid (channel priority) */
+  .rank-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 8px 0 14px; }
+  @media (max-width: 640px) { .rank-grid { grid-template-columns: 1fr; } }
+  .rank-item { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; background: #fff; border: 1px solid #e2e8f0; border-left: 3px solid #059669; border-radius: 6px; }
+  .rank-item .rk-num { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; background: #059669; color: #fff; font-weight: 800; font-size: 12px; display: flex; align-items: center; justify-content: center; }
+  .rank-item.rk-2 .rk-num { background: #0891b2; }
+  .rank-item.rk-3 .rk-num { background: #0e7490; }
+  .rank-item.rk-4 .rk-num, .rank-item.rk-5 .rk-num, .rank-item.rk-6 .rk-num { background: #94a3b8; }
+  .rank-item .rk-body { font-size: 12.5px; line-height: 1.45; }
+  .rank-item .rk-icon { font-size: 16px; margin-right: 4px; }
+  .rank-item .rk-name { font-weight: 800; color: #0f172a; }
+  .rank-item .rk-meta { font-size: 11px; color: #64748b; margin-top: 2px; }
+
+  /* CPC big-number market cards */
+  .cpc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin: 14px 0; }
+  @media (min-width: 900px) { .cpc-grid { grid-template-columns: repeat(4, 1fr); } }
+  .cpc-card { padding: 16px 14px; background: #fff; border: 1px solid #e2e8f0; border-top: 4px solid var(--c-accent, #4A2D6B); border-radius: 8px; }
+  .cpc-card .cpc-flag { font-size: 22px; line-height: 1; }
+  .cpc-card .cpc-country { font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 6px; }
+  .cpc-card .cpc-num { font-size: 32px; font-weight: 900; color: #0f172a; line-height: 1; margin: 8px 0 4px; }
+  .cpc-card .cpc-num-suffix { font-size: 14px; font-weight: 600; color: #64748b; }
+  .cpc-card .cpc-label { font-size: 11px; color: #64748b; margin-bottom: 10px; }
+  .cpc-card .cpc-channels { display: flex; flex-wrap: wrap; gap: 4px; }
+  .cpc-card .cpc-chip { font-size: 11px; padding: 3px 8px; background: #f1f5f9; color: #334155; border-radius: 999px; font-weight: 600; }
+  .cpc-card .cpc-chip.primary { background: #4A2D6B; color: #fff; }
+
+  /* Decision card groups */
+  .dec-group { margin: 18px 0; }
+  .dec-group .dg-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: #4A2D6B; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #e2e8f0; }
+  .dec-group .dg-title .dg-icon { font-size: 18px; }
+  .dec-cards { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  @media (min-width: 720px) { .dec-cards { grid-template-columns: repeat(2, 1fr); } }
+  .dec-card { padding: 12px 14px; background: #fff; border: 1px solid #e2e8f0; border-left: 3px solid #4A2D6B; border-radius: 6px; }
+  .dec-card .dc-item { font-size: 12.5px; font-weight: 800; color: #0f172a; margin-bottom: 4px; }
+  .dec-card .dc-decision { font-size: 12px; color: #4A2D6B; font-weight: 700; margin-bottom: 4px; }
+  .dec-card .dc-rationale { font-size: 11.5px; color: #475569; line-height: 1.5; }
 </style>
 </head>
 <body>
@@ -347,25 +384,90 @@
 </div>
 
 <h2 id="decisions">✅ 합의된 결정 사항 (12개)</h2>
-<table>
-  <thead>
-    <tr><th>#</th><th>항목</th><th>결정 내용</th></tr>
-  </thead>
-  <tbody>
-    <tr><td><b>1</b></td><td>진출 범위</td><td>KR(본진) + TH + VN + EN(US/IN/PH/MY) — 4축</td></tr>
-    <tr><td><b>2</b></td><td>진입 순서</td><td>TH → VN → EN</td></tr>
-    <tr><td><b>3</b></td><td>자산 상태</td><td>한국 본진만 가동, TH/VN/EN 제로 베이스</td></tr>
-    <tr><td><b>4</b></td><td>채널 믹스</td><td>Phase별 진화: M0-2 광고 60% → M3-5 50/50 → M6+ 오가닉 65%</td></tr>
-    <tr><td><b>5</b></td><td>TH Phase 1 페르소나</td><td>태국 현지 중상류층 (방콕/치앙마이)</td></tr>
-    <tr><td><b>6</b></td><td>전략 Approach</td><td>콘텐츠 자산형 + 인플루언서/광고 가속 하이브리드</td></tr>
-    <tr><td><b>7</b></td><td>상담 채널</td><td>TH=Line+Messenger / VN=Zalo+Messenger / EN=WhatsApp+Messenger / KR=카톡</td></tr>
-    <tr style="background:#ecfdf5;"><td><b>8</b></td><td><b>운영 분리</b></td><td><b>한국(마케팅·상담) + 현지 에이전시(클로징·진료) 핸드오프 모델</b></td></tr>
-    <tr style="background:#ecfdf5;"><td><b>9</b></td><td><b>상담 응대 주체</b></td><td><b>한국 본사 직접 응대</b> (각국 언어 가능 인력 + 챗봇 1차)</td></tr>
-    <tr style="background:#ecfdf5;"><td><b>10</b></td><td><b>DFlo 앱 역할</b></td><td><b>funnel 핵심</b> — 그룹 A(상담만 nurture) / 그룹 B(본격 치료 + 앱 관리)</td></tr>
-    <tr style="background:#ecfdf5;"><td><b>11</b></td><td><b>콘텐츠 source</b></td><td><b>dflo_0.1 백엔드 환자 데이터 자동 파이프</b> + 채용현 원장 자산 + 외부 책</td></tr>
-    <tr><td><b>12</b></td><td>콘텐츠 생산</td><td>한국어 베이스 + AI 자동번역 + 현지 의료 검토 + KOL 재가공</td></tr>
-  </tbody>
-</table>
+
+<div class="dec-group">
+  <div class="dg-title"><span class="dg-icon">⏱️</span>순서 · Phase (진출 범위 / 타이밍)</div>
+  <div class="dec-cards">
+    <div class="dec-card">
+      <div class="dc-item">진출 범위</div>
+      <div class="dc-decision">→ KR(본진) + TH + VN + EN(US/IN/PH/MY) — 4축</div>
+      <div class="dc-rationale">한류 친화 + CPC 효율 순으로 4개 축 선정</div>
+    </div>
+    <div class="dec-card">
+      <div class="dc-item">진입 순서</div>
+      <div class="dc-decision">→ TH → VN → EN</div>
+      <div class="dc-rationale">태국 검증 후 모델 복제로 후속 시장 진입 가속</div>
+    </div>
+    <div class="dec-card">
+      <div class="dc-item">자산 상태</div>
+      <div class="dc-decision">→ 한국 본진만 가동, TH/VN/EN 제로 베이스</div>
+      <div class="dc-rationale">글로벌 3축은 모두 신규 구축 시작</div>
+    </div>
+    <div class="dec-card">
+      <div class="dc-item">채널 믹스</div>
+      <div class="dc-decision">→ Phase별 진화: M0-2 광고 60% → M3-5 50/50 → M6+ 오가닉 65%</div>
+      <div class="dc-rationale">초기 빠른 데이터 수집 후 오가닉 자산으로 전환</div>
+    </div>
+  </div>
+</div>
+
+<div class="dec-group">
+  <div class="dg-title"><span class="dg-icon">⚙️</span>운영 (조직 · 인력 · 파트너십)</div>
+  <div class="dec-cards">
+    <div class="dec-card">
+      <div class="dc-item">운영 분리</div>
+      <div class="dc-decision">→ 한국(마케팅·상담) + 현지 에이전시(클로징·진료) 핸드오프 모델</div>
+      <div class="dc-rationale">책임 분리로 마케팅 통제력↑ + 현지 의료법 부담↓</div>
+    </div>
+    <div class="dec-card">
+      <div class="dc-item">상담 응대 주체</div>
+      <div class="dc-decision">→ 한국 본사 직접 응대 (각국 언어 가능 인력 + 챗봇 1차)</div>
+      <div class="dc-rationale">CRM 가시성 확보 + 응답 SLA: 평일 5분 / 야간 30분</div>
+    </div>
+    <div class="dec-card">
+      <div class="dc-item">TH Phase 1 페르소나</div>
+      <div class="dc-decision">→ 태국 현지 중상류층 (방콕/치앙마이)</div>
+      <div class="dc-rationale">한류 친화 + 의료 소비 여력 있는 타겟</div>
+    </div>
+    <div class="dec-card">
+      <div class="dc-item">전략 Approach</div>
+      <div class="dc-decision">→ 콘텐츠 자산형 + 인플루언서/광고 가속 하이브리드</div>
+      <div class="dc-rationale">단기 광고 검증 + 장기 오가닉 자산 병행</div>
+    </div>
+  </div>
+</div>
+
+<div class="dec-group">
+  <div class="dg-title"><span class="dg-icon">📡</span>채널 (메신저 · 광고 · SEO)</div>
+  <div class="dec-cards">
+    <div class="dec-card">
+      <div class="dc-item">상담 채널</div>
+      <div class="dc-decision">→ TH=Line+Messenger / VN=Zalo+Messenger / EN=WhatsApp+Messenger / KR=카톡</div>
+      <div class="dc-rationale">현지 1위 메신저 + Messenger 이중 CTA로 유입 극대화</div>
+    </div>
+    <div class="dec-card">
+      <div class="dc-item">DFlo 앱 역할</div>
+      <div class="dc-decision">→ funnel 핵심 — 그룹 A(상담만 nurture) / 그룹 B(본격 치료 + 앱 관리)</div>
+      <div class="dc-rationale">단순 retention이 아닌 active funnel 도구로 활용</div>
+    </div>
+  </div>
+</div>
+
+<div class="dec-group">
+  <div class="dg-title"><span class="dg-icon">📝</span>콘텐츠 (생산 · 번역 · source)</div>
+  <div class="dec-cards">
+    <div class="dec-card">
+      <div class="dc-item">콘텐츠 source</div>
+      <div class="dc-decision">→ dflo_0.1 백엔드 환자 데이터 자동 파이프 + 채용현 원장 자산 + 외부 책</div>
+      <div class="dc-rationale">YMYL E-E-A-T 핵심 — 경쟁자가 복제 불가능한 source</div>
+    </div>
+    <div class="dec-card">
+      <div class="dc-item">콘텐츠 생산</div>
+      <div class="dc-decision">→ 한국어 베이스 + AI 자동번역 + 현지 의료 검토 + KOL 재가공</div>
+      <div class="dc-rationale">1회 생산 → 8개 언어 확장, ContentFlow 인프라 활용</div>
+    </div>
+  </div>
+</div>
 
 <h2 id="funnel">🔄 글로벌 환자 Funnel (핵심)</h2>
 <div class="funnel-box">
@@ -597,45 +699,64 @@
 </table>
 
 <h3>8.2 시장별 오가닉 / 유료 주력 채널</h3>
-<table>
-  <thead>
-    <tr><th>축</th><th>오가닉 메인</th><th>오가닉 보조</th><th>유료 메인</th><th>유료 보조</th><th>CPC 메모</th></tr>
-  </thead>
-  <tbody>
-    <tr style="background:#f0f9ff;">
-      <td><b>🇰🇷 KR</b></td>
-      <td><span class="badge b-green">네이버 블로그</span> <span class="badge b-green">카페</span> <span class="badge b-green">지식인</span></td>
-      <td>인스타·유튜브·카카오 채널·구글 SEO</td>
-      <td><span class="badge b-amber">네이버 파워링크</span> <span class="badge b-amber">GFA</span></td>
-      <td>Meta Ads, 카카오 광고, 유튜브 Ads</td>
-      <td>본진 (네이버 73%)</td>
-    </tr>
-    <tr style="background:#fffbeb;">
-      <td><b>🇹🇭 TH</b></td>
-      <td><span class="badge b-green">Facebook 페이지</span> <span class="badge b-green">Line OA</span></td>
-      <td>Instagram·TikTok·유튜브·구글 SEO (태국어)</td>
-      <td><span class="badge b-amber">Meta Ads (FB/IG/TikTok)</span></td>
-      <td>Google Ads, Line Ads, 한류 KOL</td>
-      <td>$0.60 (CPM 중간)</td>
-    </tr>
-    <tr style="background:#f0fdf4;">
-      <td><b>🇻🇳 VN</b></td>
-      <td><span class="badge b-green">Facebook</span> <span class="badge b-green">Zalo</span></td>
-      <td>TikTok (폭증)·유튜브·구글 SEO (베트남어)</td>
-      <td><span class="badge b-amber">Meta Ads</span> <span class="badge b-amber">TikTok Ads</span></td>
-      <td>Google Ads, Zalo Ads, 베트남 KOL</td>
-      <td><b>$0.18 (저비용)</b></td>
-    </tr>
-    <tr style="background:#faf5ff;">
-      <td><b>🇺🇸🇮🇳🇵🇭🇲🇾 EN</b></td>
-      <td><span class="badge b-green">구글 SEO</span> <span class="badge b-green">유튜브</span></td>
-      <td>Instagram·Facebook (PH 1위)·Reddit (US 의료 Q&amp;A)</td>
-      <td><span class="badge b-amber">Google Ads</span> (IN/PH/MY) + <span class="badge b-amber">Meta Ads</span> (US)</td>
-      <td>YouTube Ads, TikTok Ads (PH), WhatsApp 그룹 (IN)</td>
-      <td>US $1-2.5(도구)/$5-7(HGH) · <b>IN $0.10 (광고 효율 1위)</b> · PH $0.15 · MY $0.27</td>
-    </tr>
-  </tbody>
-</table>
+<div class="cpc-grid">
+  <div class="cpc-card" style="--c-accent: #1a56a0;">
+    <div class="cpc-flag">🇰🇷</div>
+    <div class="cpc-country">한국 — Korea</div>
+    <div class="cpc-num">본진<span class="cpc-num-suffix"> 운영중</span></div>
+    <div class="cpc-label">네이버 73% 점유 · 별도 운영</div>
+    <div class="cpc-channels">
+      <span class="cpc-chip primary">네이버 블로그</span>
+      <span class="cpc-chip primary">카페</span>
+      <span class="cpc-chip primary">지식인</span>
+      <span class="cpc-chip">네이버 파워링크</span>
+      <span class="cpc-chip">GFA</span>
+      <span class="cpc-chip">카카오 광고</span>
+    </div>
+  </div>
+  <div class="cpc-card" style="--c-accent: #DC2626;">
+    <div class="cpc-flag">🇹🇭</div>
+    <div class="cpc-country">태국 — Thailand</div>
+    <div class="cpc-num">$0.60<span class="cpc-num-suffix"> CPC</span></div>
+    <div class="cpc-label">Meta/Google · CPM 중간</div>
+    <div class="cpc-channels">
+      <span class="cpc-chip primary">Facebook 페이지</span>
+      <span class="cpc-chip primary">Line OA</span>
+      <span class="cpc-chip">Meta Ads</span>
+      <span class="cpc-chip">Google Ads</span>
+      <span class="cpc-chip">Line Ads</span>
+      <span class="cpc-chip">한류 KOL</span>
+    </div>
+  </div>
+  <div class="cpc-card" style="--c-accent: #D97706;">
+    <div class="cpc-flag">🇻🇳</div>
+    <div class="cpc-country">베트남 — Vietnam</div>
+    <div class="cpc-num">$0.18<span class="cpc-num-suffix"> CPC</span></div>
+    <div class="cpc-label">저비용 고효율 · TikTok 폭증</div>
+    <div class="cpc-channels">
+      <span class="cpc-chip primary">Facebook</span>
+      <span class="cpc-chip primary">Zalo</span>
+      <span class="cpc-chip">Meta Ads</span>
+      <span class="cpc-chip">TikTok Ads</span>
+      <span class="cpc-chip">Zalo Ads</span>
+      <span class="cpc-chip">베트남 KOL</span>
+    </div>
+  </div>
+  <div class="cpc-card" style="--c-accent: #1D4ED8;">
+    <div class="cpc-flag">🇺🇸🇮🇳🇵🇭🇲🇾</div>
+    <div class="cpc-country">영어 4시장 — EN Axis</div>
+    <div class="cpc-num">$0.10<span class="cpc-num-suffix"> IN CPC</span></div>
+    <div class="cpc-label">IN $0.10 최저 · PH $0.15 · MY $0.27 · US $1–2.5</div>
+    <div class="cpc-channels">
+      <span class="cpc-chip primary">구글 SEO</span>
+      <span class="cpc-chip primary">YouTube</span>
+      <span class="cpc-chip">Google Ads</span>
+      <span class="cpc-chip">Meta Ads</span>
+      <span class="cpc-chip">Reddit</span>
+      <span class="cpc-chip">WhatsApp</span>
+    </div>
+  </div>
+</div>
 
 <div class="info-box">
   <strong>핵심 인사이트</strong>
@@ -673,14 +794,14 @@
       <div class="axis-cols">
         <div>
           <strong>핵심 채널 (우선순위)</strong>
-          <ol>
-            <li><b>Facebook 페이지</b> — 5,800만 사용자, 가족 단위 결정 + 의료 정보 공유</li>
-            <li><b>Line OA</b> — 자체 채널 + 1:1 상담 (5,400만)</li>
-            <li><b>구글 SEO 태국어</b> — 블로그 콘텐츠 누적 자산</li>
-            <li><b>Instagram</b> — 한류 친화 중상류층</li>
-            <li><b>TikTok</b> — 짧은 영상 (한류 트렌드)</li>
-            <li><b>YouTube</b> — 채용현 원장 강의·사례 영상</li>
-          </ol>
+          <div class="rank-grid">
+            <div class="rank-item rk-1"><div class="rk-num">1</div><div class="rk-body"><span class="rk-icon">📘</span><span class="rk-name">Facebook 페이지</span><div class="rk-meta">5,800만 사용자 · 가족 단위 결정 + 의료 정보 공유</div></div></div>
+            <div class="rank-item rk-2"><div class="rk-num">2</div><div class="rk-body"><span class="rk-icon">💚</span><span class="rk-name">Line OA</span><div class="rk-meta">자체 채널 + 1:1 상담 (5,400만)</div></div></div>
+            <div class="rank-item rk-3"><div class="rk-num">3</div><div class="rk-body"><span class="rk-icon">🔍</span><span class="rk-name">구글 SEO 태국어</span><div class="rk-meta">블로그 콘텐츠 누적 자산</div></div></div>
+            <div class="rank-item rk-4"><div class="rk-num">4</div><div class="rk-body"><span class="rk-icon">📷</span><span class="rk-name">Instagram</span><div class="rk-meta">한류 친화 중상류층</div></div></div>
+            <div class="rank-item rk-5"><div class="rk-num">5</div><div class="rk-body"><span class="rk-icon">🎵</span><span class="rk-name">TikTok</span><div class="rk-meta">짧은 영상 (한류 트렌드)</div></div></div>
+            <div class="rank-item rk-6"><div class="rk-num">6</div><div class="rk-body"><span class="rk-icon">▶️</span><span class="rk-name">YouTube</span><div class="rk-meta">채용현 원장 강의·사례 영상</div></div></div>
+          </div>
         </div>
         <div>
           <strong>핵심 콘텐츠 유형</strong>
@@ -769,14 +890,14 @@
       <div class="axis-cols">
         <div>
           <strong>핵심 채널 (우선순위)</strong>
-          <ol>
-            <li><b>Facebook 페이지</b> — 7,500만+, 가장 큰 SNS</li>
-            <li><b>Zalo OA</b> — 베트남 자국 메신저/SNS, 1:1 상담</li>
-            <li><b>TikTok</b> — 베트남 폭증 트렌드</li>
-            <li><b>구글 SEO 베트남어</b> — cách tăng chiều cao 4.4K 등</li>
-            <li><b>YouTube</b></li>
-            <li><b>Instagram</b> — 도시 중상류층</li>
-          </ol>
+          <div class="rank-grid">
+            <div class="rank-item rk-1"><div class="rk-num">1</div><div class="rk-body"><span class="rk-icon">📘</span><span class="rk-name">Facebook 페이지</span><div class="rk-meta">7,500만+ · 가장 큰 SNS</div></div></div>
+            <div class="rank-item rk-2"><div class="rk-num">2</div><div class="rk-body"><span class="rk-icon">💙</span><span class="rk-name">Zalo OA</span><div class="rk-meta">베트남 자국 메신저/SNS · 1:1 상담</div></div></div>
+            <div class="rank-item rk-3"><div class="rk-num">3</div><div class="rk-body"><span class="rk-icon">🎵</span><span class="rk-name">TikTok</span><div class="rk-meta">베트남 폭증 트렌드</div></div></div>
+            <div class="rank-item rk-4"><div class="rk-num">4</div><div class="rk-body"><span class="rk-icon">🔍</span><span class="rk-name">구글 SEO 베트남어</span><div class="rk-meta">cách tăng chiều cao 4.4K 등</div></div></div>
+            <div class="rank-item rk-5"><div class="rk-num">5</div><div class="rk-body"><span class="rk-icon">▶️</span><span class="rk-name">YouTube</span><div class="rk-meta">영상 콘텐츠 채널</div></div></div>
+            <div class="rank-item rk-6"><div class="rk-num">6</div><div class="rk-body"><span class="rk-icon">📷</span><span class="rk-name">Instagram</span><div class="rk-meta">도시 중상류층</div></div></div>
+          </div>
         </div>
         <div>
           <strong>핵심 콘텐츠 유형</strong>
@@ -863,14 +984,14 @@
       <div class="axis-cols">
         <div>
           <strong>핵심 채널 (우선순위)</strong>
-          <ol>
-            <li><b>구글 SEO 영어</b> — 가장 중요 (월 598K 4국 도달)</li>
-            <li><b>YouTube 영어</b> — 글로벌, 한류 친화</li>
-            <li><b>Instagram</b> — US/IN/PH 강세</li>
-            <li><b>Facebook</b> — PH 1위, US 30+ 강세</li>
-            <li><b>Reddit</b> — US 의료 Q&amp;A 커뮤니티</li>
-            <li><b>WhatsApp 그룹</b> — 인도 의료 커뮤니티</li>
-          </ol>
+          <div class="rank-grid">
+            <div class="rank-item rk-1"><div class="rk-num">1</div><div class="rk-body"><span class="rk-icon">🔍</span><span class="rk-name">구글 SEO 영어</span><div class="rk-meta">가장 중요 · 월 598K 4국 도달</div></div></div>
+            <div class="rank-item rk-2"><div class="rk-num">2</div><div class="rk-body"><span class="rk-icon">▶️</span><span class="rk-name">YouTube 영어</span><div class="rk-meta">글로벌 · 한류 친화</div></div></div>
+            <div class="rank-item rk-3"><div class="rk-num">3</div><div class="rk-body"><span class="rk-icon">📷</span><span class="rk-name">Instagram</span><div class="rk-meta">US/IN/PH 강세</div></div></div>
+            <div class="rank-item rk-4"><div class="rk-num">4</div><div class="rk-body"><span class="rk-icon">📘</span><span class="rk-name">Facebook</span><div class="rk-meta">PH 1위 · US 30+ 강세</div></div></div>
+            <div class="rank-item rk-5"><div class="rk-num">5</div><div class="rk-body"><span class="rk-icon">🤖</span><span class="rk-name">Reddit</span><div class="rk-meta">US 의료 Q&amp;A 커뮤니티</div></div></div>
+            <div class="rank-item rk-6"><div class="rk-num">6</div><div class="rk-body"><span class="rk-icon">💬</span><span class="rk-name">WhatsApp 그룹</span><div class="rk-meta">인도 의료 커뮤니티</div></div></div>
+          </div>
         </div>
         <div>
           <strong>핵심 콘텐츠 유형</strong>
