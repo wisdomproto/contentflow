@@ -46,55 +46,74 @@ export async function GET(
 
   const contentIds = records.map((r: any) => r.content_id)
 
-  // Step 2: Fetch blog_contents (sibling table via shared content_id)
-  const { data: blogContents } = await adminClient
-    .from('blog_contents')
-    .select('id, content_id, seo_title, url_slug, meta_description, primary_keyword, secondary_keywords, seo_details')
-    .in('content_id', contentIds)
+  // Steps 2-4: Fetch blog_contents, base_articles, translations in parallel
+  const [blogContentsRes, baseArticlesRes, translationsRes] = await Promise.all([
+    adminClient
+      .from('blog_contents')
+      .select('id, content_id, seo_title, url_slug, meta_description, primary_keyword, secondary_keywords, seo_details')
+      .in('content_id', contentIds),
+    adminClient
+      .from('base_articles')
+      .select('content_id, body, body_plain_text')
+      .in('content_id', contentIds),
+    lang !== 'ko'
+      ? adminClient
+          .from('translations')
+          .select('content_id, language, channel_type, status, title, body, cards_json, seo_title, seo_description')
+          .in('content_id', contentIds)
+          .eq('language', lang)
+          .eq('channel_type', 'blog')
+          .eq('status', 'completed')
+      : Promise.resolve({ data: [] as any[], error: null }),
+  ])
 
-  // Step 3: Fetch base_articles (sibling table via shared content_id)
-  const { data: baseArticles } = await adminClient
-    .from('base_articles')
-    .select('content_id, body, body_plain_text')
-    .in('content_id', contentIds)
-
-  // Step 4: Non-Korean — fetch translations for body override
-  let translations: any[] = []
-  if (lang !== 'ko') {
-    const { data: trData } = await adminClient
-      .from('translations')
-      .select('content_id, language, channel_type, status, title, body, cards_json, seo_title, seo_description')
-      .in('content_id', contentIds)
-      .eq('language', lang)
-      .eq('channel_type', 'blog')
-      .eq('status', 'completed')
-    translations = trData || []
+  if (blogContentsRes.error || baseArticlesRes.error || translationsRes.error) {
+    return Response.json(
+      { error: (blogContentsRes.error || baseArticlesRes.error || translationsRes.error)!.message },
+      { status: 500 },
+    )
   }
 
-  // Step 5: Fetch blog_cards keyed by blog_content_id
-  const blogContentIds = (blogContents || []).map((bc: any) => bc.id).filter(Boolean)
-  const { data: cards } = blogContentIds.length
+  const blogContents = blogContentsRes.data || []
+  const baseArticles = baseArticlesRes.data || []
+  const translations = translationsRes.data || []
+
+  // Step 5: Fetch blog_cards (depends on blogContentIds from step 2)
+  const blogContentIds = blogContents.map((bc: any) => bc.id).filter(Boolean)
+  const cardsRes = blogContentIds.length
     ? await adminClient
         .from('blog_cards')
         .select('id, blog_content_id, card_type, content, sort_order')
         .in('blog_content_id', blogContentIds)
         .order('sort_order', { ascending: true })
-    : { data: [] as any[] }
+    : { data: [] as any[], error: null }
 
-  // Build lookup maps
-  const bcByContentId = Object.fromEntries((blogContents || []).map((b: any) => [b.content_id, b]))
-  const baByContentId = Object.fromEntries((baseArticles || []).map((a: any) => [a.content_id, a]))
+  if (cardsRes.error) {
+    return Response.json({ error: cardsRes.error.message }, { status: 500 })
+  }
+  const cards = cardsRes.data || []
+
+  // Build O(1) lookup maps
+  const translationByContentId = new Map(translations.map((t: any) => [t.content_id, t]))
+  const blogContentByContentId = new Map(blogContents.map((b: any) => [b.content_id, b]))
+  const baseArticleByContentId = new Map(baseArticles.map((a: any) => [a.content_id, a]))
+  const cardsByBlogContentId = new Map<string, any[]>()
+  for (const c of cards) {
+    const arr = cardsByBlogContentId.get(c.blog_content_id) || []
+    arr.push(c)
+    cardsByBlogContentId.set(c.blog_content_id, arr)
+  }
 
   // Build response — skip non-ko records without translation
   const result = records
     .map((r: any) => {
-      const tr = lang !== 'ko' ? translations.find((t) => t.content_id === r.content_id) : null
+      const tr = lang !== 'ko' ? translationByContentId.get(r.content_id) : null
       // Skip if non-ko and no translation (avoid leaking Korean body)
       if (lang !== 'ko' && !tr?.body) return null
 
-      const bc = bcByContentId[r.content_id]
-      const ba = baByContentId[r.content_id]
-      const postCards = (cards || []).filter((c: any) => c.blog_content_id === bc?.id)
+      const bc = blogContentByContentId.get(r.content_id)
+      const ba = baseArticleByContentId.get(r.content_id)
+      const postCards = bc?.id ? (cardsByBlogContentId.get(bc.id) || []) : []
 
       return {
         id: r.id,
