@@ -95,13 +95,26 @@ export interface WpCredentials {
   appPassword: string;
 }
 
+/**
+ * Site registered to receive published blog content via the
+ * `self_hosted` channel. One per project (Project.published_site).
+ * The site is responsible for fetching `/api/blog/by-project/{id}/posts`
+ * at build time (e.g. Vite prerender) and serving the resulting HTML.
+ */
 export interface PublishedSite {
+  /** Display name shown in UI (e.g. "dflo"). */
   name: string;
+  /** Origin URL with protocol (e.g. "https://www.dr187growup.com"). */
   domain: string;
+  /** Optional path prefix used during staging (e.g. "/test"). Empty when prod-ready. */
   domain_prefix?: string;
+  /** ISO 639-1 language codes that are activated for this site (e.g. ["ko", "th"]). */
   active_languages: string[];
+  /** Map of language → URL path under the domain (e.g. { ko: "/blog", th: "/th/blog" }). */
   language_paths: Record<string, string>;
+  /** Optional webhook to ping (POST {}) when scheduled posts transition to published. */
   deploy_webhook_url?: string;
+  /** When false, ContentFlow ignores scheduled rows for this site. */
   enabled: boolean;
 }
 
