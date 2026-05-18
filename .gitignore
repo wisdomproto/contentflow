@@ -4,6 +4,7 @@ node_modules/
 .env*.local
 *.log
 .superpowers/brainstorm/
+.claude/worktrees/
 contentflow/node_modules/
 contentflow/.next/
 contentflow/.env.local
