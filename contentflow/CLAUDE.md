@@ -73,7 +73,8 @@ node scripts/fix-article-tone.mjs        # 기본글 톤 수정
 - **채널별 번역**: `lib/channel-translator.ts` — 채널별 HTML 소스 번역 → R2 저장 → `translations` 테이블에 URL 기록
 - **N블로그 다국어 필터**: 한국어가 아닌 언어 선택 시 N블로그 탭 자동 숨김
 - **한글 IME**: `components/ui/korean-input.tsx` — `<KoreanInput>`, `<KoreanTextarea>` 공용 (`value`+`onCommit` 패턴)
-- **채널 탭**: 기본글 | N블로그 | WordPress | 카드뉴스 | 스레드 | 롱폼 | 숏폼
+- **채널 탭**: 기본글 | N블로그 | 내부 블로그 | 카드뉴스 | 스레드 | 롱폼 | 숏폼
+- **내부 블로그 발행**: `internal-blog-panel.tsx` (WordPress 탭 교체) + `bulk-schedule-dialog.tsx` (일괄 예약 마법사, 5단계)
 
 ## 마케팅 전략 페이지 (HTML 뷰어 방식)
 - **드롭다운 + iframe 뷰어**: `components/strategy/strategy-dashboard.tsx`가 `public/strategy-templates/`의 HTML 파일을 드롭다운에서 선택해서 iframe으로 표시
@@ -85,10 +86,12 @@ node scripts/fix-article-tone.mjs        # 기본글 톤 수정
 - **187 글로벌 마케팅 전략 페이지 5종** (2026-05-14): `187-global-market.html`(10개국 시장 분석) · `187-global-strategy.html`(큰 그림 — 3축 유기적 사이클 + hub-spoke 운영 구조 + Phase 탭 + 국가별 3축 탭) · `187-th/vn/en-operations.html`(국가별 디테일 작전 페이지 — 전략+실행 통합, 페르소나·키워드·90일 캘린더, hero 색상 국가 구분)
 - **정적 파일 serving 버그 수정**: `src/middleware.ts` matcher가 `.html` 등 정적 파일 확장자를 Supabase auth 미들웨어에서 제외 — 안 하면 strategy-templates HTML이 Next.js catch-all로 fallback (iframe 깨짐)
 
-## 외부 사이트 블로그 연동 API (2026-05-14)
+## 외부 사이트 블로그 연동 API (2026-05-14, 업데이트 2026-05-18)
 - **엔드포인트**: `GET /api/blog/by-project/[projectId]/posts?lang={lang}` — 공개 read-only
-- **용도**: dflo(187 성장클리닉) 등 외부 사이트가 빌드 타임에 published 글을 fetch해 정적 HTML로 렌더 (WordPress 우회)
-- **권한**: service-role 클라이언트 + `status='published'` 필터 + `contents!inner:content_id(project_id)` PostgREST inner join으로 **프로젝트 격리 강제** (다른 프로젝트 글 누수 방지)
+- **용도**: dflo(187 성장클리닉) 등 외부 사이트가 빌드 타임에 published 글을 fetch해 정적 HTML로 렌더
+- **노출 게이트**: `publish_records.channel='self_hosted' AND status='published' AND language={lang}` (기존 `blog_contents.status` 기반에서 변경)
+- **자동 발행 체인**: Supabase `pg_cron`(`publish-self-hosted`, 매 1분) → `scheduled→published` 전환 + `deploy_webhook_queue` enqueue → Vercel Cron(`/api/cron/fire-deploy-webhooks`, 매 1분) → queue 폴링 → Railway deploy webhook 호출 (debounce)
+- **다국어 fallback**: `lang≠ko`인데 translations 미완성이면 해당 글 응답에서 skip (한국어 본문 노출 금지)
 - **응답**: `{posts: [{id, slug, title, body_html, cards, global_style, ...}]}` — translations 테이블 매칭 시 해당 언어 body/title 우선
 - **캐시**: `Cache-Control: s-maxage=300, stale-while-revalidate=600` (CDN 5분, SWR 10분)
 - **파일**: `src/app/api/blog/by-project/[projectId]/posts/route.ts`

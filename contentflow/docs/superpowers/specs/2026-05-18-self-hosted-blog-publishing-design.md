@@ -1,5 +1,7 @@
 # Self-Hosted Blog Publishing (Phase A — Infrastructure)
 
+> **Status:** ✅ Implemented (2026-05-18) — see `plans/2026-05-18-self-hosted-blog-publishing.md`
+
 ## Overview
 
 ContentFlow에서 사용자의 본진 사이트(예: dflo / `https://www.dr187growup.com`)로

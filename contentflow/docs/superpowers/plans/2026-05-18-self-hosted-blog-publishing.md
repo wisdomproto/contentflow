@@ -4,6 +4,8 @@
 
 **Goal:** ContentFlow에서 사용자의 본진 사이트(`https://www.dr187growup.com`)로 다국어(KR/TH) 블로그 글을 예약 발행하는 시스템 구축. WordPress 채널을 "내부 블로그(self_hosted)"로 교체.
 
+> **Status:** ✅ Implemented (2026-05-18) — pending user E2E verification (Task 16).
+
 **Architecture:** ContentFlow `publish_records`를 마스터 상태로, Supabase `pg_cron`이 매 1분 `scheduled→published` 전환. 별도 Next.js cron route(Vercel Cron 트리거)가 `deploy_webhook_queue`를 폴링해 Railway deploy webhook을 debounce 호출. dflo v4(Vite SPA)는 빌드 타임 prerender 스크립트로 ContentFlow API에서 글을 fetch해 정적 HTML 생성 (SEO 풀파워).
 
 **Tech Stack:** Next.js 16, Supabase Postgres (`pg_cron`), Vercel Cron, `@google/genai` (이미 설치), `@aws-sdk/client-s3` (R2, 이미 설치), Vitest, dflo는 Vite + React 19 + react-router-dom v7
