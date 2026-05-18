@@ -1,9 +1,9 @@
 'use client'
 
 import { useProjectStore } from '@/stores/project-store'
+import { SelfHostedCard } from './self-hosted-card'
 
 const CHANNELS = [
-  { id: 'wordpress', name: 'WordPress', icon: 'W', color: 'bg-[#21759b]' },
   { id: 'instagram', name: 'Instagram', icon: 'IG', color: 'bg-gradient-to-br from-[#f09433] to-[#dc2743]' },
   { id: 'youtube', name: 'YouTube', icon: 'YT', color: 'bg-[#ff0000]' },
   { id: 'facebook', name: 'Facebook / Threads', icon: 'FB', color: 'bg-[#1877f2]' },
@@ -12,17 +12,16 @@ const CHANNELS = [
 export function ChannelCards() {
   const { selectedProjectId, projects } = useProjectStore()
   const project = projects.find(p => p.id === selectedProjectId)
-  const wpConnected = !!project?.wp_credentials
   const metaConnected = !!project?.meta_credentials
 
   function isConnected(channelId: string) {
-    if (channelId === 'wordpress') return wpConnected
     if (channelId === 'instagram' || channelId === 'facebook') return metaConnected
     return false
   }
 
   return (
     <div className="grid grid-cols-4 gap-3">
+      <SelfHostedCard />
       {CHANNELS.map(ch => {
         const connected = isConnected(ch.id)
         return (
