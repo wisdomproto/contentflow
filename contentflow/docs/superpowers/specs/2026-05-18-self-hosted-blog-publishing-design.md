@@ -130,12 +130,15 @@ ALTER TABLE projects ADD COLUMN published_site JSONB DEFAULT NULL;
 
 ### (b) 채널 enum 교체
 ```sql
+-- 순서 중요: DROP → UPDATE legacy → ADD new constraint (역순이면 violation)
 ALTER TABLE publish_records DROP CONSTRAINT publish_records_channel_check;
+
+-- 새 enum에 없는 모든 값(wordpress 등)을 self_hosted로 마이그
+UPDATE publish_records SET channel='self_hosted'
+WHERE channel NOT IN ('self_hosted', 'naver_blog', 'instagram', 'facebook', 'threads', 'youtube');
+
 ALTER TABLE publish_records ADD CONSTRAINT publish_records_channel_check
   CHECK (channel IN ('self_hosted', 'naver_blog', 'instagram', 'facebook', 'threads', 'youtube'));
-
--- 기존 wordpress 행 마이그레이션 (187 프로젝트엔 거의 없을 가능성)
-UPDATE publish_records SET channel='self_hosted' WHERE channel='wordpress';
 ```
 
 ### (c) 중복 예약 방지

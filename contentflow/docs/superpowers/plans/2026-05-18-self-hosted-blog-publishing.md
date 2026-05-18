@@ -72,12 +72,15 @@
 ALTER TABLE projects ADD COLUMN IF NOT EXISTS published_site JSONB DEFAULT NULL;
 
 -- (b) publish_records.channel enum 교체 (wordpress 제거, self_hosted 추가)
+-- 순서 중요: DROP → UPDATE legacy → ADD new constraint
 ALTER TABLE publish_records DROP CONSTRAINT IF EXISTS publish_records_channel_check;
+
+-- 새 enum에 없는 모든 값(wordpress 포함)을 self_hosted로 마이그
+UPDATE publish_records SET channel='self_hosted'
+WHERE channel NOT IN ('self_hosted', 'naver_blog', 'instagram', 'facebook', 'threads', 'youtube');
+
 ALTER TABLE publish_records ADD CONSTRAINT publish_records_channel_check
   CHECK (channel IN ('self_hosted', 'naver_blog', 'instagram', 'facebook', 'threads', 'youtube'));
-
--- 기존 wordpress 행이 있다면 self_hosted로 이전 (187 프로젝트엔 거의 없을 가능성)
-UPDATE publish_records SET channel='self_hosted' WHERE channel='wordpress';
 
 -- (c) 중복 예약 방지
 CREATE UNIQUE INDEX IF NOT EXISTS uniq_publish_self_hosted
