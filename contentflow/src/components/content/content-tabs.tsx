@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { useProjectStore } from '@/stores/project-store';
 import { BaseArticlePanel } from './base-article-panel';
 import { BlogPanel } from './blog-panel';
-import { WordpressPanel } from './wordpress-panel';
+import { InternalBlogPanel } from './internal-blog-panel';
 import { CardNewsPanel } from './cardnews-panel';
 import { ThreadsPanel } from './threads-panel';
 import { YoutubePanel } from './youtube-panel';
@@ -22,7 +22,7 @@ import {
   type ChannelKind,
 } from '@/lib/channel-translator';
 
-type TabId = 'base-article' | 'wordpress' | 'blog' | 'cardnews' | 'threads' | 'youtube' | 'shorts';
+type TabId = 'base-article' | 'self_hosted' | 'blog' | 'cardnews' | 'threads' | 'youtube' | 'shorts';
 
 interface Tab {
   id: TabId;
@@ -33,7 +33,7 @@ interface Tab {
 const tabs: Tab[] = [
   { id: 'base-article', label: '기본글', icon: <FileText size={16} /> },
   { id: 'blog', label: 'N 블로그', icon: <BookOpen size={16} /> },
-  { id: 'wordpress', label: 'WordPress', icon: <Globe size={16} /> },
+  { id: 'self_hosted', label: '내부 블로그', icon: <Globe size={16} /> },
   { id: 'cardnews', label: '카드뉴스', icon: <Image size={16} /> },
   { id: 'threads', label: '스레드', icon: <MessageCircle size={16} /> },
   { id: 'youtube', label: '롱폼', icon: <Youtube size={16} /> },
@@ -77,7 +77,7 @@ export function ContentTabs() {
     const channelKind: ChannelKind | null =
       activeTab === 'base-article' ? 'base'
       : activeTab === 'blog' ? 'naver_blog'
-      : activeTab === 'wordpress' ? 'wordpress'
+      : activeTab === 'self_hosted' ? 'self_hosted'
       : activeTab === 'cardnews' ? 'instagram'
       : activeTab === 'threads' ? 'threads'
       : activeTab === 'youtube' ? 'youtube'
@@ -96,10 +96,10 @@ export function ContentTabs() {
         alert('기본글을 먼저 작성해주세요.');
         return;
       }
-    } else if (channelKind === 'naver_blog' || channelKind === 'wordpress') {
+    } else if (channelKind === 'naver_blog' || channelKind === 'self_hosted') {
       const blog = getBlogContents(selectedContentId)[0];
       if (!blog) {
-        alert(`${channelKind === 'naver_blog' ? 'N블로그' : 'WordPress'} 콘텐츠가 없습니다.`);
+        alert(`${channelKind === 'naver_blog' ? 'N블로그' : '내부 블로그'} 콘텐츠가 없습니다.`);
         return;
       }
       sourceHtml = buildBlogCardsHtml(getBlogCards(blog.id));
@@ -186,7 +186,7 @@ export function ContentTabs() {
 
       {/* Language Selector — only shows when project has 2+ languages */}
       <LanguageSelector
-        channel={activeTab === 'blog' ? 'naver_blog' : activeTab === 'cardnews' ? 'instagram' : activeTab}
+        channel={activeTab === 'blog' ? 'naver_blog' : activeTab === 'cardnews' ? 'instagram' : activeTab === 'self_hosted' ? 'self_hosted' : activeTab}
         onTranslate={handleTranslate}
         translationStatuses={translationStatuses}
       />
@@ -194,7 +194,7 @@ export function ContentTabs() {
       {/* Tab Content */}
       <div className="flex-1 overflow-y-auto p-6 bg-muted/30">
         {activeTab === 'base-article' && <BaseArticlePanel />}
-        {activeTab === 'wordpress' && <WordpressPanel />}
+        {activeTab === 'self_hosted' && <InternalBlogPanel />}
         {activeTab === 'blog' && <BlogPanel />}
         {activeTab === 'cardnews' && <CardNewsPanel />}
         {activeTab === 'threads' && <ThreadsPanel />}

@@ -5,6 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from '@/components/ui/dialog';
 import { BlogCardItem, AddCardButton, formatForMobile } from './blog-card-item';
 import { ChannelModelSelector } from './channel-model-selector';
 import { cn } from '@/lib/utils';
@@ -23,9 +26,9 @@ import type { Content, Project, BlogContent, BlogCard } from '@/types/database';
 import { fetchAiGenerate } from '@/lib/sse-stream-parser';
 import { WorkflowStepBar, type WorkflowStep as WorkflowStepType } from './workflow-step-bar';
 
-// ─── Inner: 개별 WordPress 콘텐츠 ────────────────────────────────
+// ─── Inner: 개별 내부 블로그 콘텐츠 ────────────────────────────────
 
-interface WordpressPanelInnerProps {
+interface InternalBlogPanelInnerProps {
   blogContent: BlogContent;
   content: Content;
   project: Project;
@@ -42,7 +45,7 @@ const WORKFLOW_STEPS = [
   { step: 4 as WorkflowStep, label: 'SEO 검사', icon: '🔍' },
 ];
 
-function WordpressPanelInner({ blogContent, content, project, hasBaseArticle, channelModels }: WordpressPanelInnerProps) {
+function InternalBlogPanelInner({ blogContent, content, project, hasBaseArticle, channelModels }: InternalBlogPanelInnerProps) {
   const {
     getBaseArticle,
     getBlogCards,
@@ -51,11 +54,45 @@ function WordpressPanelInner({ blogContent, content, project, hasBaseArticle, ch
     updateBlogCard,
     deleteBlogCard,
     addBlogCard,
+    schedulePublish,
+    fetchPublishRecordsForContent,
   } = useProjectStore();
   const { savedKeywords } = useProjectStore();
 
+  const site = project?.published_site;
+  const activeLangs = site?.active_languages || ['ko'];
+
   const baseArticle = getBaseArticle(content.id);
   const cards = getBlogCards(blogContent.id);
+
+  // Publish records & status badges
+  const records = useProjectStore((s) => s.getPublishRecordsForContent(content.id));
+
+  useEffect(() => {
+    void fetchPublishRecordsForContent(content.id);
+  }, [content.id, fetchPublishRecordsForContent]);
+
+  // Schedule dialog state
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [scheduleLang, setScheduleLang] = useState(activeLangs[0] || 'ko');
+  const [scheduleAt, setScheduleAt] = useState(() => new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16));
+
+  async function handleSchedulePublish() {
+    try {
+      await schedulePublish({
+        contentId: content.id,
+        projectId: project.id,
+        language: scheduleLang,
+        channel: 'self_hosted',
+        scheduledAt: new Date(scheduleAt).toISOString(),
+      });
+      setScheduleOpen(false);
+      alert(`${scheduleLang.toUpperCase()} 예약 완료`);
+      void fetchPublishRecordsForContent(content.id);
+    } catch (err) {
+      alert(`예약 실패: ${(err as Error).message}`);
+    }
+  }
 
   const [showPromptDialog, setShowPromptDialog] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -103,94 +140,51 @@ function WordpressPanelInner({ blogContent, content, project, hasBaseArticle, ch
   const [urlSlug, setUrlSlug] = useState(blogContent.url_slug ?? '');
   const [structureGenerating, setStructureGenerating] = useState(false);
   const [keywordGenerating, setKeywordGenerating] = useState(false);
-  const [publishing, setPublishing] = useState(false);
-  const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
 
   // AI auto-pick keywords from pool based on content
   const handleAutoPickKeywords = async () => {
-    const pool = (savedKeywords as any[]).map((sk: any) => sk.keyword)
-    if (pool.length === 0) return
-    setKeywordGenerating(true)
+    const pool = (savedKeywords as any[]).map((sk: any) => sk.keyword);
+    if (pool.length === 0) return;
+    setKeywordGenerating(true);
     try {
-      const articleText = baseArticle?.body_plain_text?.substring(0, 500) || content.title
+      const articleText = baseArticle?.body_plain_text?.substring(0, 500) || content.title;
       const prompt = `Pick the most relevant keywords from the pool for this content.
 
 Title: ${content.title}
 Content: ${articleText}
 Pool: ${pool.join(', ')}
 
-Return ONLY JSON: { "primary": "best keyword", "secondary": ["2nd", "3rd"] }`
-      const fullText = await fetchAiGenerate(prompt, channelModels.textModel)
-      const cleaned = fullText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
-      const match = cleaned.match(/\{[\s\S]*\}/)
+Return ONLY JSON: { "primary": "best keyword", "secondary": ["2nd", "3rd"] }`;
+      const fullText = await fetchAiGenerate(prompt, channelModels.textModel);
+      const cleaned = fullText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const match = cleaned.match(/\{[\s\S]*\}/);
       if (match) {
-        const parsed = JSON.parse(match[0])
+        const parsed = JSON.parse(match[0]);
         if (parsed.primary) {
-          setPrimaryKeyword(parsed.primary)
-          const secs = (parsed.secondary || []) as string[]
-          setSecondaryKeywords(secs.join(', '))
-          updateBlogContent(blogContent.id, { primary_keyword: parsed.primary, secondary_keywords: secs })
-          // Fetch Google-derived secondaries
+          setPrimaryKeyword(parsed.primary);
+          const secs = (parsed.secondary || []) as string[];
+          setSecondaryKeywords(secs.join(', '));
+          updateBlogContent(blogContent.id, { primary_keyword: parsed.primary, secondary_keywords: secs });
           const res = await fetch('/api/google/keywords', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ keywords: [parsed.primary] }),
-          })
-          const data = await res.json()
+          });
+          const data = await res.json();
           if (data.keywords?.length) {
             const googleSecs = data.keywords
               .filter((k: any) => k.keyword !== parsed.primary && (k.searchVolume || 0) > 0)
               .sort((a: any, b: any) => (b.searchVolume || 0) - (a.searchVolume || 0))
-              .slice(0, 5).map((k: any) => k.keyword)
-            const allSecs = [...secs, ...googleSecs.filter((g: string) => !secs.includes(g))]
-            setSecondaryKeywords(allSecs.join(', '))
-            updateBlogContent(blogContent.id, { secondary_keywords: allSecs })
+              .slice(0, 5).map((k: any) => k.keyword);
+            const allSecs = [...secs, ...googleSecs.filter((g: string) => !secs.includes(g))];
+            setSecondaryKeywords(allSecs.join(', '));
+            updateBlogContent(blogContent.id, { secondary_keywords: allSecs });
           }
         }
       }
-    } catch (err) { console.error('Auto-pick error:', err) }
-    finally { setKeywordGenerating(false) }
-  }
-
-  // WordPress publish
-  const handleAddToQueue = async () => {
-    if (cards.length === 0) { alert('발행할 콘텐츠가 없습니다. AI 생성을 먼저 해주세요.'); return }
-
-    setPublishing(true)
-    try {
-      // Build HTML for metadata preview
-      const htmlParts = cards.map(card => {
-        const c = card.content as Record<string, unknown>
-        const heading = c?.heading ? `<h2>${c.heading}</h2>` : ''
-        const text = (c?.text as string) || ''
-        return `${heading}\n${text}`
-      }).join('\n\n')
-
-      const res = await fetch('/api/publish/wordpress', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mode: 'queue',
-          title: metaTitle || content.title,
-          content: htmlParts,
-          projectId: project.id,
-          contentId: content.id,
-          language: 'ko',
-        }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        setPublishedUrl('queued')
-        alert('발행 큐에 추가되었습니다. 발행 메뉴에서 확인하세요.')
-      } else {
-        alert(`발행 실패: ${data.error}`)
-      }
-    } catch (err) {
-      alert(`발행 오류: ${err}`)
-    } finally {
-      setPublishing(false)
-    }
-  }
+    } catch (err) { console.error('Auto-pick error:', err); }
+    finally { setKeywordGenerating(false); }
+  };
 
   const handleMetaTitleChange = (value: string) => {
     setMetaTitle(value);
@@ -230,7 +224,6 @@ Return ONLY JSON: { "primary": "best keyword", "secondary": ["2nd", "3rd"] }`
         const now = new Date().toISOString();
         const existingCards = getBlogCards(blogContent.id);
         const newCards: BlogCard[] = sections.map((section, i) => {
-          // Preserve existing image if card at same index has one
           const existing = existingCards[i]?.content as Record<string, string> | undefined;
           return {
             id: generateId(),
@@ -250,14 +243,13 @@ Return ONLY JSON: { "primary": "best keyword", "secondary": ["2nd", "3rd"] }`
           };
         });
 
-        // Apply mobile formatting before saving
         const formattedCards = newCards.map(card => {
           const c = card.content as Record<string, string>;
           return { ...card, content: { ...c, text: c.text ? formatForMobile(c.text) : '' } };
         });
         setBlogCardsForContent(blogContent.id, formattedCards);
       } catch {
-        alert('WordPress 섹션 파싱 실패. 다시 시도해 주세요.');
+        alert('내부 블로그 섹션 파싱 실패. 다시 시도해 주세요.');
       }
     },
     onError: (err: string) => {
@@ -269,7 +261,6 @@ Return ONLY JSON: { "primary": "best keyword", "secondary": ["2nd", "3rd"] }`
   const { isGeneratingImage, generatingCardId, imageProgress, generateCardImage, generateAllImages: generateAllCardImages, abort: abortImageGeneration } = useCardImageGeneration({
     getPrompt: (card: BlogCard) => {
       const idx = cards.findIndex((c) => c.id === card.id);
-      // Always use buildBlogImagePromptForCard to include imageInstruction
       const style = (card.content as Record<string, string>)?.image_style || channelModels.imageStyle || '';
       return buildBlogImagePromptForCard(project, cards, idx, style, channelModels.imageInstruction);
     },
@@ -300,8 +291,8 @@ Return ONLY JSON: { "primary": "best keyword", "secondary": ["2nd", "3rd"] }`
     const structureInstruction = headingStructure.trim()
       ? `\n\n## 콘텐츠 구조 (이 구조를 따르세요):\n${headingStructure}`
       : '';
-    const wpPrompt = `${prompt}${structureInstruction}\n\n## WordPress / Google SEO 최적화 지침\n- 주 키워드: "${primaryKeyword}" — 제목, 첫 문단, H2에 자연스럽게 배치\n- 보조 키워드: ${secondaryArr.join(', ')} — H2/H3와 본문에 분산 배치 (키워드 밀도 1~2%)\n- 검색 의도: ${searchIntent} — 이 의도에 맞는 콘텐츠 구성\n- H1/H2/H3 계층 구조를 명확히 사용하세요\n- 각 섹션에 내부링크 기회를 제안하세요\n- 이미지 alt 텍스트를 키워드가 포함된 설명형으로 작성하세요\n- 마지막에 FAQ 섹션(3~5개 질문)을 추가하세요 (GEO 최적화)\n- 구글 검색 의도에 맞는 자연스러운 키워드 배치를 사용하세요`;
-    setGeneratedPrompt(wpPrompt);
+    const blogPrompt = `${prompt}${structureInstruction}\n\n## 내부 블로그 / Google SEO 최적화 지침\n- 주 키워드: "${primaryKeyword}" — 제목, 첫 문단, H2에 자연스럽게 배치\n- 보조 키워드: ${secondaryArr.join(', ')} — H2/H3와 본문에 분산 배치 (키워드 밀도 1~2%)\n- 검색 의도: ${searchIntent} — 이 의도에 맞는 콘텐츠 구성\n- H1/H2/H3 계층 구조를 명확히 사용하세요\n- 각 섹션에 내부링크 기회를 제안하세요\n- 이미지 alt 텍스트를 키워드가 포함된 설명형으로 작성하세요\n- 마지막에 FAQ 섹션(3~5개 질문)을 추가하세요 (GEO 최적화)\n- 구글 검색 의도에 맞는 자연스러운 키워드 배치를 사용하세요`;
+    setGeneratedPrompt(blogPrompt);
     setShowPromptDialog(true);
   };
 
@@ -320,7 +311,6 @@ Return ONLY JSON: { "primary": "best keyword", "secondary": ["2nd", "3rd"] }`
         updateBlogCard(card.id, { content: { ...c, text: formatForMobile(c.text) } });
       }
     }
-    // Force TipTap editors to re-mount with new content
     setEditorKey(k => k + 1);
   };
 
@@ -341,7 +331,19 @@ Return ONLY JSON: { "primary": "best keyword", "secondary": ["2nd", "3rd"] }`
 
   return (
     <div className="space-y-4">
-      <ChannelTranslationView contentId={content.id} channel="wordpress" />
+      {/* Per-language status badges */}
+      <div className="flex gap-2 mb-3">
+        {activeLangs.map((lang) => {
+          const r = records.find((x) => x.language === lang);
+          return (
+            <Badge key={lang} variant={r?.status === 'published' ? 'default' : r ? 'secondary' : 'outline'}>
+              {lang.toUpperCase()}{r ? ` · ${r.status}${r.scheduled_at ? ' ' + new Date(r.scheduled_at).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' }) : ''}` : ''}
+            </Badge>
+          );
+        })}
+      </div>
+
+      <ChannelTranslationView contentId={content.id} channel="self_hosted" />
       <WorkflowStepBar steps={WORKFLOW_STEPS} currentStep={currentStep} onStepChange={setCurrentStep} />
 
       {/* Step 1: 키워드 설정 */}
@@ -369,7 +371,6 @@ Return ONLY JSON: { "primary": "best keyword", "secondary": ["2nd", "3rd"] }`
                     onClick={async () => {
                       setPrimaryKeyword(sk.keyword);
                       updateBlogContent(blogContent.id, { primary_keyword: sk.keyword });
-                      // Fetch Google secondary keywords
                       setKeywordGenerating(true);
                       try {
                         const res = await fetch('/api/google/keywords', {
@@ -507,7 +508,6 @@ Return ONLY valid JSON (no explanation) with this exact structure:
                     if (parsed.metaDescription) setMetaDescription(parsed.metaDescription);
                     if (parsed.urlSlug) setUrlSlug(parsed.urlSlug);
                     if (parsed.headingStructure) setHeadingStructure(parsed.headingStructure);
-                    // Save to DB immediately after AI structure generation
                     updateBlogContent(blogContent.id, {
                       seo_title: parsed.metaTitle || null,
                       meta_description: parsed.metaDescription || null,
@@ -527,7 +527,6 @@ Return ONLY valid JSON (no explanation) with this exact structure:
           </div>
           <p className="text-xs text-muted-foreground">키워드 기반으로 AI가 Meta Title, Description, H2/H3 구조를 자동 생성합니다.</p>
 
-          {/* SEO Meta Fields */}
           <div className="space-y-3">
             <div>
               <div className="flex items-center justify-between mb-1">
@@ -544,58 +543,37 @@ Return ONLY valid JSON (no explanation) with this exact structure:
                 className="text-sm"
               />
             </div>
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <label className="text-xs text-muted-foreground">Meta Title</label>
-            <span className={`text-[10px] ${metaTitle.length > 60 ? 'text-red-500' : 'text-muted-foreground'}`}>
-              {metaTitle.length} / 60
-            </span>
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs text-muted-foreground">Meta Description</label>
+                <span className={`text-[10px] ${metaDescription.length > 160 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                  {metaDescription.length} / 160
+                </span>
+              </div>
+              <Textarea
+                value={metaDescription}
+                onChange={(e) => setMetaDescription(e.target.value)}
+                placeholder="페이지 설명 (검색 결과에 표시)"
+                maxLength={200}
+                rows={2}
+                className="text-sm resize-none"
+              />
+              {metaDescription.length > 160 && (
+                <p className="text-xs text-red-500 mt-1">160자를 초과하면 검색 결과에서 잘릴 수 있습니다.</p>
+              )}
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">URL Slug</label>
+              <Input
+                value={urlSlug}
+                onChange={(e) => setUrlSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
+                placeholder="page-url-slug"
+                className="text-sm font-mono"
+              />
+              <p className="text-xs text-muted-foreground mt-1">영문 소문자, 숫자, 하이픈만 사용 가능합니다.</p>
+            </div>
           </div>
-          <Input
-            value={metaTitle}
-            onChange={(e) => handleMetaTitleChange(e.target.value)}
-            placeholder="페이지 제목 (검색 결과에 표시)"
-            maxLength={80}
-            className="text-sm"
-          />
-          {metaTitle.length > 60 && (
-            <p className="text-xs text-red-500 mt-1">60자를 초과하면 검색 결과에서 잘릴 수 있습니다.</p>
-          )}
-        </div>
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <label className="text-xs text-muted-foreground">Meta Description</label>
-            <span className={`text-[10px] ${metaDescription.length > 160 ? 'text-red-500' : 'text-muted-foreground'}`}>
-              {metaDescription.length} / 160
-            </span>
-          </div>
-          <Textarea
-            value={metaDescription}
-            onChange={(e) => setMetaDescription(e.target.value)}
-            placeholder="페이지 설명 (검색 결과에 표시)"
-            maxLength={200}
-            rows={2}
-            className="text-sm resize-none"
-          />
-          {metaDescription.length > 160 && (
-            <p className="text-xs text-red-500 mt-1">160자를 초과하면 검색 결과에서 잘릴 수 있습니다.</p>
-          )}
-        </div>
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <label className="text-xs text-muted-foreground">URL Slug</label>
-          </div>
-          <Input
-            value={urlSlug}
-            onChange={(e) => setUrlSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
-            placeholder="page-url-slug"
-            className="text-sm font-mono"
-          />
-          <p className="text-xs text-muted-foreground mt-1">영문 소문자, 숫자, 하이픈만 사용 가능합니다.</p>
-        </div>
-      </div>
 
-          {/* Heading Structure */}
           <div>
             <label className="text-xs text-muted-foreground mb-1 block">Heading 구조 (H2/H3)</label>
             <Textarea
@@ -633,7 +611,6 @@ Return ONLY valid JSON (no explanation) with this exact structure:
         <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
           <h3 className="text-sm font-semibold flex items-center gap-2">✨ AI 콘텐츠 생성</h3>
 
-          {/* Current settings summary */}
           <div className="bg-muted rounded-md p-3 text-xs space-y-1">
             <div><span className="text-muted-foreground">주 키워드:</span> <span className="font-medium">{primaryKeyword || '미설정'}</span></div>
             <div><span className="text-muted-foreground">보조 키워드:</span> <span className="font-medium">{secondaryKeywords || '미설정'}</span></div>
@@ -641,137 +618,129 @@ Return ONLY valid JSON (no explanation) with this exact structure:
             <div><span className="text-muted-foreground">Meta Title:</span> <span className="font-medium">{metaTitle || '미설정'}</span></div>
           </div>
 
-          {/* Action buttons */}
           <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          {cards.length > 0 && (
-            <Badge variant="secondary" className="text-xs">{cards.length}개 섹션</Badge>
-          )}
-        </div>
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => setShowPreview(true)} disabled={cards.length === 0}>
-            미리보기
-          </Button>
-          <GenerationButton
-            variant="text"
-            isGenerating={isGenerating}
-            disabled={!hasBaseArticle}
-            onClick={handleGenerate}
-            onAbort={abort}
-          />
-          <GenerationButton
-            variant="batch-image"
-            isGenerating={isGeneratingImage}
-            disabled={cards.length === 0}
-            onClick={handleGenerateAllImages}
-            progress={imageProgress}
-          />
-        </div>
-      </div>
-
-      {/* No base article */}
-      {!hasBaseArticle && (
-        <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-          기본글에서 콘텐츠를 먼저 작성하면, AI가 Google SEO에 최적화된 WordPress 글로 변환합니다.
-          <br />
-          <span className="text-xs mt-1 block">H1/H2/H3 구조, 내부링크, alt 텍스트, Schema 마크업 자동 적용</span>
-        </div>
-      )}
-
-      {/* Card List with style bar + PC/Mobile toggle */}
-      {cards.length > 0 && (
-        <div>
-          <div className="flex items-center gap-3 mb-3 flex-wrap">
-            {/* Alignment */}
-            <div className="flex items-center gap-0.5">
-              <span className="text-[10px] text-muted-foreground mr-1">정렬:</span>
-              {(['left', 'center', 'right', 'justify'] as const).map(a => (
-                <button key={a} onClick={() => { setGlobalAlign(a); saveGlobalStyle({ align: a }); }}
-                  className={cn('w-6 h-6 flex items-center justify-center rounded border text-[10px]',
-                    globalAlign === a ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground')}>
-                  {a === 'left' ? '←' : a === 'center' ? '↔' : a === 'right' ? '→' : '≡'}
-                </button>
-              ))}
+            <div className="flex items-center gap-2">
+              {cards.length > 0 && (
+                <Badge variant="secondary" className="text-xs">{cards.length}개 섹션</Badge>
+              )}
             </div>
-
-            {/* Heading: font + bold */}
-            <div className="flex items-center gap-1">
-              <span className="text-[10px] text-muted-foreground">제목:</span>
-              <select value={headingFont} onChange={(e) => { setHeadingFont(e.target.value); saveGlobalStyle({ headingFont: e.target.value }); }}
-                className="h-6 text-[9px] bg-muted border border-border rounded px-1">
-                <option value="Noto Sans KR">고딕</option>
-                <option value="Noto Serif KR">명조</option>
-                <option value="Black Han Sans">블랙한산스</option>
-                <option value="Jua">주아</option>
-                <option value="Do Hyeon">도현</option>
-              </select>
-              <button onClick={() => { const v = !headingBold; setHeadingBold(v); saveGlobalStyle({ headingBold: v }); }}
-                className={cn('px-1.5 py-0.5 rounded text-[10px] font-bold border', headingBold ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground')}>
-                B
-              </button>
-              <input type="number" min={14} max={48} value={headingSize}
-                onChange={(e) => { const v = Math.max(14, Math.min(48, Number(e.target.value) || 24)); setHeadingSize(v); saveGlobalStyle({ headingSize: v }); }}
-                className="w-10 h-6 text-[9px] text-center bg-muted border border-border rounded" title="제목 크기(px)" />
-            </div>
-
-            {/* Body: font + bold + size */}
-            <div className="flex items-center gap-1">
-              <span className="text-[10px] text-muted-foreground">본문:</span>
-              <select value={bodyFont} onChange={(e) => { setBodyFont(e.target.value); saveGlobalStyle({ bodyFont: e.target.value }); }}
-                className="h-6 text-[9px] bg-muted border border-border rounded px-1">
-                <option value="Noto Sans KR">고딕</option>
-                <option value="Noto Serif KR">명조</option>
-                <option value="Black Han Sans">블랙한산스</option>
-                <option value="Jua">주아</option>
-                <option value="Do Hyeon">도현</option>
-              </select>
-              <button onClick={() => { const v = !bodyBold; setBodyBold(v); saveGlobalStyle({ bodyBold: v }); }}
-                className={cn('px-1.5 py-0.5 rounded text-[10px] font-bold border', bodyBold ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground')}>
-                B
-              </button>
-              <input type="number" min={12} max={24} value={bodySize}
-                onChange={(e) => { const v = Math.max(12, Math.min(24, Number(e.target.value) || 16)); setBodySize(v); saveGlobalStyle({ bodySize: v }); }}
-                className="w-10 h-6 text-[9px] text-center bg-muted border border-border rounded" title="본문 크기(px)" />
-            </div>
-
-            {/* Mobile format + View mode — pushed right */}
-            <button onClick={applyMobileFormatAll}
-              className="px-2 py-1 rounded text-[10px] bg-muted text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors" title="전체 모바일 정리">
-              📱 모바일 정리
-            </button>
-            <div className="flex items-center gap-1 ml-auto">
-              <span className="text-[10px] text-muted-foreground mr-1">뷰:</span>
-              <button onClick={() => setViewMode('pc')}
-                className={cn('px-2 py-1 rounded text-[10px]', viewMode === 'pc' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground')}>
-                🖥 PC
-              </button>
-              <button onClick={() => setViewMode('mobile')}
-                className={cn('px-2 py-1 rounded text-[10px]', viewMode === 'mobile' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground')}>
-                📱 모바일
-              </button>
-            </div>
-          </div>
-          <div className={cn('space-y-4 mx-auto transition-all', viewMode === 'mobile' ? 'max-w-sm border border-border rounded-xl p-3 bg-background shadow-inner' : '')}>
-            {cards.map((card, i) => (
-              <BlogCardItem
-                key={`${card.id}-${editorKey}`}
-                card={card}
-                index={i}
-                onUpdate={handleCardUpdate}
-                onDelete={handleCardDelete}
-                onGenerateImage={handleGenerateCardImage}
-                onAbortImage={abortImageGeneration}
-                isGeneratingImage={isGeneratingImage}
-                generatingCardId={generatingCardId}
-                globalStyle={{ align: globalAlign, headingBold, bodyBold, headingFont, bodyFont, headingSize, bodySize }}
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => setShowPreview(true)} disabled={cards.length === 0}>
+                미리보기
+              </Button>
+              <GenerationButton
+                variant="text"
+                isGenerating={isGenerating}
+                disabled={!hasBaseArticle}
+                onClick={handleGenerate}
+                onAbort={abort}
               />
-            ))}
+              <GenerationButton
+                variant="batch-image"
+                isGenerating={isGeneratingImage}
+                disabled={cards.length === 0}
+                onClick={handleGenerateAllImages}
+                progress={imageProgress}
+              />
+            </div>
           </div>
-        </div>
-      )}
 
-      {/* Add Section */}
-      {currentStep === 3 && hasBaseArticle && <AddCardButton onAdd={handleAddSection} />}
+          {!hasBaseArticle && (
+            <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+              기본글에서 콘텐츠를 먼저 작성하면, AI가 Google SEO에 최적화된 내부 블로그 글로 변환합니다.
+              <br />
+              <span className="text-xs mt-1 block">H1/H2/H3 구조, 내부링크, alt 텍스트, Schema 마크업 자동 적용</span>
+            </div>
+          )}
+
+          {cards.length > 0 && (
+            <div>
+              <div className="flex items-center gap-3 mb-3 flex-wrap">
+                <div className="flex items-center gap-0.5">
+                  <span className="text-[10px] text-muted-foreground mr-1">정렬:</span>
+                  {(['left', 'center', 'right', 'justify'] as const).map(a => (
+                    <button key={a} onClick={() => { setGlobalAlign(a); saveGlobalStyle({ align: a }); }}
+                      className={cn('w-6 h-6 flex items-center justify-center rounded border text-[10px]',
+                        globalAlign === a ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground')}>
+                      {a === 'left' ? '←' : a === 'center' ? '↔' : a === 'right' ? '→' : '≡'}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-muted-foreground">제목:</span>
+                  <select value={headingFont} onChange={(e) => { setHeadingFont(e.target.value); saveGlobalStyle({ headingFont: e.target.value }); }}
+                    className="h-6 text-[9px] bg-muted border border-border rounded px-1">
+                    <option value="Noto Sans KR">고딕</option>
+                    <option value="Noto Serif KR">명조</option>
+                    <option value="Black Han Sans">블랙한산스</option>
+                    <option value="Jua">주아</option>
+                    <option value="Do Hyeon">도현</option>
+                  </select>
+                  <button onClick={() => { const v = !headingBold; setHeadingBold(v); saveGlobalStyle({ headingBold: v }); }}
+                    className={cn('px-1.5 py-0.5 rounded text-[10px] font-bold border', headingBold ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground')}>
+                    B
+                  </button>
+                  <input type="number" min={14} max={48} value={headingSize}
+                    onChange={(e) => { const v = Math.max(14, Math.min(48, Number(e.target.value) || 24)); setHeadingSize(v); saveGlobalStyle({ headingSize: v }); }}
+                    className="w-10 h-6 text-[9px] text-center bg-muted border border-border rounded" title="제목 크기(px)" />
+                </div>
+
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-muted-foreground">본문:</span>
+                  <select value={bodyFont} onChange={(e) => { setBodyFont(e.target.value); saveGlobalStyle({ bodyFont: e.target.value }); }}
+                    className="h-6 text-[9px] bg-muted border border-border rounded px-1">
+                    <option value="Noto Sans KR">고딕</option>
+                    <option value="Noto Serif KR">명조</option>
+                    <option value="Black Han Sans">블랙한산스</option>
+                    <option value="Jua">주아</option>
+                    <option value="Do Hyeon">도현</option>
+                  </select>
+                  <button onClick={() => { const v = !bodyBold; setBodyBold(v); saveGlobalStyle({ bodyBold: v }); }}
+                    className={cn('px-1.5 py-0.5 rounded text-[10px] font-bold border', bodyBold ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground')}>
+                    B
+                  </button>
+                  <input type="number" min={12} max={24} value={bodySize}
+                    onChange={(e) => { const v = Math.max(12, Math.min(24, Number(e.target.value) || 16)); setBodySize(v); saveGlobalStyle({ bodySize: v }); }}
+                    className="w-10 h-6 text-[9px] text-center bg-muted border border-border rounded" title="본문 크기(px)" />
+                </div>
+
+                <button onClick={applyMobileFormatAll}
+                  className="px-2 py-1 rounded text-[10px] bg-muted text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors" title="전체 모바일 정리">
+                  📱 모바일 정리
+                </button>
+                <div className="flex items-center gap-1 ml-auto">
+                  <span className="text-[10px] text-muted-foreground mr-1">뷰:</span>
+                  <button onClick={() => setViewMode('pc')}
+                    className={cn('px-2 py-1 rounded text-[10px]', viewMode === 'pc' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground')}>
+                    🖥 PC
+                  </button>
+                  <button onClick={() => setViewMode('mobile')}
+                    className={cn('px-2 py-1 rounded text-[10px]', viewMode === 'mobile' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground')}>
+                    📱 모바일
+                  </button>
+                </div>
+              </div>
+              <div className={cn('space-y-4 mx-auto transition-all', viewMode === 'mobile' ? 'max-w-sm border border-border rounded-xl p-3 bg-background shadow-inner' : '')}>
+                {cards.map((card, i) => (
+                  <BlogCardItem
+                    key={`${card.id}-${editorKey}`}
+                    card={card}
+                    index={i}
+                    onUpdate={handleCardUpdate}
+                    onDelete={handleCardDelete}
+                    onGenerateImage={handleGenerateCardImage}
+                    onAbortImage={abortImageGeneration}
+                    isGeneratingImage={isGeneratingImage}
+                    generatingCardId={generatingCardId}
+                    globalStyle={{ align: globalAlign, headingBold, bodyBold, headingFont, bodyFont, headingSize, bodySize }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {currentStep === 3 && hasBaseArticle && <AddCardButton onAdd={handleAddSection} />}
 
           <div className="flex justify-between">
             <Button size="sm" variant="outline" onClick={() => setCurrentStep(2)}>← 구조 설계</Button>
@@ -780,12 +749,11 @@ Return ONLY valid JSON (no explanation) with this exact structure:
         </div>
       )}
 
-      {/* Step 4: SEO 검사 */}
+      {/* Step 4: SEO 검사 + 예약 발행 */}
       {currentStep === 4 && (
         <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
           <h3 className="text-sm font-semibold flex items-center gap-2">🔍 Google SEO 검사</h3>
 
-          {/* Score Cards */}
           <div className="grid grid-cols-4 gap-3 text-center">
             {[
               { label: 'Title', value: metaTitle.length > 0 ? (metaTitle.length <= 60 ? '✓' : '!') : '—', ok: metaTitle.length > 0 && metaTitle.length <= 60 },
@@ -800,7 +768,6 @@ Return ONLY valid JSON (no explanation) with this exact structure:
             ))}
           </div>
 
-          {/* Checklist */}
           <div className="space-y-2">
             <h4 className="text-xs font-semibold text-muted-foreground">체크리스트</h4>
             {[
@@ -811,8 +778,8 @@ Return ONLY valid JSON (no explanation) with this exact structure:
               { check: cards.length >= 3, label: '콘텐츠 섹션 3개 이상' },
               { check: cards.some(c => (c.content as Record<string, unknown>)?.url), label: '이미지 1개 이상 포함' },
               { check: cards.every(c => {
-                const content = c.content as Record<string, unknown>;
-                return !content?.url || (content?.alt && String(content.alt).length > 0);
+                const cardContent = c.content as Record<string, unknown>;
+                return !cardContent?.url || (cardContent?.alt && String(cardContent.alt).length > 0);
               }), label: '모든 이미지에 alt 텍스트' },
             ].map(({ check, label }) => (
               <div key={label} className="flex items-center gap-2 text-xs">
@@ -822,7 +789,6 @@ Return ONLY valid JSON (no explanation) with this exact structure:
             ))}
           </div>
 
-          {/* Schema Markup */}
           <div className="bg-muted rounded-md p-3">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold">Schema 마크업</span>
@@ -833,16 +799,35 @@ Return ONLY valid JSON (no explanation) with this exact structure:
 
           <div className="flex justify-between items-center">
             <Button size="sm" variant="outline" onClick={() => setCurrentStep(3)}>← AI 생성</Button>
-            {publishedUrl ? (
-              <span className="text-xs text-green-500 font-medium">✅ 발행 큐에 등록됨 — 발행 메뉴에서 확인</span>
-            ) : (
-              <Button size="sm" className="bg-green-600 hover:bg-green-700" disabled={publishing || cards.length === 0} onClick={handleAddToQueue}>
-                {publishing ? <><Loader2 size={12} className="animate-spin mr-1" /> 발행 큐에 등록 중...</> : '🚀 발행 큐에 추가'}
-              </Button>
-            )}
+            <Button size="sm" disabled={cards.length === 0} onClick={() => setScheduleOpen(true)}>
+              예약 발행
+            </Button>
           </div>
         </div>
       )}
+
+      {/* Schedule Dialog */}
+      <Dialog open={scheduleOpen} onOpenChange={setScheduleOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>예약 발행</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs">언어</label>
+              <select value={scheduleLang} onChange={(e) => setScheduleLang(e.target.value)} className="w-full p-2 border rounded">
+                {activeLangs.map((l) => <option key={l} value={l}>{l.toUpperCase()}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs">발행 시각</label>
+              <Input type="datetime-local" value={scheduleAt} onChange={(e) => setScheduleAt(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setScheduleOpen(false)}>취소</Button>
+            <Button onClick={handleSchedulePublish}>예약</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Prompt Dialog */}
       <PromptEditDialog
@@ -867,9 +852,9 @@ Return ONLY valid JSON (no explanation) with this exact structure:
   );
 }
 
-// ─── Outer: 다중 WordPress 콘텐츠 리스트 ────────────────────────────
+// ─── Outer: 다중 내부 블로그 콘텐츠 리스트 ────────────────────────────
 
-export function WordpressPanel() {
+export function InternalBlogPanel() {
   const {
     selectedContentId,
     contents,
@@ -892,7 +877,7 @@ export function WordpressPanel() {
   if (!content || !project) return null;
 
   const hasBaseArticle = !!getBaseArticle(content.id);
-  const wpContents = getBlogContents(content.id);
+  const blogContents = getBlogContents(content.id);
   const channelModels = getChannelModels(project.id, 'blog');
 
   return (
@@ -900,11 +885,10 @@ export function WordpressPanel() {
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold flex items-center gap-2">
           <Globe size={20} className="text-blue-500" />
-          WordPress (Google SEO)
+          내부 블로그 (Google SEO)
         </h2>
       </div>
 
-      {/* Model Selector */}
       <ChannelModelSelector
         textModel={channelModels.textModel}
         imageModel={channelModels.imageModel}
@@ -919,15 +903,14 @@ export function WordpressPanel() {
         defaultAspectRatio="16:9"
       />
 
-      {/* Content List */}
       <ChannelContentList<BlogContent>
-        items={wpContents}
+        items={blogContents}
         getId={(item) => item.id}
-        getTitle={(item, index) => item.title || `WordPress 글 ${index + 1}`}
+        getTitle={(item, index) => item.title || `내부 블로그 글 ${index + 1}`}
         onTitleChange={(id, title) => updateBlogContent(id, { title })}
         onAdd={() => addBlogContent(content.id)}
         onDelete={(id) => deleteBlogContent(id)}
-        addLabel="새 WordPress 글 추가"
+        addLabel="새 내부 블로그 글 추가"
         onAddToQueue={async (id, channel) => {
           const cards = getBlogCards(id);
           const warnings: string[] = [];
@@ -938,10 +921,10 @@ export function WordpressPanel() {
           if (ok) alert(`✅ ${channel} 발행큐에 추가되었습니다`);
           else alert('발행큐 추가 실패');
         }}
-        publishChannels={[{ id: 'wordpress', label: 'WordPress', icon: '🌐' }]}
+        publishChannels={[{ id: 'self_hosted', label: '내부 블로그', icon: '🌐' }]}
         accentColor="bg-indigo-600 hover:bg-indigo-700"
         renderContent={(blogContent) => (
-          <WordpressPanelInner
+          <InternalBlogPanelInner
             key={blogContent.id}
             blogContent={blogContent}
             content={content}

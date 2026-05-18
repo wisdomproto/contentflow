@@ -22,7 +22,7 @@ const LANG_NAMES: Record<string, string> = {
 export type ChannelKind =
   | 'base'
   | 'naver_blog'
-  | 'wordpress'
+  | 'self_hosted'
   | 'instagram'
   | 'threads'
   | 'youtube'
