@@ -2,7 +2,7 @@
 export { useUIStore } from './ui-store'
 
 import { create } from 'zustand';
-import type { Project, Content, ContentStatus, BaseArticle, BlogContent, BlogCard, InstagramContent, InstagramCard, ThreadsContent, ThreadsCard, YoutubeContent, YoutubeCard, CardTemplateRow } from '@/types/database';
+import type { Project, Content, ContentStatus, BaseArticle, BlogContent, BlogCard, InstagramContent, InstagramCard, ThreadsContent, ThreadsCard, YoutubeContent, YoutubeCard, CardTemplateRow, PublishedSite, PublishRecord } from '@/types/database';
 import type { MarketingStrategy, StrategyInput, GenerationStatus, StrategyTab } from '@/types/strategy';
 import { DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL } from '@/lib/ai-models';
 import type { ImportedStrategy } from '@/types/analytics';
@@ -199,8 +199,27 @@ interface ProjectState {
   getChannelModels: (projectId: string, channel: string) => { textModel: string; imageModel: string; aspectRatio: string; imageStyle: string; imageInstruction: string };
   setChannelModels: (projectId: string, channel: string, models: { textModel?: string; imageModel?: string; aspectRatio?: string; imageStyle?: string; imageInstruction?: string }) => void;
 
-  // Publish queue
+  // Publish queue (legacy — channels other than self_hosted)
   addToPublishQueue: (channel: string, contentId: string, metadata?: Record<string, unknown>) => Promise<boolean>;
+
+  // Published site + publish records (self_hosted channel)
+  publishRecords: PublishRecord[];
+  updatePublishedSite: (projectId: string, site: PublishedSite | null) => Promise<void>;
+  fetchPublishRecordsForContent: (contentId: string) => Promise<void>;
+  getPublishRecordsForContent: (contentId: string) => PublishRecord[];
+  schedulePublish: (input: {
+    contentId: string;
+    projectId: string;
+    language: string;
+    channel: 'self_hosted';
+    scheduledAt: string;
+  }) => Promise<PublishRecord>;
+  cancelPublish: (recordId: string) => Promise<void>;
+  bulkSchedulePublish: (rows: Array<{
+    contentId: string; projectId: string; language: string;
+    channel: 'self_hosted'; scheduledAt: string;
+  }>) => Promise<{ inserted: number; skipped: number }>;
+  fetchPublishCountsByLanguage: (projectId: string) => Promise<Record<string, { scheduled: number; published: number }>>;
 
   // UI state
   openProjectSettings: (projectId: string) => void;
@@ -231,6 +250,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
   hiddenBuiltins: [],
   strategies: [],
   savedKeywords: [],
+  publishRecords: [],
   sidebarCollapsed: false,
   showProjectSettings: false,
   showStrategy: false,
@@ -1702,6 +1722,97 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     });
     if (error) { console.error('addToPublishQueue error:', error.message); return false; }
     return true;
+  },
+
+  // Published site + publish records (self_hosted channel)
+  updatePublishedSite: async (projectId, site) => {
+    const supabase = createClient();
+    const { error } = await supabase.from('projects')
+      .update({ published_site: site, updated_at: new Date().toISOString() })
+      .eq('id', projectId);
+    if (error) throw error;
+    set((s) => ({ projects: s.projects.map((p) => p.id === projectId ? { ...p, published_site: site } : p) }));
+  },
+
+  fetchPublishRecordsForContent: async (contentId) => {
+    const supabase = createClient();
+    const { data } = await supabase.from('publish_records').select('*')
+      .eq('content_id', contentId).eq('channel', 'self_hosted');
+    set((s) => ({
+      publishRecords: [
+        ...s.publishRecords.filter((r) => r.content_id !== contentId || r.channel !== 'self_hosted'),
+        ...(data || []),
+      ],
+    }));
+  },
+
+  getPublishRecordsForContent: (contentId) => {
+    return get().publishRecords.filter((r) => r.content_id === contentId && r.channel === 'self_hosted');
+  },
+
+  schedulePublish: async (input) => {
+    const supabase = createClient();
+    const row = {
+      content_id: input.contentId,
+      project_id: input.projectId,
+      language: input.language,
+      channel: 'self_hosted',
+      status: 'scheduled' as const,
+      scheduled_at: input.scheduledAt,
+    };
+    const { data, error } = await supabase.from('publish_records')
+      .upsert(row, { onConflict: 'content_id,language,channel', ignoreDuplicates: false })
+      .select().single();
+    if (error) throw error;
+    set((s) => ({ publishRecords: [...s.publishRecords.filter((r) => r.id !== data.id), data] }));
+    return data;
+  },
+
+  cancelPublish: async (recordId) => {
+    const supabase = createClient();
+    const { error } = await supabase.from('publish_records').delete().eq('id', recordId);
+    if (error) throw error;
+    set((s) => ({ publishRecords: s.publishRecords.filter((r) => r.id !== recordId) }));
+  },
+
+  bulkSchedulePublish: async (rows) => {
+    const supabase = createClient();
+    const contentIds = [...new Set(rows.map((r) => r.contentId))];
+    const { data: existing } = await supabase.from('publish_records')
+      .select('content_id, language')
+      .in('content_id', contentIds)
+      .eq('channel', 'self_hosted')
+      .in('status', ['scheduled', 'published']);
+    const existingKey = new Set((existing || []).map((e) => `${e.content_id}::${e.language}`));
+
+    const toInsert = rows
+      .filter((r) => !existingKey.has(`${r.contentId}::${r.language}`))
+      .map((r) => ({
+        content_id: r.contentId,
+        project_id: r.projectId,
+        language: r.language,
+        channel: 'self_hosted',
+        status: 'scheduled' as const,
+        scheduled_at: r.scheduledAt,
+      }));
+    if (toInsert.length === 0) return { inserted: 0, skipped: rows.length };
+    const { data, error } = await supabase.from('publish_records').insert(toInsert).select();
+    if (error) throw error;
+    set((s) => ({ publishRecords: [...s.publishRecords, ...(data || [])] }));
+    return { inserted: data?.length || 0, skipped: rows.length - (data?.length || 0) };
+  },
+
+  fetchPublishCountsByLanguage: async (projectId) => {
+    const supabase = createClient();
+    const { data } = await supabase.from('publish_records').select('language, status')
+      .eq('project_id', projectId).eq('channel', 'self_hosted');
+    const counts: Record<string, { scheduled: number; published: number }> = {};
+    for (const r of data || []) {
+      if (!counts[r.language]) counts[r.language] = { scheduled: 0, published: 0 };
+      if (r.status === 'scheduled') counts[r.language].scheduled++;
+      else if (r.status === 'published') counts[r.language].published++;
+    }
+    return counts;
   },
 
   // UI state
