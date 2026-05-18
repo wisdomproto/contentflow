@@ -7,10 +7,11 @@ import { BgmSection } from './bgm-section';
 import { ApiKeysSection } from './api-keys-section';
 import { useProjectStore } from '@/stores/project-store';
 import type { Project } from '@/types/database';
-import { FileText, Paperclip, Music, Key, Globe, Languages, Link2 } from 'lucide-react';
+import { FileText, Paperclip, Music, Key, Globe, Languages, Link2, ExternalLink } from 'lucide-react';
 import { FunnelAnalyticsSection } from './funnel-analytics-section';
 import { TargetLanguagesSection } from './target-languages-section';
 import { ChannelConnectionsSection } from './channel-connections-section';
+import { PublishedSiteSection } from './published-site-section';
 
 interface ProjectSettingsProps {
   project: Project;
@@ -54,6 +55,9 @@ export function ProjectSettings({ project }: ProjectSettingsProps) {
             <TabsTrigger value="channel-connections">
               <Link2 size={14} className="mr-1.5" /> 채널 연동
             </TabsTrigger>
+            <TabsTrigger value="published-site">
+              <ExternalLink size={14} className="mr-1.5" /> 발행 사이트
+            </TabsTrigger>
           </TabsList>
 
           <div className="mt-6">
@@ -77,6 +81,9 @@ export function ProjectSettings({ project }: ProjectSettingsProps) {
             </TabsContent>
             <TabsContent value="channel-connections">
               <ChannelConnectionsSection />
+            </TabsContent>
+            <TabsContent value="published-site">
+              <PublishedSiteSection projectId={project.id} />
             </TabsContent>
           </div>
         </Tabs>
