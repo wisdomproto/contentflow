@@ -7,7 +7,6 @@ import { useProjectStore } from '@/stores/project-store'
 import { createClient } from '@/lib/supabase/client'
 import { CalendarDays, Clock, Eye, List, Loader2, Rocket, Trash2 } from 'lucide-react'
 import { BlogPreviewDialog } from '@/components/content/blog-preview-dialog'
-import { WordpressPreviewDialog } from '@/components/content/wordpress-preview-dialog'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 const STATUS_COLORS: Record<string, string> = {
@@ -136,66 +135,8 @@ export function PublishQueue() {
 
   useEffect(() => { loadRecords() }, [selectedProjectId])
 
-  const handlePublishNow = async (record: any) => {
-    if (record.channel !== 'wordpress') { alert('현재 WordPress 발행만 지원합니다.'); return }
-    const creds = project?.wp_credentials
-    if (!creds) { alert('WordPress 연결 설정을 먼저 해주세요.'); return }
-
-    // Get blog cards for this content
-    const supabase = createClient()
-    const { data: blogContents } = await supabase.from('blog_contents').select('id').eq('content_id', record.content_id)
-    let htmlBody = record.metadata?.content || ''
-    if (blogContents?.length) {
-      const { data: cards } = await supabase.from('blog_cards').select('*').eq('blog_content_id', blogContents[0].id).order('sort_order')
-      // Load globalStyle from blog_content.seo_details
-      const { data: bcData } = await supabase.from('blog_contents').select('seo_details').eq('id', blogContents[0].id).single()
-      const gs = (bcData?.seo_details as Record<string, unknown>)?.globalStyle as Record<string, unknown> || {}
-      const align = (gs.align as string) || 'left'
-      const hBold = gs.headingBold !== false
-      const bBold = !!gs.bodyBold
-      const hFont = (gs.headingFont as string) || 'Noto Sans KR'
-      const bFont = (gs.bodyFont as string) || 'Noto Sans KR'
-      const hSize = (gs.headingSize as number) || 22
-      const bSize = (gs.bodySize as number) || 16
-
-      if (cards?.length) {
-        const sections = cards.map((card: any) => {
-          const c = card.content || {}
-          const heading = c.heading ? `<h2 style="font-family:'${hFont}',sans-serif;font-size:${hSize}px;font-weight:${hBold ? 700 : 400};margin:1.5em 0 0.5em;line-height:1.3;text-align:${align};">${c.heading}</h2>` : ''
-          const text = c.text ? `<div style="font-family:'${bFont}',sans-serif;font-size:${bSize}px;line-height:1.9;color:#333;word-break:keep-all;text-align:${align};${bBold ? 'font-weight:700;' : ''}">${c.text}</div>` : ''
-          const img = c.url ? `<figure style="margin:1em 0;text-align:${align};"><img src="${c.url}" alt="${c.alt || ''}" style="max-width:100%;height:auto;border-radius:8px;" />${c.caption ? `<figcaption style="font-size:0.85em;color:#888;margin-top:0.3em;">${c.caption}</figcaption>` : ''}</figure>` : ''
-          return `${heading}\n${img}\n${text}`
-        }).join('\n\n')
-        htmlBody = `<div style="max-width:720px;margin:0 auto;padding:0 16px;font-size:17px;line-height:1.8;color:#222;">${sections}</div>`
-      }
-    }
-
-    setPublishingId(record.id)
-    try {
-      const res = await fetch('/api/publish/wordpress', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mode: 'publish',
-          title: record.metadata?.title || 'Untitled',
-          content: htmlBody,
-          siteUrl: creds.siteUrl,
-          username: creds.username,
-          applicationPassword: creds.appPassword,
-          projectId: selectedProjectId,
-          contentId: record.content_id,
-          recordId: record.id,
-        }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        alert(`발행 완료! ${data.url}`)
-        loadRecords()
-      } else {
-        alert(`발행 실패: ${data.error}`)
-      }
-    } catch (err) { alert(`오류: ${err}`) }
-    finally { setPublishingId(null) }
+  const handlePublishNow = async (_record: any) => {
+    alert('직접 발행은 현재 지원하지 않습니다. 내부 블로그 API를 통해 자동 발행됩니다.')
   }
 
   const handleSchedule = async (id: string, scheduledAt: string | null) => {
@@ -464,12 +405,10 @@ export function PublishQueue() {
         />
       )}
       {previewRecord && previewRecord.channel === 'wordpress' && (
-        <WordpressPreviewDialog
+        <BlogPreviewDialog
           open={!!previewRecord}
           onOpenChange={(open) => { if (!open) setPreviewRecord(null) }}
-          title={previewRecord.metadata?.title || ''}
-          metaTitle={previewRecord.metadata?.title || ''}
-          metaDescription=""
+          seoTitle={previewRecord.metadata?.title || ''}
           cards={previewCards}
         />
       )}

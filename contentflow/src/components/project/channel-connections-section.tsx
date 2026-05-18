@@ -1,14 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Link2, ExternalLink, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Link2, ExternalLink, CheckCircle2 } from 'lucide-react';
 import { useProjectStore } from '@/stores/project-store';
-import type { MetaCredentials as MetaConnectionInfo, WpCredentials } from '@/types/database';
+import type { MetaCredentials as MetaConnectionInfo } from '@/types/database';
 
 interface ChannelConfig {
   id: string;
@@ -21,14 +19,6 @@ interface ChannelConfig {
 }
 
 const CHANNELS: ChannelConfig[] = [
-  {
-    id: 'wordpress',
-    name: 'WordPress',
-    icon: 'W',
-    iconBg: 'bg-blue-600',
-    iconText: 'text-white',
-    description: 'REST API로 포스트 발행',
-  },
   {
     id: 'instagram',
     name: 'Instagram',
@@ -71,150 +61,6 @@ const CHANNELS: ChannelConfig[] = [
     manualOnly: true,
   },
 ];
-
-function WordPressCredentialsForm({ projectId }: { projectId: string }) {
-  const { projects, updateProject } = useProjectStore();
-  const project = projects.find(p => p.id === projectId);
-  const [wpUrl, setWpUrl] = useState('');
-  const [wpUser, setWpUser] = useState('');
-  const [wpPass, setWpPass] = useState('');
-  const [wpConnected, setWpConnected] = useState(false);
-  const [testing, setTesting] = useState(false);
-  const [expanded, setExpanded] = useState(false);
-
-  // Load from DB (with one-time localStorage migration)
-  useEffect(() => {
-    const fromDb = project?.wp_credentials;
-    if (fromDb) {
-      setWpUrl(fromDb.siteUrl || '');
-      setWpUser(fromDb.username || '');
-      setWpPass(fromDb.appPassword || '');
-      setWpConnected(true);
-      return;
-    }
-    // One-time migration from localStorage (non-destructive: keep localStorage as backup)
-    const saved = localStorage.getItem(`wp_credentials_${projectId}`);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved) as WpCredentials;
-        updateProject(projectId, { wp_credentials: parsed });
-        setWpUrl(parsed.siteUrl || '');
-        setWpUser(parsed.username || '');
-        setWpPass(parsed.appPassword || '');
-        setWpConnected(true);
-      } catch {
-        // ignore parse errors
-      }
-    }
-  }, [projectId, project?.wp_credentials, updateProject]);
-
-  async function testConnection() {
-    if (!wpUrl || !wpUser || !wpPass) {
-      alert('URL, 사용자명, 앱 비밀번호를 모두 입력해주세요');
-      return;
-    }
-    setTesting(true);
-    try {
-      const res = await fetch(`${wpUrl.replace(/\/$/, '')}/wp-json/wp/v2/posts?per_page=1`, {
-        headers: {
-          'Authorization': `Basic ${btoa(`${wpUser}:${wpPass}`)}`,
-        },
-      });
-      if (res.ok) {
-        alert('연결 성공!');
-        setWpConnected(true);
-      } else {
-        alert('연결 실패: 인증 정보를 확인해주세요');
-        setWpConnected(false);
-      }
-    } catch {
-      alert('연결 실패: URL을 확인해주세요');
-      setWpConnected(false);
-    }
-    setTesting(false);
-  }
-
-  function saveCredentials() {
-    if (!wpUrl || !wpUser || !wpPass) {
-      alert('URL, 사용자명, 앱 비밀번호를 모두 입력해주세요');
-      return;
-    }
-    updateProject(projectId, {
-      wp_credentials: { siteUrl: wpUrl, username: wpUser, appPassword: wpPass },
-    });
-    setWpConnected(true);
-    alert('저장되었습니다');
-  }
-
-  return (
-    <div className="mt-2 space-y-3 border-t pt-3">
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">WordPress REST API 연동</span>
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-        >
-          {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-          {expanded ? '접기' : '설정'}
-        </button>
-      </div>
-
-      {expanded && (
-        <div className="space-y-2">
-          <div className="space-y-1">
-            <Label className="text-xs">사이트 URL</Label>
-            <Input
-              value={wpUrl}
-              onChange={e => setWpUrl(e.target.value)}
-              placeholder="https://example.com"
-              className="h-7 text-xs"
-            />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">사용자명</Label>
-            <Input
-              value={wpUser}
-              onChange={e => setWpUser(e.target.value)}
-              placeholder="admin"
-              className="h-7 text-xs"
-            />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">앱 비밀번호</Label>
-            <Input
-              type="password"
-              value={wpPass}
-              onChange={e => setWpPass(e.target.value)}
-              placeholder="xxxx xxxx xxxx xxxx xxxx xxxx"
-              className="h-7 text-xs"
-            />
-            <p className="text-[10px] text-muted-foreground">
-              WordPress 관리자 → 사용자 → 프로필 → 앱 비밀번호에서 생성
-            </p>
-          </div>
-          <div className="flex gap-2 pt-1">
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-7 text-xs flex-1"
-              onClick={testConnection}
-              disabled={testing}
-            >
-              {testing ? '테스트 중...' : '연결 테스트'}
-            </Button>
-            <Button
-              size="sm"
-              className="h-7 text-xs flex-1"
-              onClick={saveCredentials}
-            >
-              저장
-            </Button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 export function ChannelConnectionsSection() {
   const { selectedProjectId, projects, updateProject } = useProjectStore();
@@ -319,9 +165,7 @@ export function ChannelConnectionsSection() {
 
                 {/* 연결 상태 + 버튼 */}
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  {channel.id === 'wordpress' && selectedProjectId ? (
-                    <WordPressStatusBadge projectId={selectedProjectId} />
-                  ) : isMetaChannel(channel.id) && selectedProjectId ? (
+                  {isMetaChannel(channel.id) && selectedProjectId ? (
                     metaConnectionInfo ? (
                       <>
                         <Badge variant="outline" className="text-xs text-green-600 border-green-500/40 gap-1">
@@ -378,10 +222,6 @@ export function ChannelConnectionsSection() {
                 </div>
               </div>
 
-              {/* WordPress 전용 자격증명 폼 */}
-              {channel.id === 'wordpress' && selectedProjectId && (
-                <WordPressCredentialsForm projectId={selectedProjectId} />
-              )}
             </div>
           ))}
         </div>
@@ -390,23 +230,3 @@ export function ChannelConnectionsSection() {
   );
 }
 
-// WordPress 연결 상태 배지 (DB 읽기)
-function WordPressStatusBadge({ projectId }: { projectId: string }) {
-  const { projects } = useProjectStore();
-  const connected = !!projects.find(p => p.id === projectId)?.wp_credentials;
-
-  if (connected) {
-    return (
-      <Badge variant="outline" className="text-xs text-green-600 border-green-500/40 gap-1">
-        <CheckCircle2 size={10} />
-        연결됨
-      </Badge>
-    );
-  }
-
-  return (
-    <Badge variant="outline" className="text-xs text-muted-foreground border-muted-foreground/30">
-      미연결
-    </Badge>
-  );
-}

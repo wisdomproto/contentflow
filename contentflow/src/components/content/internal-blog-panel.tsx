@@ -13,7 +13,7 @@ import { ChannelModelSelector } from './channel-model-selector';
 import { cn } from '@/lib/utils';
 import { ChannelContentList } from './channel-content-list';
 import { PromptEditDialog } from './prompt-edit-dialog';
-import { WordpressPreviewDialog } from './wordpress-preview-dialog';
+import { BlogPreviewDialog } from './blog-preview-dialog';
 import { useAiGeneration } from '@/hooks/use-ai-generation';
 import { useCardImageGeneration } from '@/hooks/use-card-image-generation';
 import { useProjectStore } from '@/stores/project-store';
@@ -840,12 +840,10 @@ Return ONLY valid JSON (no explanation) with this exact structure:
       />
 
       {/* Preview Dialog */}
-      <WordpressPreviewDialog
+      <BlogPreviewDialog
         open={showPreview}
         onOpenChange={setShowPreview}
-        title={content.title}
-        metaTitle={metaTitle}
-        metaDescription={metaDescription}
+        seoTitle={metaTitle || content.title}
         cards={cards}
       />
     </div>

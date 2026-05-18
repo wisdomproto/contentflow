@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Send, Clock, Link2Off, Loader2 } from 'lucide-react'
 import { GenerationButton } from './generation-button'
-import type { BlogCard } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import {
@@ -31,7 +30,6 @@ const LANGUAGE_INFO: Record<string, { label: string; flag: string }> = {
 }
 
 const CHANNEL_LABELS: Record<string, string> = {
-  wordpress: 'WordPress',
   naver_blog: 'N 블로그',
   instagram: 'Instagram',
   threads: 'Threads',
@@ -46,7 +44,7 @@ interface LanguageSelectorProps {
 
 export function LanguageSelector({ onTranslate, translationStatuses = {}, channel }: LanguageSelectorProps) {
   const { selectedLanguage, setSelectedLanguage } = useUIStore()
-  const { projects, selectedProjectId, selectedContentId, contents, getBaseArticle, getBlogContents, getBlogCards } = useProjectStore()
+  const { projects, selectedProjectId, selectedContentId, contents } = useProjectStore()
   const project = projects.find(p => p.id === selectedProjectId)
 
   const [showSchedule, setShowSchedule] = useState(false)
@@ -56,11 +54,9 @@ export function LanguageSelector({ onTranslate, translationStatuses = {}, channe
   const [publishing, setPublishing] = useState(false)
 
   // 연결 상태를 project DB 필드에서 확인
-  const isWpConnected = !!project?.wp_credentials
   const isMetaConnected = !!project?.meta_credentials
 
-  const isConnected = channel === 'wordpress' ? isWpConnected
-    : (channel === 'instagram' || channel === 'facebook' || channel === 'threads') ? isMetaConnected
+  const isConnected = (channel === 'instagram' || channel === 'facebook' || channel === 'threads') ? isMetaConnected
     : false
   const channelLabel = channel ? (CHANNEL_LABELS[channel] || channel) : ''
 
@@ -138,181 +134,11 @@ export function LanguageSelector({ onTranslate, translationStatuses = {}, channe
       return
     }
 
-    if (channel === 'wordpress') {
-      if (!selectedProjectId || !selectedContentId) {
-        alert('발행할 콘텐츠를 선택해주세요')
-        return
-      }
-
-      const creds = project?.wp_credentials
-      if (!creds) {
-        setShowConnectDialog(true)
-        return
-      }
-
-      // 콘텐츠 제목과 본문 가져오기 (WordPress cards 우선, 없으면 기본글)
-      const contentMeta = contents.find(c => c.id === selectedContentId)
-      const blogContents = getBlogContents(selectedContentId)
-      let title = contentMeta?.title || 'Untitled'
-      let body = ''
-
-      if (blogContents.length > 0) {
-        const bc = blogContents[0]
-        if (bc.seo_title) title = bc.seo_title
-        const cards: BlogCard[] = getBlogCards(bc.id)
-
-        if (cards.length > 0) {
-          // Build HTML from blog cards
-          const htmlParts: string[] = []
-          for (const card of cards) {
-            const c = card.content as Record<string, unknown>
-            const text = (c?.text as string) || ''
-            const imgUrl = (c?.url as string) || ''
-            const alt = (c?.alt as string) || ''
-
-            if (text) htmlParts.push(text)
-            if (imgUrl) {
-              // Compress base64 image to JPEG if it's base64
-              let finalUrl = imgUrl
-              if (imgUrl.startsWith('data:')) {
-                try {
-                  const canvas = document.createElement('canvas')
-                  const img = new Image()
-                  await new Promise<void>((resolve, reject) => {
-                    img.onload = () => resolve()
-                    img.onerror = reject
-                    img.src = imgUrl
-                  })
-                  canvas.width = Math.min(img.width, 1200) // max 1200px width
-                  canvas.height = Math.round(img.height * (canvas.width / img.width))
-                  const ctx = canvas.getContext('2d')
-                  ctx?.drawImage(img, 0, 0, canvas.width, canvas.height)
-                  finalUrl = canvas.toDataURL('image/jpeg', 0.7) // 70% quality JPEG
-                } catch {}
-              }
-              htmlParts.push(`<figure><img src="${finalUrl}" alt="${alt}" style="max-width:100%;height:auto;" />${alt ? `<figcaption>${alt}</figcaption>` : ''}</figure>`)
-            }
-          }
-          body = htmlParts.join('\n\n')
-        }
-      }
-
-      // Fallback to base article
-      if (!body.trim()) {
-        const baseArticle = getBaseArticle(selectedContentId)
-        body = baseArticle?.body || ''
-      }
-
-      if (!body.trim()) {
-        alert('발행할 본문이 없습니다. WordPress 탭에서 AI 생성하거나 기본글을 작성해주세요.')
-        return
-      }
-
-      setPublishing(true)
-      try {
-        const res = await fetch('/api/publish/wordpress', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json; charset=utf-8' },
-          body: JSON.stringify({
-            title,
-            content: body,
-            status: 'publish',
-            siteUrl: creds.siteUrl,
-            username: creds.username,
-            applicationPassword: creds.appPassword,
-          }),
-        })
-        const result = await res.json()
-        if (result.success) {
-          // Save publish record to Supabase
-          const supabase = createClient()
-          await supabase.from('publish_records').insert({
-            content_id: selectedContentId,
-            project_id: selectedProjectId,
-            channel: 'wordpress',
-            language: selectedLanguage,
-            status: 'published',
-            published_at: new Date().toISOString(),
-            platform_post_id: String(result.postId || ''),
-            published_url: result.url || '',
-            metadata: { title },
-          })
-          alert(`발행 성공!\n${result.url}`)
-        } else {
-          alert(`발행 실패: ${result.error}`)
-        }
-      } catch (err) {
-        alert(`발행 오류: ${err}`)
-      } finally {
-        setPublishing(false)
-      }
-    }
   }
 
   async function handleScheduleConfirm() {
     if (!scheduleDate) return
-
-    if (channel === 'wordpress') {
-      if (!selectedProjectId || !selectedContentId) {
-        alert('발행할 콘텐츠를 선택해주세요')
-        return
-      }
-
-      const creds = project?.wp_credentials
-      if (!creds) {
-        setShowConnectDialog(true)
-        return
-      }
-
-      const contentMeta = contents.find(c => c.id === selectedContentId)
-      const title = contentMeta?.title || 'Untitled'
-      const baseArticle = getBaseArticle(selectedContentId)
-      const body = baseArticle?.body || ''
-
-      const scheduledAt = `${scheduleDate}T${scheduleTime}:00`
-
-      setPublishing(true)
-      try {
-        const res = await fetch('/api/publish/wordpress', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json; charset=utf-8' },
-          body: JSON.stringify({
-            title,
-            content: body,
-            status: 'future',
-            scheduledAt,
-            siteUrl: creds.siteUrl,
-            username: creds.username,
-            applicationPassword: creds.appPassword,
-          }),
-        })
-        const result = await res.json()
-        if (result.success) {
-          const supabase = createClient()
-          await supabase.from('publish_records').insert({
-            content_id: selectedContentId,
-            project_id: selectedProjectId,
-            channel: 'wordpress',
-            language: selectedLanguage,
-            status: 'scheduled',
-            scheduled_at: scheduledAt,
-            platform_post_id: String(result.postId || ''),
-            published_url: result.url || '',
-            metadata: { title },
-          })
-          alert(`예약 발행 성공!\n예약 시간: ${scheduledAt}\n${result.url}`)
-        } else {
-          alert(`예약 실패: ${result.error}`)
-        }
-      } catch (err) {
-        alert(`예약 오류: ${err}`)
-      } finally {
-        setPublishing(false)
-        setShowSchedule(false)
-      }
-    } else {
-      setShowSchedule(false)
-    }
+    setShowSchedule(false)
   }
 
   function handleScheduleClick() {
