@@ -3,7 +3,7 @@ import type { FunnelConfig, GA4Config, ImportedStrategy } from './analytics';
 
 export type ThemePreference = 'light' | 'dark' | 'system';
 export type ContentStatus = 'draft' | 'in_progress' | 'published';
-export type ChannelType = 'wordpress' | 'naver_blog' | 'instagram' | 'facebook' | 'threads' | 'youtube';
+export type ChannelType = 'self_hosted' | 'naver_blog' | 'instagram' | 'facebook' | 'threads' | 'youtube';
 export type CardType = 'text' | 'image' | 'divider' | 'quote' | 'list';
 export type AssetType = 'image' | 'audio' | 'video';
 export type FactcheckStatus = 'unchecked' | 'checking' | 'checked';
@@ -95,6 +95,16 @@ export interface WpCredentials {
   appPassword: string;
 }
 
+export interface PublishedSite {
+  name: string;
+  domain: string;
+  domain_prefix?: string;
+  active_languages: string[];
+  language_paths: Record<string, string>;
+  deploy_webhook_url?: string;
+  enabled: boolean;
+}
+
 export interface MetaPage {
   id: string;
   name: string;
@@ -116,6 +126,7 @@ export interface Project {
   name: string;
   wp_credentials?: WpCredentials | null;
   meta_credentials?: MetaCredentials | null;
+  published_site?: PublishedSite | null;
   description: string | null;
   cover_image_url: string | null;
   industry: string | null;

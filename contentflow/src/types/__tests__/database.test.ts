@@ -3,8 +3,8 @@ import { describe, it, expectTypeOf } from 'vitest'
 import type { ChannelType, ProjectMember, ChannelConnection } from '@/types/database'
 
 describe('database types', () => {
-  it('ChannelType includes wordpress and naver_blog', () => {
-    expectTypeOf<'wordpress'>().toMatchTypeOf<ChannelType>()
+  it('ChannelType includes self_hosted and naver_blog', () => {
+    expectTypeOf<'self_hosted'>().toMatchTypeOf<ChannelType>()
     expectTypeOf<'naver_blog'>().toMatchTypeOf<ChannelType>()
   })
 
