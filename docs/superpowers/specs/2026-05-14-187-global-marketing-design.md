@@ -1,7 +1,7 @@
 # 187 성장클리닉 글로벌 마케팅 전략 — 설계 스펙
 
 - **작성일**: 2026-05-14
-- **상태**: v2 — 전략 + 국가별 작전 페이지 작성 완료 · HTML 시각화 5종 · 정량 수치(예산·KPI·M0) TBD
+- **상태**: v2.1 — 전략 + 국가별 작전 페이지 작성 완료 · HTML 시각화 6종(+US-Korean 미국 한인 축, 2026-06-01) · 정량 수치(예산·KPI·M0) TBD
 - **대상**: 연세새봄의원 (강남 압구정) — 187 성장클리닉
 - **본진 원장**: 채용현 (쌍둥이 아빠 의사 퍼스널 브랜딩)
 - **핵심 자산**: 채용현 원장 책 + 박미정 책(외부) + **dflo_0.1 백엔드 환자 치료 사례 + DFlo 187 성장케어 앱**
@@ -204,6 +204,15 @@
 - **유료**: 인도 = Google Ads ($0.10 광고 효율 1위) / 필리핀 = Meta+TikTok Ads / 말레이 = Meta Ads / 미국 = Google 도구 키워드만 ($1-2.5), HGH는 SEO만 ($5-7 비쌈). 예산 (4시장 통합) = 인도 35% / 필리핀 20% / 미국 25% / 말레이 10% / 콘텐츠 제작 10%
 - **홈페이지**: CTA = WhatsApp (IN/PH/MY) + Messenger (US) / SEO = height calculator·how to increase height·hgh + US Reddit·Quora 백링크 / 체류 = Height calculator 도구·인터랙티브 height chart·케이스 스터디
 
+**🇺🇸🇰🇷 미국 한인 디아스포라 (US-Korean · 2026-06-01 신설 — EN과 별개 축)**
+- **세그먼트**: 미국 거주 한인 190만(LA 32만·17%, NY 21.5만·12%, 버겐카운티 밀도 전국 1위). EN(영어권 현지인)과 달리 한국어·한국 의료 신뢰·방한 동선이 핵심. 1차 지역 = LA·OC 단일 집중.
+- **오가닉**: 인스타·유튜브 @187growup 한국어 콘텐츠 **재활용(번역 불필요)** + **미주중앙일보 애드버토리얼**(구글 색인 PR 자산) + 미씨USA·한인맘 커뮤니티 진성참여(SEO 0, 도달용) + 카카오 채널 nurture
+- **유료**: **Meta 리드젠 메인(85%)** — 한인맘 타깃(언어 한국어 + 관심사 한국육아 + LA ZIP + 35~49 여성). 구글은 브랜드 방어만(한국어 검색량 바닥). 헬스케어 CPL Meta $33~52 vs 구글 $85~145. 1차 목표 = 상담 DB. 예산 = 월 $1~3k 검증(Meta 단일 몰빵)
+- **홈페이지**: dr187growup.com 한인 랜딩 — 예상키 도구 + 방한 진료 안내(방학 시즌) + 카톡 상담 CTA + 채용현 원장 E-E-A-T
+- **⚠️ 운영 예외 (hub-spoke와 다름)**: 현지 에이전시 핸드오프 **불필요** — **한국 본사가 한국어로 직접 클로징** → 방한 진료로 KR 본원 직결. spoke 비용·핸드오프 손실 제거 (CAC↓ 마진↑). 이 축이 KR 본진과 거의 동급으로 조기 진입 가능한 이유.
+- **구글 색인 실측(site:)**: 미씨USA·헤이코리안 게시판글 ✗(로그인/동적 렌더링) / 라디오코리아·미주중앙 ✓. 미주중앙에 키성장 시장 이미 활성(경쟁: "북가주 성장판 무료진단 이벤트" → 남가주 상대적 공백)
+- HTML: `187-us-korean-operations.html` (hero 네이비→레드)
+
 ## 9. 공유 자산 구조
 
 ### 도메인 (다국어 SEO 시너지)
@@ -302,6 +311,7 @@ spec 승인 후 `superpowers:writing-plans` skill로 구체 실행 계획 작성
 - `contentflow/public/strategy-templates/187-th-operations.html` — 🇹🇭 태국 Phase 1 작전 페이지 (전략+실행 통합 · 90일 캘린더)
 - `contentflow/public/strategy-templates/187-vn-operations.html` — 🇻🇳 베트남 Phase 2 작전 페이지
 - `contentflow/public/strategy-templates/187-en-operations.html` — 🇺🇸🇮🇳🇵🇭🇲🇾 영어 4시장 Phase 3 작전 페이지
+- `contentflow/public/strategy-templates/187-us-korean-operations.html` — 🇺🇸🇰🇷 미국 한인 디아스포라 작전 페이지 (US-Korean, EN과 별개 축 · Meta 리드젠 + 미주중앙 PR + LA 집중 · 본사 직접 한국어 클로징)
 - `contentflow/public/strategy-templates/187-global-market.html` — 10개국 시장 분석
 - `documents/연세새봄의원_마케팅전략 260323.html` — 한국 본진 통합 마케팅 전략
 - `C:/projects/dflo_0.1/` — 환자 데이터 백엔드 + DFlo 앱 (`cases/` 폴더, `v4/`, `ai-server/`)
